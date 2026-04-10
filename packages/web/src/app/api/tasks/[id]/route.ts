@@ -1,6 +1,6 @@
 import { db, tasks } from "@todo/db";
 import { UpdateTaskSchema } from "@todo/shared";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { err, nowIso, ok } from "@/lib/api";
 
 export async function GET(
@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+  const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt)));
   if (!task) return err("Not found", 404);
 
   const subtasks = await db.select().from(tasks).where(eq(tasks.parentTaskId, id));
@@ -33,7 +33,7 @@ export async function PATCH(
   const [task] = await db
     .update(tasks)
     .set({ ...update, updatedAt: nowIso() })
-    .where(eq(tasks.id, id))
+    .where(and(eq(tasks.id, id), isNull(tasks.deletedAt)))
     .returning();
   if (!task) return err("Not found", 404);
 

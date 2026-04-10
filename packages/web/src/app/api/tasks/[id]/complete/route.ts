@@ -1,5 +1,5 @@
 import { db, tasks } from "@todo/db";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { err, nextRecurrenceDate, nowIso, ok, todayStr } from "@/lib/api";
 
 export async function POST(
@@ -10,7 +10,7 @@ export async function POST(
   const now = nowIso();
   const today = todayStr();
 
-  const [original] = await db.select().from(tasks).where(eq(tasks.id, id));
+  const [original] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt)));
   if (!original) return err("Not found", 404);
 
   const [completed] = await db

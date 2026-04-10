@@ -59,7 +59,7 @@ export default function TrashPage() {
                       size="sm"
                       className="h-7 text-xs px-2"
                       onClick={() => restoreTask.mutate(task.id)}
-                      disabled={restoreTask.isPending}
+                      disabled={restoreTask.isPending && restoreTask.variables === task.id}
                     >
                       Restore
                     </Button>
@@ -68,7 +68,7 @@ export default function TrashPage() {
                       size="sm"
                       className="h-7 text-xs px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => deleteForever.mutate(task.id)}
-                      disabled={deleteForever.isPending}
+                      disabled={deleteForever.isPending && deleteForever.variables === task.id}
                     >
                       Delete
                     </Button>
