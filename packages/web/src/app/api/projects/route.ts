@@ -15,6 +15,7 @@ export async function GET(request: Request) {
       notes: projects.notes,
       color: projects.color,
       areaId: projects.areaId,
+      parentProjectId: projects.parentProjectId,
       isCompleted: projects.isCompleted,
       completedAt: projects.completedAt,
       position: projects.position,
@@ -34,6 +35,16 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = CreateProjectSchema.safeParse(body);
   if (!parsed.success) return err(parsed.error.message);
+
+  // Enforce 1-level depth limit
+  if (parsed.data.parentProjectId) {
+    const [parent] = await db
+      .select({ parentProjectId: projects.parentProjectId })
+      .from(projects)
+      .where(eq(projects.id, parsed.data.parentProjectId));
+    if (!parent) return err("Parent project not found", 404);
+    if (parent.parentProjectId) return err("Sub-projects cannot have sub-projects (max 1 level deep)", 400);
+  }
 
   const now = nowIso();
   const [project] = await db
