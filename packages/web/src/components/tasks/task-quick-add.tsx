@@ -24,7 +24,13 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
 
   // Parse on every render — pure function, negligible cost
   const parsed = value.trim() ? parseTaskInput(value, projects) : null;
-  const hasChips = parsed && (parsed.whenDate || parsed.timeOfDay || parsed.projectId || parsed.deadline || parsed.isSomeday);
+  const hasChips = parsed && (parsed.whenDate || parsed.timeOfDay || parsed.scheduledTime || parsed.projectId || parsed.deadline || parsed.isSomeday);
+
+  function fmtTime(t: string) {
+    const [h, m] = t.split(":").map(Number);
+    const ampm = h >= 12 ? "PM" : "AM";
+    return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
+  }
 
   function handleOpen() {
     setOpen(true);
@@ -42,6 +48,7 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
         title,
         whenDate: parsed?.whenDate ?? defaults?.whenDate ?? undefined,
         timeOfDay: parsed?.timeOfDay ?? defaults?.timeOfDay ?? undefined,
+        scheduledTime: parsed?.scheduledTime ?? undefined,
         deadline: parsed?.deadline ?? undefined,
         isSomeday: parsed?.isSomeday ?? false,
         projectId: parsed?.projectId ?? defaults?.projectId ?? undefined,
@@ -131,6 +138,12 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
             <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-medium">
               <Clock className="h-3 w-3" />
               {parsed.timeOfDay.charAt(0).toUpperCase() + parsed.timeOfDay.slice(1)}
+            </span>
+          )}
+          {parsed.scheduledTime && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 font-medium">
+              <Clock className="h-3 w-3" />
+              {fmtTime(parsed.scheduledTime)}
             </span>
           )}
           {parsed.projectName && (
