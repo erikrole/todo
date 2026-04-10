@@ -29,11 +29,12 @@ export async function GET(request: Request) {
         isNull(tasks.areaId),
         isNull(tasks.parentTaskId),
         eq(tasks.isCompleted, false),
+        eq(tasks.isCancelled, false),
         eq(tasks.isSomeday, false),
       );
       break;
     case "today":
-      conditions.push(lte(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
+      conditions.push(lte(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false), eq(tasks.isCancelled, false));
       break;
     case "completed_today": {
       // Tasks completed today (completedAt starts with today's date string)
@@ -49,10 +50,10 @@ export async function GET(request: Request) {
       break;
     }
     case "upcoming":
-      conditions.push(gt(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
+      conditions.push(gt(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false), eq(tasks.isCancelled, false));
       break;
     case "someday":
-      conditions.push(eq(tasks.isSomeday, true), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
+      conditions.push(eq(tasks.isSomeday, true), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false), eq(tasks.isCancelled, false));
       break;
     case "completed":
       conditions.push(eq(tasks.isCompleted, true), isNull(tasks.parentTaskId));
