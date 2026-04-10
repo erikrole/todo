@@ -34,8 +34,8 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
   const [notes, setNotes] = useState(task.notes ?? "");
   const [whenDate, setWhenDate] = useState(task.whenDate ?? "");
   const [deadline, setDeadline] = useState(task.deadline ?? "");
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay | "">(task.timeOfDay ?? "");
-  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType | "">(task.recurrenceType ?? "");
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay | "none">(task.timeOfDay ?? "none");
+  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType | "none">(task.recurrenceType ?? "none");
   const [recurrenceMode, setRecurrenceMode] = useState<RecurrenceMode>("on_schedule");
   const [recurrenceInterval, setRecurrenceInterval] = useState(task.recurrenceInterval ?? 1);
 
@@ -44,23 +44,26 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
     setNotes(task.notes ?? "");
     setWhenDate(task.whenDate ?? "");
     setDeadline(task.deadline ?? "");
-    setTimeOfDay(task.timeOfDay ?? "");
-    setRecurrenceType(task.recurrenceType ?? "");
+    setTimeOfDay(task.timeOfDay ?? "none");
+    setRecurrenceType(task.recurrenceType ?? "none");
     setRecurrenceMode(task.recurrenceMode ?? "on_schedule");
     setRecurrenceInterval(task.recurrenceInterval ?? 1);
   }, [task]);
 
-  function save() {
+  function save(overrides?: { timeOfDay?: TimeOfDay | "none"; recurrenceType?: RecurrenceType | "none"; recurrenceMode?: RecurrenceMode }) {
+    const tod = overrides?.timeOfDay ?? timeOfDay;
+    const rt = overrides?.recurrenceType ?? recurrenceType;
+    const rm = overrides?.recurrenceMode ?? recurrenceMode;
     updateTask.mutate({
       id: task.id,
       title,
       notes: notes || null,
       whenDate: whenDate || null,
       deadline: deadline || null,
-      timeOfDay: (timeOfDay as TimeOfDay) || null,
-      recurrenceType: (recurrenceType as RecurrenceType) || null,
-      recurrenceMode: recurrenceType ? recurrenceMode : null,
-      recurrenceInterval: recurrenceType ? recurrenceInterval : null,
+      timeOfDay: tod !== "none" ? tod : null,
+      recurrenceType: rt !== "none" ? rt : null,
+      recurrenceMode: rt !== "none" ? rm : null,
+      recurrenceInterval: rt !== "none" ? recurrenceInterval : null,
     });
   }
 
@@ -114,12 +117,12 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
           {whenDate && (
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs text-muted-foreground">Time of day</Label>
-              <Select value={timeOfDay} onValueChange={(v) => { setTimeOfDay(v as TimeOfDay); save(); }}>
+              <Select value={timeOfDay} onValueChange={(v) => { const val = v as TimeOfDay | "none"; setTimeOfDay(val); save({ timeOfDay: val }); }}>
                 <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Any time" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Any time</SelectItem>
+                  <SelectItem value="none">Any time</SelectItem>
                   <SelectItem value="morning">Morning</SelectItem>
                   <SelectItem value="day">Day</SelectItem>
                   <SelectItem value="night">Night</SelectItem>
@@ -143,12 +146,12 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
           {/* Recurrence */}
           <div className="flex flex-col gap-2">
             <Label className="text-xs text-muted-foreground">Repeat</Label>
-            <Select value={recurrenceType} onValueChange={(v) => { setRecurrenceType(v as RecurrenceType); save(); }}>
+            <Select value={recurrenceType} onValueChange={(v) => { const val = v as RecurrenceType | "none"; setRecurrenceType(val); save({ recurrenceType: val }); }}>
               <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Never" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Never</SelectItem>
+                <SelectItem value="none">Never</SelectItem>
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
                 <SelectItem value="monthly">Monthly</SelectItem>
@@ -157,7 +160,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
               </SelectContent>
             </Select>
 
-            {recurrenceType && (
+            {recurrenceType !== "none" && (
               <div className="flex flex-col gap-2 pl-1">
                 {/* Mode */}
                 <div className="flex gap-2">
@@ -165,7 +168,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
                     <button
                       key={mode}
                       type="button"
-                      onClick={() => { setRecurrenceMode(mode); save(); }}
+                      onClick={() => { setRecurrenceMode(mode); save({ recurrenceMode: mode }); }}
                       className={cn(
                         "text-xs px-2.5 py-1 rounded-full border transition-colors",
                         recurrenceMode === mode
