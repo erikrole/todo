@@ -12,6 +12,8 @@ export interface ParseResult {
   title: string;
   whenDate?: string;
   timeOfDay?: TimeOfDay;
+  /** HH:MM in 24h format */
+  scheduledTime?: string;
   deadline?: string;
   isSomeday?: boolean;
   projectId?: string;
@@ -39,6 +41,7 @@ export function parseTaskInput(
   let projectName: string | undefined;
   let deadline: string | undefined;
   let whenDate: string | undefined;
+  let scheduledTime: string | undefined;
   let isSomeday: boolean | undefined;
 
   // 1. Extract someday token
@@ -83,15 +86,23 @@ export function parseTaskInput(
     }
   }
 
-  // 5. Extract natural-language date from remaining text (skip if someday)
-  const dateResults = chrono.parse(text, new Date(), { forwardDate: true });
-  if (dateResults.length > 0) {
-    const r = dateResults[0];
-    whenDate = r.date().toISOString().slice(0, 10);
-    text = text.slice(0, r.index) + text.slice(r.index + r.text.length);
+  // 5. Extract natural-language date (and time if explicitly stated) from remaining text
+  if (!isSomeday) {
+    const dateResults = chrono.parse(text, new Date(), { forwardDate: true });
+    if (dateResults.length > 0) {
+      const r = dateResults[0];
+      whenDate = r.date().toISOString().slice(0, 10);
+      // Only extract a scheduled time if the user explicitly stated one (not inferred)
+      if (r.start.isCertain("hour")) {
+        const h = String(r.start.get("hour")).padStart(2, "0");
+        const m = String(r.start.get("minute") ?? 0).padStart(2, "0");
+        scheduledTime = `${h}:${m}`;
+      }
+      text = text.slice(0, r.index) + text.slice(r.index + r.text.length);
+    }
   }
 
   const title = text.replace(/\s+/g, " ").trim();
 
-  return { title, whenDate, timeOfDay, deadline, isSomeday, projectId, projectName };
+  return { title, whenDate, timeOfDay, scheduledTime, deadline, isSomeday, projectId, projectName };
 }
