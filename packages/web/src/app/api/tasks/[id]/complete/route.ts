@@ -37,6 +37,7 @@ export async function POST(
           notes: original.notes,
           whenDate: nextWhenDate,
           timeOfDay: original.timeOfDay,
+          scheduledTime: original.scheduledTime,
           deadline: original.deadline,
           projectId: original.projectId,
           areaId: original.areaId,
