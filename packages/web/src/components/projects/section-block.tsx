@@ -10,6 +10,8 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { ChevronRight, GripVertical } from "lucide-react";
 
@@ -17,18 +19,9 @@ interface SectionBlockProps {
   section: Section;
   tasks: Task[];
   allSections: Section[];
-  // Drag handle props will be added in Task 8
-  dragHandleProps?: React.HTMLAttributes<HTMLDivElement>;
-  isDragging?: boolean;
 }
 
-export function SectionBlock({
-  section,
-  tasks,
-  allSections,
-  dragHandleProps,
-  isDragging,
-}: SectionBlockProps) {
+export function SectionBlock({ section, tasks, allSections }: SectionBlockProps) {
   const updateSection = useUpdateSection();
   const deleteSection = useDeleteSection();
   const [isRenaming, setIsRenaming] = useState(false);
@@ -37,11 +30,24 @@ export function SectionBlock({
   const renameSubmittedRef = useRef(false);
   const openTasks = tasks.filter((t) => !t.isCompleted);
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   useEffect(() => {
     if (isRenaming) setTimeout(() => renameRef.current?.focus(), 50);
   }, [isRenaming]);
 
-  // Keep renameValue in sync if section.title changes externally
   useEffect(() => {
     if (!isRenaming) setRenameValue(section.title);
   }, [section.title, isRenaming]);
@@ -62,14 +68,8 @@ export function SectionBlock({
   }
 
   function handleRenameKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      submitRename();
-    }
-    if (e.key === "Escape") {
-      setRenameValue(section.title);
-      setIsRenaming(false);
-    }
+    if (e.key === "Enter") { e.preventDefault(); submitRename(); }
+    if (e.key === "Escape") { setRenameValue(section.title); setIsRenaming(false); }
   }
 
   function handleDelete() {
@@ -93,14 +93,19 @@ export function SectionBlock({
   }
 
   return (
-    <div className={cn("flex flex-col", isDragging && "opacity-50")}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn("flex flex-col", isDragging && "opacity-50")}
+    >
       {/* Section header */}
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div className="flex items-center gap-1.5 py-1.5 pl-1 pr-3 group/section cursor-default select-none">
-            {/* Drag handle (wired in Task 8) */}
+            {/* Drag handle */}
             <div
-              {...dragHandleProps}
+              {...attributes}
+              {...listeners}
               className="opacity-0 group-hover/section:opacity-40 hover:!opacity-70 cursor-grab active:cursor-grabbing transition-opacity p-0.5"
             >
               <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />

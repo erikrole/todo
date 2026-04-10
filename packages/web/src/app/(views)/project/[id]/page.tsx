@@ -3,7 +3,7 @@
 import { use, useState, useRef, useEffect } from "react";
 import { useTasks } from "@/hooks/use-tasks";
 import { useProjects, useCompleteProject } from "@/hooks/use-projects";
-import { useSections, useCreateSection } from "@/hooks/use-sections";
+import { useSections, useCreateSection, useUpdateSection } from "@/hooks/use-sections";
 import { TaskList } from "@/components/tasks/task-list";
 import { SectionBlock } from "@/components/projects/section-block";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
@@ -11,6 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckSquare, Plus } from "lucide-react";
 import type { Section } from "@todo/shared";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -19,6 +30,11 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const { data: sections = [] } = useSections(id);
   const completeProject = useCompleteProject();
   const createSection = useCreateSection();
+  const updateSection = useUpdateSection();
+  const [activeDragSection, setActiveDragSection] = useState<Section | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
 
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -49,6 +65,35 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     setNewSectionTitle("");
     setAddingSection(false);
     await createSection.mutateAsync({ projectId: id, title, position: maxPos + 1 });
+  }
+
+  function handleSectionDragStart(event: DragStartEvent) {
+    const sec = sections.find((s) => s.id === event.active.id);
+    setActiveDragSection(sec ?? null);
+  }
+
+  function handleSectionDragEnd(event: DragEndEvent) {
+    setActiveDragSection(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = sections.findIndex((s) => s.id === active.id);
+    const newIndex = sections.findIndex((s) => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(sections, oldIndex, newIndex);
+    const prev = reordered[newIndex - 1];
+    const next = reordered[newIndex + 1];
+    const newPosition =
+      prev && next
+        ? (prev.position + next.position) / 2
+        : prev
+          ? prev.position + 1
+          : next
+            ? next.position - 1
+            : 0;
+
+    updateSection.mutate({ id: active.id as string, projectId: id, position: newPosition });
   }
 
   function handleSectionKeyDown(e: React.KeyboardEvent) {
@@ -110,15 +155,36 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         />
       </DroppableZone>
 
-      {/* Section blocks (drag reorder added in Task 8) */}
-      {sections.map((section) => (
-        <SectionBlock
-          key={section.id}
-          section={section}
-          tasks={tasksForSection(section)}
-          allSections={sections}
-        />
-      ))}
+      {/* Section blocks with drag reorder */}
+      {sections.length > 0 && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleSectionDragStart}
+          onDragEnd={handleSectionDragEnd}
+        >
+          <SortableContext
+            items={sections.map((s) => s.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {sections.map((section) => (
+              <SectionBlock
+                key={section.id}
+                section={section}
+                tasks={tasksForSection(section)}
+                allSections={sections}
+              />
+            ))}
+          </SortableContext>
+          <DragOverlay dropAnimation={null}>
+            {activeDragSection && (
+              <div className="bg-card border border-border rounded-md px-3 py-1.5 shadow-lg text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                {activeDragSection.title}
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
+      )}
 
       {/* Add Section */}
       {addingSection ? (
