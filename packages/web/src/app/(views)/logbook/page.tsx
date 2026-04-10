@@ -54,6 +54,7 @@ export default function LogbookPage() {
                   onToggle={(id) => setExpandedTaskId((prev) => (prev === id ? null : id))}
                   activeProjects={activeProjects}
                   showWhenDate
+                  showCompletedTime
                 />
               ))}
             </div>
