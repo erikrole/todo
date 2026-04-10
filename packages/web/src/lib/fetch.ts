@@ -5,7 +5,7 @@ const BASE = "";
 function authHeaders(): HeadersInit {
   // NEXT_PUBLIC_AUTH_TOKEN is available in both browser and server.
   // AUTH_TOKEN alone would be undefined on the client.
-  const token = process.env["NEXT_PUBLIC_AUTH_TOKEN"] ?? "";
+  const token = process.env.NEXT_PUBLIC_AUTH_TOKEN ?? "";
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
