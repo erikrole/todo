@@ -33,6 +33,7 @@ interface TaskItemProps {
   onToggle: (id: string) => void;
   activeProjects: ProjectWithCounts[];
   showWhenDate?: boolean;
+  showCompletedTime?: boolean;
 }
 
 function todayStr() {
@@ -58,6 +59,7 @@ export const TaskItem = memo(function TaskItem({
   onToggle,
   activeProjects,
   showWhenDate,
+  showCompletedTime,
 }: TaskItemProps) {
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
@@ -155,16 +157,26 @@ export const TaskItem = memo(function TaskItem({
                         "text-sm leading-snug tracking-[-0.006em]",
                         task.isCompleted
                           ? "line-through text-muted-foreground/40"
-                          : "text-foreground",
+                          : task.isCancelled
+                            ? "line-through text-muted-foreground/25"
+                            : "text-foreground",
                       )}
                     >
                       {task.title}
                     </span>
-                    {((showWhenDate && task.whenDate) || task.notes) && (
+                    {((showWhenDate && task.whenDate) || task.notes || (showCompletedTime && task.completedAt)) && (
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {showWhenDate && task.whenDate && (
                           <span className="text-[11px] text-muted-foreground/50 font-mono">
                             {formatWhenDate(task.whenDate)}
+                          </span>
+                        )}
+                        {showCompletedTime && task.completedAt && (
+                          <span className="text-[11px] text-muted-foreground/30 font-mono">
+                            {new Date(task.completedAt).toLocaleTimeString("en-US", {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
                           </span>
                         )}
                         {task.notes && (
@@ -258,6 +270,11 @@ export const TaskItem = memo(function TaskItem({
             )}
             <ContextMenuSeparator />
             <ContextMenuItem onSelect={handleComplete}>Complete</ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => updateTask.mutate({ id: task.id, isCancelled: !task.isCancelled })}
+            >
+              {task.isCancelled ? "Uncancel" : "Cancel"}
+            </ContextMenuItem>
             <ContextMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={() => deleteTask.mutate(task.id)}
