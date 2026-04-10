@@ -24,6 +24,7 @@ export interface Project {
   notes: string | null;
   color: string | null;
   areaId: string | null;
+  parentProjectId: string | null;
   isCompleted: boolean;
   completedAt: string | null;
   position: number;
@@ -33,6 +34,16 @@ export interface Project {
 
 export interface ProjectWithCounts extends Project {
   taskCount: number;
+}
+
+export interface Section {
+  id: string;
+  projectId: string;
+  title: string;
+  position: number;
+  isCollapsed: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
@@ -59,6 +70,7 @@ export interface Task {
   deadline: string | null;
   projectId: string | null;
   areaId: string | null;
+  sectionId: string | null;
   parentTaskId: string | null;
   /** When true, task is in Someday and hidden from Inbox. Cleared when whenDate is set. */
   isSomeday: boolean;

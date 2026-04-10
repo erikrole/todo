@@ -24,6 +24,7 @@ export const CreateProjectSchema = z.object({
   notes: z.string().optional(),
   color: z.string().optional(),
   areaId: z.string().optional(),
+  parentProjectId: z.string().optional(),
   position: z.number().optional(),
 });
 
@@ -33,6 +34,20 @@ export const UpdateProjectSchema = z.object({
   color: z.string().nullable().optional(),
   areaId: z.string().nullable().optional(),
   position: z.number().optional(),
+});
+
+// ─── Sections ────────────────────────────────────────────────────────────────
+
+export const CreateSectionSchema = z.object({
+  projectId: z.string().min(1),
+  title: z.string().min(1),
+  position: z.number().optional(),
+});
+
+export const UpdateSectionSchema = z.object({
+  title: z.string().min(1).optional(),
+  position: z.number().optional(),
+  isCollapsed: z.boolean().optional(),
 });
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
@@ -54,6 +69,7 @@ export const CreateTaskSchema = z.object({
   isSomeday: z.boolean().optional(),
   projectId: z.string().optional(),
   areaId: z.string().optional(),
+  sectionId: z.string().optional(),
   parentTaskId: z.string().optional(),
   recurrenceType: RecurrenceTypeSchema.optional(),
   recurrenceMode: RecurrenceModeSchema.optional(),
@@ -73,6 +89,7 @@ export const UpdateTaskSchema = z.object({
   isCancelled: z.boolean().optional(),
   projectId: z.string().nullable().optional(),
   areaId: z.string().nullable().optional(),
+  sectionId: z.string().nullable().optional(),
   parentTaskId: z.string().nullable().optional(),
   recurrenceType: RecurrenceTypeSchema.nullable().optional(),
   recurrenceMode: RecurrenceModeSchema.nullable().optional(),
@@ -87,5 +104,7 @@ export type CreateAreaInput = z.infer<typeof CreateAreaSchema>;
 export type UpdateAreaInput = z.infer<typeof UpdateAreaSchema>;
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof UpdateProjectSchema>;
+export type CreateSectionInput = z.infer<typeof CreateSectionSchema>;
+export type UpdateSectionInput = z.infer<typeof UpdateSectionSchema>;
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof UpdateTaskSchema>;
