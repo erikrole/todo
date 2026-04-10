@@ -23,7 +23,14 @@ export default function TodayPage() {
   const progressPct = totalForProgress > 0 ? (completedTodayTasks.length / totalForProgress) * 100 : 0;
 
   function tasksBySection(sectionId: TimeOfDay | null): Task[] {
-    return activeTasks.filter((t) => (t.timeOfDay ?? null) === sectionId);
+    return activeTasks
+      .filter((t) => (t.timeOfDay ?? null) === sectionId)
+      .sort((a, b) => {
+        if (!a.scheduledTime && !b.scheduledTime) return 0;
+        if (!a.scheduledTime) return 1;
+        if (!b.scheduledTime) return -1;
+        return a.scheduledTime.localeCompare(b.scheduledTime);
+      });
   }
 
   function completedBySection(sectionId: TimeOfDay | null): Task[] {
