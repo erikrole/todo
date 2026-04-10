@@ -48,11 +48,12 @@ export const tasks = sqliteTable(
     deadline: text("deadline"),
     projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
     areaId: text("area_id").references(() => areas.id, { onDelete: "set null" }),
-    // Self-referential FK — defined as plain text; cascade handled in drizzle.config
     parentTaskId: text("parent_task_id"),
     isSomeday: integer("is_someday", { mode: "boolean" }).default(false).notNull(),
     isCompleted: integer("is_completed", { mode: "boolean" }).default(false).notNull(),
     completedAt: text("completed_at"),
+    isCancelled: integer("is_cancelled", { mode: "boolean" }).default(false).notNull(),
+    deletedAt: text("deleted_at"),
     recurrenceType: text("recurrence_type"),
     recurrenceMode: text("recurrence_mode"),
     recurrenceInterval: integer("recurrence_interval"),
@@ -68,6 +69,8 @@ export const tasks = sqliteTable(
     index("idx_tasks_when_date").on(t.whenDate),
     index("idx_tasks_is_completed").on(t.isCompleted),
     index("idx_tasks_is_someday").on(t.isSomeday),
+    index("idx_tasks_is_cancelled").on(t.isCancelled),
+    index("idx_tasks_deleted_at").on(t.deletedAt),
   ],
 );
 
