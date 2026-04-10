@@ -34,6 +34,7 @@ export function SectionBlock({
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(section.title);
   const renameRef = useRef<HTMLInputElement>(null);
+  const renameSubmittedRef = useRef(false);
   const openTasks = tasks.filter((t) => !t.isCompleted);
 
   useEffect(() => {
@@ -46,6 +47,8 @@ export function SectionBlock({
   }, [section.title, isRenaming]);
 
   function submitRename() {
+    if (renameSubmittedRef.current) return;
+    renameSubmittedRef.current = true;
     const title = renameValue.trim();
     if (!title) {
       setRenameValue(section.title);
@@ -144,6 +147,7 @@ export function SectionBlock({
         <ContextMenuContent className="w-40">
           <ContextMenuItem
             onSelect={() => {
+              renameSubmittedRef.current = false;
               setRenameValue(section.title);
               setIsRenaming(true);
             }}

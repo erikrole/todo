@@ -23,6 +23,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [addingSection, setAddingSection] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const sectionInputRef = useRef<HTMLInputElement>(null);
+  const sectionSubmittedRef = useRef(false);
 
   useEffect(() => {
     if (addingSection) setTimeout(() => sectionInputRef.current?.focus(), 50);
@@ -40,11 +41,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   }
 
   async function submitSection() {
+    if (sectionSubmittedRef.current) return;
+    sectionSubmittedRef.current = true;
     const title = newSectionTitle.trim();
-    if (!title) {
-      setAddingSection(false);
-      return;
-    }
+    if (!title) { setAddingSection(false); return; }
     const maxPos = sections.length > 0 ? Math.max(...sections.map((s) => s.position)) : 0;
     setNewSectionTitle("");
     setAddingSection(false);
@@ -137,7 +137,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setAddingSection(true)}
+          onClick={() => {
+          sectionSubmittedRef.current = false;
+          setAddingSection(true);
+        }}
           className="w-fit text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-transparent -ml-1 gap-1.5 font-normal"
         >
           <Plus className="h-3.5 w-3.5" />
