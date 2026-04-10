@@ -4,6 +4,7 @@ import { use } from "react";
 import { useTasks } from "@/hooks/use-tasks";
 import { useProjects, useCompleteProject } from "@/hooks/use-projects";
 import { TaskList } from "@/components/tasks/task-list";
+import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckSquare } from "lucide-react";
@@ -52,12 +53,14 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.notes}</p>
       )}
 
-      <TaskList
-        tasks={tasks.filter((t) => !t.isCompleted)}
-        isLoading={isLoading}
-        quickAddDefaults={{ projectId: id }}
-        emptyMessage="No open tasks in this project."
-      />
+      <DroppableZone id={`section:project:${id}`}>
+        <TaskList
+          tasks={tasks.filter((t) => !t.isCompleted)}
+          isLoading={isLoading}
+          quickAddDefaults={{ projectId: id }}
+          emptyMessage="No open tasks in this project."
+        />
+      </DroppableZone>
     </div>
   );
 }

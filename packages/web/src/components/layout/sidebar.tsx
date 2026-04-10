@@ -20,14 +20,15 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAreas } from "@/hooks/use-areas";
 import { useProjects } from "@/hooks/use-projects";
+import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
 import { CheckSquare, Inbox, Sun, Calendar, BookOpen, ChevronRight } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/today", label: "Today", icon: Sun },
-  { href: "/upcoming", label: "Upcoming", icon: Calendar },
-  { href: "/logbook", label: "Logbook", icon: BookOpen },
+  { href: "/inbox", label: "Inbox", icon: Inbox, dropId: "sidebar:inbox" },
+  { href: "/today", label: "Today", icon: Sun, dropId: "sidebar:today" },
+  { href: "/upcoming", label: "Upcoming", icon: Calendar, dropId: "sidebar:upcoming" },
+  { href: "/logbook", label: "Logbook", icon: BookOpen, dropId: null },
 ];
 
 export function AppSidebar() {
@@ -48,14 +49,25 @@ export function AppSidebar() {
         {/* Main nav */}
         <SidebarGroup>
           <SidebarMenu>
-            {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
+            {NAV_ITEMS.map(({ href, label, icon: Icon, dropId }) => (
               <SidebarMenuItem key={href}>
-                <SidebarMenuButton asChild isActive={pathname === href}>
-                  <Link href={href}>
-                    <Icon className="h-4 w-4" />
-                    <span>{label}</span>
-                  </Link>
-                </SidebarMenuButton>
+                {dropId ? (
+                  <DroppableZone id={dropId} className="w-full">
+                    <SidebarMenuButton asChild isActive={pathname === href}>
+                      <Link href={href}>
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </DroppableZone>
+                ) : (
+                  <SidebarMenuButton asChild isActive={pathname === href}>
+                    <Link href={href}>
+                      <Icon className="h-4 w-4" />
+                      <span>{label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                )}
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
@@ -71,33 +83,37 @@ export function AppSidebar() {
                 return (
                   <Collapsible key={area.id} defaultOpen className="group/collapsible">
                     <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton isActive={pathname === `/area/${area.id}`} asChild={false}>
-                          <Link href={`/area/${area.id}`} className="flex flex-1 items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            {area.color && (
-                              <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: area.color }} />
-                            )}
-                            <span className="flex-1 truncate">{area.name}</span>
-                          </Link>
-                          <ChevronRight className="ml-auto h-3 w-3 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
+                      <DroppableZone id={`sidebar:area:${area.id}`} className="w-full">
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton isActive={pathname === `/area/${area.id}`} asChild={false}>
+                            <Link href={`/area/${area.id}`} className="flex flex-1 items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              {area.color && (
+                                <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: area.color }} />
+                              )}
+                              <span className="flex-1 truncate">{area.name}</span>
+                            </Link>
+                            <ChevronRight className="ml-auto h-3 w-3 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                      </DroppableZone>
                       {areaProjects.length > 0 && (
                         <CollapsibleContent>
                           <SidebarMenuSub>
                             {areaProjects.map((project) => (
                               <SidebarMenuSubItem key={project.id}>
-                                <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}`}>
-                                  <Link href={`/project/${project.id}`}>
-                                    {project.color && (
-                                      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
-                                    )}
-                                    <span className="truncate">{project.name}</span>
-                                    {project.taskCount > 0 && (
-                                      <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
-                                    )}
-                                  </Link>
-                                </SidebarMenuSubButton>
+                                <DroppableZone id={`sidebar:project:${project.id}`} className="w-full">
+                                  <SidebarMenuSubButton asChild isActive={pathname === `/project/${project.id}`}>
+                                    <Link href={`/project/${project.id}`}>
+                                      {project.color && (
+                                        <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
+                                      )}
+                                      <span className="truncate">{project.name}</span>
+                                      {project.taskCount > 0 && (
+                                        <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
+                                      )}
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </DroppableZone>
                               </SidebarMenuSubItem>
                             ))}
                           </SidebarMenuSub>
@@ -120,17 +136,19 @@ export function AppSidebar() {
                 .filter((p) => !p.areaId && !p.isCompleted)
                 .map((project) => (
                   <SidebarMenuItem key={project.id}>
-                    <SidebarMenuButton asChild isActive={pathname === `/project/${project.id}`}>
-                      <Link href={`/project/${project.id}`}>
-                        {project.color && (
-                          <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
-                        )}
-                        <span className="truncate">{project.name}</span>
-                        {project.taskCount > 0 && (
-                          <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
+                    <DroppableZone id={`sidebar:project:${project.id}`} className="w-full">
+                      <SidebarMenuButton asChild isActive={pathname === `/project/${project.id}`}>
+                        <Link href={`/project/${project.id}`}>
+                          {project.color && (
+                            <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
+                          )}
+                          <span className="truncate">{project.name}</span>
+                          {project.taskCount > 0 && (
+                            <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </DroppableZone>
                   </SidebarMenuItem>
                 ))}
             </SidebarMenu>

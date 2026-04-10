@@ -1,9 +1,15 @@
 {
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true
+  },
   "mcpServers": {
     "todo": {
       "type": "stdio",
       "command": "node",
-      "args": ["packages/mcp/dist/index.js"],
+      "args": [
+        "packages/mcp/dist/index.js"
+      ],
       "env": {
         "TURSO_URL": "${TURSO_URL}",
         "TURSO_AUTH_TOKEN": "${TURSO_AUTH_TOKEN}"

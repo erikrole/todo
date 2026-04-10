@@ -2,6 +2,7 @@
 
 import { useTasks } from "@/hooks/use-tasks";
 import { TaskList } from "@/components/tasks/task-list";
+import { DroppableZone } from "@/components/dnd/droppable-zone";
 
 export default function InboxPage() {
   const { data: tasks = [], isLoading } = useTasks("inbox");
@@ -9,11 +10,9 @@ export default function InboxPage() {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <h1 className="text-xl font-semibold">Inbox</h1>
-      <TaskList
-        tasks={tasks}
-        isLoading={isLoading}
-        emptyMessage="No tasks in your inbox."
-      />
+      <DroppableZone id="section:inbox">
+        <TaskList tasks={tasks} isLoading={isLoading} emptyMessage="No tasks in your inbox." />
+      </DroppableZone>
     </div>
   );
 }

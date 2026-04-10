@@ -2,6 +2,7 @@
 
 import { useTasks } from "@/hooks/use-tasks";
 import { TaskList } from "@/components/tasks/task-list";
+import { DroppableZone } from "@/components/dnd/droppable-zone";
 import type { Task, TimeOfDay } from "@todo/shared";
 
 const SECTIONS: { id: TimeOfDay | null; label: string }[] = [
@@ -28,16 +29,17 @@ export default function TodayPage() {
         <TaskList tasks={[]} isLoading />
       ) : (
         SECTIONS.map(({ id, label }) => {
-          const sectionTasks = tasksBySection(id);
-          if (sectionTasks.length === 0 && id !== null) return null;
+          const dropId = `section:today:${id ?? "anytime"}`;
           return (
             <section key={label}>
               <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</h2>
-              <TaskList
-                tasks={sectionTasks}
-                quickAddDefaults={{ whenDate: todayStr, timeOfDay: id ?? undefined }}
-                emptyMessage=""
-              />
+              <DroppableZone id={dropId}>
+                <TaskList
+                  tasks={tasksBySection(id)}
+                  quickAddDefaults={{ whenDate: todayStr, timeOfDay: id ?? undefined }}
+                  emptyMessage=""
+                />
+              </DroppableZone>
             </section>
           );
         })

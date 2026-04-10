@@ -2,6 +2,7 @@
 
 import { useTasks } from "@/hooks/use-tasks";
 import { TaskList } from "@/components/tasks/task-list";
+import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { formatWhenDate } from "@/lib/dates";
 import type { Task } from "@todo/shared";
 
@@ -25,17 +26,18 @@ export default function UpcomingPage() {
       {isLoading ? (
         <TaskList tasks={[]} isLoading />
       ) : sortedDates.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-6 text-center">Nothing coming up.</p>
+        <DroppableZone id="section:upcoming">
+          <p className="text-sm text-muted-foreground py-6 text-center">Nothing coming up.</p>
+        </DroppableZone>
       ) : (
         sortedDates.map((date) => (
           <section key={date}>
             <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
               {date === "No date" ? date : formatWhenDate(date)}
             </h2>
-            <TaskList
-              tasks={groups.get(date) ?? []}
-              quickAddDefaults={{ whenDate: date }}
-            />
+            <DroppableZone id="section:upcoming">
+              <TaskList tasks={groups.get(date) ?? []} quickAddDefaults={{ whenDate: date }} />
+            </DroppableZone>
           </section>
         ))
       )}

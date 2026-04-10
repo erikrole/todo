@@ -6,6 +6,7 @@ import { useAreas } from "@/hooks/use-areas";
 import { useProjects } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
 import { TaskList } from "@/components/tasks/task-list";
+import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FolderOpen } from "lucide-react";
@@ -67,12 +68,14 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
       {/* Loose tasks assigned directly to this area */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tasks</h2>
-        <TaskList
-          tasks={looseTasks.filter((t) => !t.projectId && !t.isCompleted)}
-          isLoading={isLoading}
-          quickAddDefaults={{ areaId: id }}
-          emptyMessage="No loose tasks in this area."
-        />
+        <DroppableZone id={`section:area:${id}`}>
+          <TaskList
+            tasks={looseTasks.filter((t) => !t.projectId && !t.isCompleted)}
+            isLoading={isLoading}
+            quickAddDefaults={{ areaId: id }}
+            emptyMessage="No loose tasks in this area."
+          />
+        </DroppableZone>
       </section>
     </div>
   );
