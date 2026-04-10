@@ -22,6 +22,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -31,6 +32,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const completeProject = useCompleteProject();
   const createSection = useCreateSection();
   const updateSection = useUpdateSection();
+  const queryClient = useQueryClient();
   const [activeDragSection, setActiveDragSection] = useState<Section | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -82,6 +84,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = arrayMove(sections, oldIndex, newIndex);
+
+    // Optimistically update the cache before the network request
+    queryClient.setQueryData(["sections", id], reordered);
+
     const prev = reordered[newIndex - 1];
     const next = reordered[newIndex + 1];
     const newPosition =
@@ -93,7 +99,15 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             ? next.position - 1
             : 0;
 
-    updateSection.mutate({ id: active.id as string, projectId: id, position: newPosition });
+    updateSection.mutate(
+      { id: active.id as string, projectId: id, position: newPosition },
+      {
+        onError: () => {
+          // Roll back to the pre-drag order on failure
+          queryClient.setQueryData(["sections", id], sections);
+        },
+      },
+    );
   }
 
   function handleSectionKeyDown(e: React.KeyboardEvent) {
