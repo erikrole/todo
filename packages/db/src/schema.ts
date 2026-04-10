@@ -45,6 +45,7 @@ export const tasks = sqliteTable(
     notes: text("notes"),
     whenDate: text("when_date"),
     timeOfDay: text("time_of_day"),
+    scheduledTime: text("scheduled_time"),
     deadline: text("deadline"),
     projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
     areaId: text("area_id").references(() => areas.id, { onDelete: "set null" }),

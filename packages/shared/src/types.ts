@@ -53,6 +53,8 @@ export interface Task {
   whenDate: string | null;
   /** Groups within Today view. Null means unscheduled within Today. */
   timeOfDay: TimeOfDay | null;
+  /** HH:MM in 24h format. Null = no scheduled time. */
+  scheduledTime: string | null;
   /** YYYY-MM-DD. Separate from whenDate — drives deadline warning badges. */
   deadline: string | null;
   projectId: string | null;
