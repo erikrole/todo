@@ -80,7 +80,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            onBlur={save}
+            onBlur={() => save()}
             className="text-base font-medium border-none shadow-none px-0 focus-visible:ring-0"
             placeholder="Task title"
           />
@@ -95,7 +95,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              onBlur={save}
+              onBlur={() => save()}
               placeholder="Add notes…"
               className="min-h-[80px] resize-none text-sm"
             />
@@ -108,7 +108,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
               type="date"
               value={whenDate}
               onChange={(e) => { setWhenDate(e.target.value); }}
-              onBlur={save}
+              onBlur={() => save()}
               className="text-sm bg-transparent border border-border rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -138,7 +138,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              onBlur={save}
+              onBlur={() => save()}
               className="text-sm bg-transparent border border-border rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -190,7 +190,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
                       min={1}
                       value={recurrenceInterval}
                       onChange={(e) => setRecurrenceInterval(Number(e.target.value))}
-                      onBlur={save}
+                      onBlur={() => save()}
                       className="w-16 text-sm h-7"
                     />
                     <span className="text-xs text-muted-foreground">days</span>
