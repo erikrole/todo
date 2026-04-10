@@ -58,6 +58,8 @@ export interface Task {
   projectId: string | null;
   areaId: string | null;
   parentTaskId: string | null;
+  /** When true, task is in Someday and hidden from Inbox. Cleared when whenDate is set. */
+  isSomeday: boolean;
   isCompleted: boolean;
   completedAt: string | null;
   recurrenceType: RecurrenceType | null;
@@ -77,7 +79,7 @@ export interface TaskWithSubtasks extends Task {
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-export type TaskFilter = "inbox" | "today" | "upcoming" | "completed" | "all";
+export type TaskFilter = "inbox" | "today" | "upcoming" | "someday" | "completed" | "all";
 
 export interface ApiResponse<T> {
   data: T;

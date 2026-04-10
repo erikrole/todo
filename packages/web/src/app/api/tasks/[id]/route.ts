@@ -24,9 +24,15 @@ export async function PATCH(
   const parsed = UpdateTaskSchema.safeParse(body);
   if (!parsed.success) return err(parsed.error.message);
 
+  const update = { ...parsed.data };
+  // Assigning a real date exits Someday automatically
+  if (update.whenDate !== undefined && update.whenDate !== null) {
+    update.isSomeday = false;
+  }
+
   const [task] = await db
     .update(tasks)
-    .set({ ...parsed.data, updatedAt: nowIso() })
+    .set({ ...update, updatedAt: nowIso() })
     .where(eq(tasks.id, id))
     .returning();
   if (!task) return err("Not found", 404);

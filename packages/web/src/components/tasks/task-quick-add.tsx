@@ -3,9 +3,12 @@
 import { useState, useRef } from "react";
 import type { Task } from "@todo/shared";
 import { useCreateTask } from "@/hooks/use-tasks";
-import { parseNaturalDate } from "@/lib/dates";
+import { useProjects } from "@/hooks/use-projects";
+import { parseTaskInput } from "@/lib/parse-task";
+import { formatWhenDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { Loader2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Calendar, Clock, FolderOpen, Hourglass, Loader2, Plus } from "lucide-react";
 
 interface TaskQuickAddProps {
   defaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId">>;
@@ -17,6 +20,11 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const createTask = useCreateTask();
+  const { data: projects = [] } = useProjects();
+
+  // Parse on every render — pure function, negligible cost
+  const parsed = value.trim() ? parseTaskInput(value, projects) : null;
+  const hasChips = parsed && (parsed.whenDate || parsed.timeOfDay || parsed.projectId || parsed.deadline || parsed.isSomeday);
 
   function handleOpen() {
     setOpen(true);
@@ -25,17 +33,18 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
   }
 
   async function submit() {
-    const title = value.trim();
+    const title = parsed?.title || value.trim();
     if (!title || createTask.isPending) return;
     setError(null);
 
-    const parsedDate = parseNaturalDate(title);
     try {
       await createTask.mutateAsync({
         title,
-        whenDate: parsedDate ?? defaults?.whenDate ?? undefined,
-        timeOfDay: defaults?.timeOfDay ?? undefined,
-        projectId: defaults?.projectId ?? undefined,
+        whenDate: parsed?.whenDate ?? defaults?.whenDate ?? undefined,
+        timeOfDay: parsed?.timeOfDay ?? defaults?.timeOfDay ?? undefined,
+        deadline: parsed?.deadline ?? undefined,
+        isSomeday: parsed?.isSomeday ?? false,
+        projectId: parsed?.projectId ?? defaults?.projectId ?? undefined,
         areaId: defaults?.areaId ?? undefined,
       });
       setValue("");
@@ -56,7 +65,6 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
 
   function handleBlur() {
     if (value.trim()) {
-      // Don't close — submit instead so content isn't lost
       submit();
     } else {
       setOpen(false);
@@ -65,14 +73,15 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
 
   if (!open) {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={handleOpen}
-        className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+        className="w-full justify-start gap-2 pl-4 pr-3 text-muted-foreground/40 hover:text-muted-foreground hover:bg-transparent font-normal"
       >
         <Plus className="h-4 w-4" />
-        <span>New task</span>
-      </button>
+        New task
+      </Button>
     );
   }
 
@@ -82,7 +91,7 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
         e.preventDefault();
         submit();
       }}
-      className="px-3 py-1 flex flex-col gap-1"
+      className="pl-4 pr-3 py-1.5 flex flex-col gap-1.5"
     >
       <div className="flex items-center gap-2">
         {createTask.isPending ? (
@@ -100,14 +109,51 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={createTask.isPending}
-          placeholder='Task title — try "tomorrow" or "next monday"'
+          placeholder='New task — try "tomorrow @morning" or "!! friday"'
           className={cn(
-            "flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60",
+            "flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40",
             "border-b pb-1 disabled:opacity-50",
             error ? "border-destructive" : "border-border",
           )}
         />
       </div>
+
+      {/* Live parse preview chips */}
+      {hasChips && (
+        <div className="flex flex-wrap gap-1.5 pl-6">
+          {parsed.whenDate && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              <Calendar className="h-3 w-3" />
+              {formatWhenDate(parsed.whenDate)}
+            </span>
+          )}
+          {parsed.timeOfDay && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-medium">
+              <Clock className="h-3 w-3" />
+              {parsed.timeOfDay.charAt(0).toUpperCase() + parsed.timeOfDay.slice(1)}
+            </span>
+          )}
+          {parsed.projectName && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 font-medium">
+              <FolderOpen className="h-3 w-3" />
+              {parsed.projectName}
+            </span>
+          )}
+          {parsed.deadline && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+              <AlertTriangle className="h-3 w-3" />
+              Due {formatWhenDate(parsed.deadline)}
+            </span>
+          )}
+          {parsed.isSomeday && (
+            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+              <Hourglass className="h-3 w-3" />
+              Someday
+            </span>
+          )}
+        </div>
+      )}
+
       {error && <p className="text-xs text-destructive pl-6">{error}</p>}
     </form>
   );

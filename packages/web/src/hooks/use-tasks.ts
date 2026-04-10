@@ -8,7 +8,7 @@ function taskKeys(filter?: TaskFilter, projectId?: string, areaId?: string) {
   return ["tasks", filter, projectId, areaId] as const;
 }
 
-export function useTasks(filter: TaskFilter = "all", projectId?: string, areaId?: string) {
+export function useTasks(filter: TaskFilter = "all", projectId?: string, areaId?: string, options?: { enabled?: boolean }) {
   const params = new URLSearchParams({ filter });
   if (projectId) params.set("projectId", projectId);
   if (areaId) params.set("areaId", areaId);
@@ -16,6 +16,7 @@ export function useTasks(filter: TaskFilter = "all", projectId?: string, areaId?
   return useQuery({
     queryKey: taskKeys(filter, projectId, areaId),
     queryFn: () => api.get<Task[]>(`/api/tasks?${params}`),
+    ...options,
   });
 }
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Task } from "@todo/shared";
 import { TaskItem } from "./task-item";
-import { TaskDetail } from "./task-detail";
 import { TaskQuickAdd } from "./task-quick-add";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProjects } from "@/hooks/use-projects";
+import type { ProjectWithCounts } from "@todo/shared";
 
 interface TaskListProps {
   tasks: Task[];
@@ -17,7 +18,14 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, emptyMessage }: TaskListProps) {
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const { data: allProjects = [] } = useProjects();
+  const activeProjects = allProjects.filter((p) => !p.isCompleted) as ProjectWithCounts[];
+
+  // Stable reference — doesn't change when expandedTaskId changes
+  const handleToggle = useCallback((id: string) => {
+    setExpandedTaskId((prev) => (prev === id ? null : id));
+  }, []);
 
   if (isLoading) {
     return (
@@ -30,29 +38,21 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, emp
   }
 
   return (
-    <>
-      <div className="flex flex-col">
-        {tasks.length === 0 && emptyMessage && (
-          <p className="text-sm text-muted-foreground py-6 text-center">{emptyMessage}</p>
-        )}
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            onOpen={setSelectedTask}
-            showWhenDate={showWhenDate}
-          />
-        ))}
-        <TaskQuickAdd defaults={quickAddDefaults} />
-      </div>
-
-      {selectedTask && (
-        <TaskDetail
-          task={selectedTask}
-          open={!!selectedTask}
-          onClose={() => setSelectedTask(null)}
-        />
+    <div className="flex flex-col">
+      {tasks.length === 0 && emptyMessage && (
+        <p className="text-sm text-muted-foreground py-6 text-center">{emptyMessage}</p>
       )}
-    </>
+      {tasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          isExpanded={expandedTaskId === task.id}
+          onToggle={handleToggle}
+          activeProjects={activeProjects}
+          showWhenDate={showWhenDate}
+        />
+      ))}
+      <TaskQuickAdd defaults={quickAddDefaults} />
+    </div>
   );
 }

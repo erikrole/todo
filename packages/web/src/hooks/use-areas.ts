@@ -4,10 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AreaWithCounts, CreateAreaInput, UpdateAreaInput } from "@todo/shared";
 import { api } from "@/lib/fetch";
 
-export function useAreas() {
+export function useAreas(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ["areas"],
     queryFn: () => api.get<AreaWithCounts[]>("/api/areas"),
+    ...options,
   });
 }
 

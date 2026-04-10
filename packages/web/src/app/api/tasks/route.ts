@@ -1,6 +1,6 @@
 import { db, tasks } from "@todo/db";
 import { CreateTaskSchema } from "@todo/shared";
-import { and, eq, gt, isNull, lte } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { err, nowIso, ok, todayStr } from "@/lib/api";
 
@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         isNull(tasks.areaId),
         isNull(tasks.parentTaskId),
         eq(tasks.isCompleted, false),
+        eq(tasks.isSomeday, false),
       );
       break;
     case "today":
@@ -31,6 +32,9 @@ export async function GET(request: Request) {
       break;
     case "upcoming":
       conditions.push(gt(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
+      break;
+    case "someday":
+      conditions.push(eq(tasks.isSomeday, true), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
       break;
     case "completed":
       conditions.push(eq(tasks.isCompleted, true), isNull(tasks.parentTaskId));

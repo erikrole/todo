@@ -27,7 +27,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             {project?.color && (
               <span className="h-3 w-3 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
             )}
-            <h1 className="text-xl font-semibold">{project?.name ?? "Project"}</h1>
+            <h1 className="text-lg font-semibold tracking-tight">{project?.name ?? "Project"}</h1>
           </div>
           {total > 0 && (
             <p className="text-xs text-muted-foreground">{completedCount} of {total} tasks complete</p>

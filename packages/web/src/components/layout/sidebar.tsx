@@ -22,12 +22,13 @@ import { useAreas } from "@/hooks/use-areas";
 import { useProjects } from "@/hooks/use-projects";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
-import { CheckSquare, Inbox, Sun, Calendar, BookOpen, ChevronRight } from "lucide-react";
+import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/inbox", label: "Inbox", icon: Inbox, dropId: "sidebar:inbox" },
   { href: "/today", label: "Today", icon: Sun, dropId: "sidebar:today" },
   { href: "/upcoming", label: "Upcoming", icon: Calendar, dropId: "sidebar:upcoming" },
+  { href: "/someday", label: "Someday", icon: Hourglass, dropId: "sidebar:someday" },
   { href: "/logbook", label: "Logbook", icon: BookOpen, dropId: null },
 ];
 
@@ -38,11 +39,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <CheckSquare className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-sm">Todo</span>
-        </div>
+      <SidebarHeader className="px-4 pt-5 pb-3">
+        <span className="text-sm font-semibold tracking-tight text-foreground/80">Todo</span>
       </SidebarHeader>
 
       <SidebarContent>

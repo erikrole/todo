@@ -26,7 +26,7 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
         {area?.color && (
           <span className="h-3 w-3 rounded-full" style={{ backgroundColor: area.color }} />
         )}
-        <h1 className="text-xl font-semibold">{area?.name ?? "Area"}</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{area?.name ?? "Area"}</h1>
       </div>
 
       {area?.notes && (
@@ -36,7 +36,7 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
       {/* Projects in this area */}
       {areaProjects.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Projects</h2>
+          <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em]">Projects</h2>
           <div className="grid gap-2">
             {areaProjects.map((project) => (
               <Link key={project.id} href={`/project/${project.id}`}>
@@ -67,7 +67,7 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Loose tasks assigned directly to this area */}
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tasks</h2>
+        <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em]">Tasks</h2>
         <DroppableZone id={`section:area:${id}`}>
           <TaskList
             tasks={looseTasks.filter((t) => !t.projectId && !t.isCompleted)}

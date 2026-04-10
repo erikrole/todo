@@ -8,6 +8,20 @@
       "when": 1775826118364,
       "tag": "0000_minor_sebastian_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1775832174062,
+      "tag": "0001_amazing_star_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775835840149,
+      "tag": "0002_nervous_lucky_pierre",
+      "breakpoints": true
     }
   ]
 }

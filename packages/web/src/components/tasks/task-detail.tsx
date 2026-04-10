@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Trash2 } from "lucide-react";
+import { Hourglass, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TaskDetailProps {
@@ -38,6 +38,7 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType | "none">(task.recurrenceType ?? "none");
   const [recurrenceMode, setRecurrenceMode] = useState<RecurrenceMode>("on_schedule");
   const [recurrenceInterval, setRecurrenceInterval] = useState(task.recurrenceInterval ?? 1);
+  const [isSomeday, setIsSomeday] = useState(task.isSomeday);
 
   useEffect(() => {
     setTitle(task.title);
@@ -48,18 +49,22 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
     setRecurrenceType(task.recurrenceType ?? "none");
     setRecurrenceMode(task.recurrenceMode ?? "on_schedule");
     setRecurrenceInterval(task.recurrenceInterval ?? 1);
+    setIsSomeday(task.isSomeday);
   }, [task]);
 
-  function save(overrides?: { timeOfDay?: TimeOfDay | "none"; recurrenceType?: RecurrenceType | "none"; recurrenceMode?: RecurrenceMode }) {
+  function save(overrides?: { timeOfDay?: TimeOfDay | "none"; recurrenceType?: RecurrenceType | "none"; recurrenceMode?: RecurrenceMode; isSomeday?: boolean; whenDate?: string }) {
     const tod = overrides?.timeOfDay ?? timeOfDay;
     const rt = overrides?.recurrenceType ?? recurrenceType;
     const rm = overrides?.recurrenceMode ?? recurrenceMode;
+    const sd = overrides?.isSomeday ?? isSomeday;
+    const wd = overrides?.whenDate !== undefined ? overrides.whenDate : whenDate;
     updateTask.mutate({
       id: task.id,
       title,
       notes: notes || null,
-      whenDate: whenDate || null,
+      whenDate: wd || null,
       deadline: deadline || null,
+      isSomeday: sd,
       timeOfDay: tod !== "none" ? tod : null,
       recurrenceType: rt !== "none" ? rt : null,
       recurrenceMode: rt !== "none" ? rm : null,
@@ -104,13 +109,37 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
           {/* When date */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">When</Label>
-            <input
-              type="date"
-              value={whenDate}
-              onChange={(e) => { setWhenDate(e.target.value); }}
-              onBlur={() => save()}
-              className="text-sm bg-transparent border border-border rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-ring"
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={isSomeday ? "" : whenDate}
+                disabled={isSomeday}
+                onChange={(e) => {
+                  setWhenDate(e.target.value);
+                  if (e.target.value) setIsSomeday(false);
+                }}
+                onBlur={() => save()}
+                className="flex-1 text-sm"
+              />
+              <Button
+                type="button"
+                variant={isSomeday ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  const next = !isSomeday;
+                  setIsSomeday(next);
+                  if (next) {
+                    setWhenDate("");
+                    save({ isSomeday: true, whenDate: "" });
+                  } else {
+                    save({ isSomeday: false });
+                  }
+                }}
+              >
+                <Hourglass className="h-3.5 w-3.5" />
+                Someday
+              </Button>
+            </div>
           </div>
 
           {/* Time of day (only relevant when whenDate is set) */}
@@ -134,12 +163,12 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
           {/* Deadline */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Deadline</Label>
-            <input
+            <Input
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
               onBlur={() => save()}
-              className="text-sm bg-transparent border border-border rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-ring"
+              className="text-sm"
             />
           </div>
 
@@ -165,19 +194,15 @@ export function TaskDetail({ task, open, onClose }: TaskDetailProps) {
                 {/* Mode */}
                 <div className="flex gap-2">
                   {(["on_schedule", "after_completion"] as RecurrenceMode[]).map((mode) => (
-                    <button
+                    <Button
                       key={mode}
                       type="button"
+                      size="sm"
+                      variant={recurrenceMode === mode ? "default" : "outline"}
                       onClick={() => { setRecurrenceMode(mode); save({ recurrenceMode: mode }); }}
-                      className={cn(
-                        "text-xs px-2.5 py-1 rounded-full border transition-colors",
-                        recurrenceMode === mode
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:border-foreground",
-                      )}
                     >
                       {mode === "on_schedule" ? "On schedule" : "After completion"}
-                    </button>
+                    </Button>
                   ))}
                 </div>
 

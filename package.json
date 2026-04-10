@@ -5,6 +5,7 @@
     "dev": "pnpm --filter @todo/web dev",
     "build": "pnpm --filter @todo/web build && pnpm --filter @todo/mcp build",
     "db:generate": "pnpm --filter @todo/db generate",
+    "predb:migrate": "cp packages/db/local.db packages/db/local.db.bak 2>/dev/null || true",
     "db:migrate": "pnpm --filter @todo/db migrate",
     "format": "prettier --write ."
   },

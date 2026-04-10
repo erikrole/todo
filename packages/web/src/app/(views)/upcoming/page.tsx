@@ -21,7 +21,7 @@ export default function UpcomingPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <h1 className="text-xl font-semibold">Upcoming</h1>
+      <h1 className="text-lg font-semibold tracking-tight">Upcoming</h1>
 
       {isLoading ? (
         <TaskList tasks={[]} isLoading />
@@ -32,7 +32,7 @@ export default function UpcomingPage() {
       ) : (
         sortedDates.map((date) => (
           <section key={date}>
-            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+            <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em] mb-1 px-4">
               {date === "No date" ? date : formatWhenDate(date)}
             </h2>
             <DroppableZone id="section:upcoming">

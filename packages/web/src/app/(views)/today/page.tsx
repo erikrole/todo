@@ -23,7 +23,7 @@ export default function TodayPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <h1 className="text-xl font-semibold">Today</h1>
+      <h1 className="text-lg font-semibold tracking-tight">Today</h1>
 
       {isLoading ? (
         <TaskList tasks={[]} isLoading />
@@ -32,7 +32,7 @@ export default function TodayPage() {
           const dropId = `section:today:${id ?? "anytime"}`;
           return (
             <section key={label}>
-              <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{label}</h2>
+              <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em] mb-1 px-4">{label}</h2>
               <DroppableZone id={dropId}>
                 <TaskList
                   tasks={tasksBySection(id)}

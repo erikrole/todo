@@ -4,11 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ProjectWithCounts, CreateProjectInput, UpdateProjectInput } from "@todo/shared";
 import { api } from "@/lib/fetch";
 
-export function useProjects(areaId?: string) {
+export function useProjects(areaId?: string, options?: { enabled?: boolean }) {
   const params = areaId ? `?areaId=${areaId}` : "";
   return useQuery({
     queryKey: ["projects", areaId],
     queryFn: () => api.get<ProjectWithCounts[]>(`/api/projects${params}`),
+    ...options,
   });
 }
 

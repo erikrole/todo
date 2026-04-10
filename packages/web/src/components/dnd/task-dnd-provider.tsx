@@ -26,20 +26,23 @@ function tomorrowStr() {
 
 function resolveUpdate(dropId: string): Omit<Parameters<ReturnType<typeof useUpdateTask>["mutate"]>[0], "id"> | null {
   if (dropId === "sidebar:inbox" || dropId === "section:inbox") {
-    return { whenDate: null, timeOfDay: null };
+    return { whenDate: null, timeOfDay: null, isSomeday: false };
   }
   if (dropId === "sidebar:today") {
-    return { whenDate: todayStr(), timeOfDay: null };
+    return { whenDate: todayStr(), timeOfDay: null, isSomeday: false };
   }
   if (dropId === "sidebar:upcoming") {
-    return { whenDate: tomorrowStr() };
+    return { whenDate: tomorrowStr(), isSomeday: false };
+  }
+  if (dropId === "sidebar:someday" || dropId === "section:someday") {
+    return { isSomeday: true, whenDate: null, timeOfDay: null };
   }
   if (dropId.startsWith("section:today:")) {
     const sub = dropId.slice("section:today:".length);
-    return { whenDate: todayStr(), timeOfDay: sub === "anytime" ? null : (sub as TimeOfDay) };
+    return { whenDate: todayStr(), timeOfDay: sub === "anytime" ? null : (sub as TimeOfDay), isSomeday: false };
   }
   if (dropId === "section:upcoming") {
-    return { whenDate: tomorrowStr() };
+    return { whenDate: tomorrowStr(), isSomeday: false };
   }
   if (dropId.startsWith("sidebar:project:") || dropId.startsWith("section:project:")) {
     const projectId = dropId.split(":").at(-1)!;
