@@ -6,14 +6,18 @@
     "build": "pnpm --filter @todo/web build && pnpm --filter @todo/mcp build",
     "db:generate": "pnpm --filter @todo/db generate",
     "predb:migrate": "cp packages/db/local.db packages/db/local.db.bak 2>/dev/null || true",
-    "db:migrate": "pnpm --filter @todo/db migrate",
+    "db:migrate": "dotenv -e packages/web/.env.local -- pnpm --filter @todo/db migrate",
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "dotenv-cli": "^11.0.0",
     "prettier": "^3.2.0",
     "typescript": "^5.7.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ]
   }
 }
