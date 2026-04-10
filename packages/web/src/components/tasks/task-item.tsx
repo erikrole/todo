@@ -324,7 +324,7 @@ function ExpandedPanel({
   const completedSubtasks = subtasks.filter((s) => s.isCompleted).length;
   const deadlineDays = task.deadline ? daysUntil(task.deadline) : null;
   const urgency = task.deadline ? deadlineUrgency(task.deadline) : null;
-  const hasMetadata = task.whenDate || task.deadline || task.recurrenceType;
+  const hasMetadata = task.whenDate || task.scheduledTime || task.deadline || task.recurrenceType;
 
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
