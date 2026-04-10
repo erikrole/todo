@@ -22,7 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { deadlineUrgency, formatWhenDate } from "@/lib/dates";
 import { useCompleteTask, useCreateTask, useDeleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
-import { Calendar, Flag, ListTree, Plus, Repeat2, Trash2 } from "lucide-react";
+import { Calendar, Clock, Flag, ListTree, Plus, Repeat2, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface TaskItemProps {
@@ -51,6 +51,12 @@ function daysUntil(date: string): number {
   today.setHours(0, 0, 0, 0);
   const d = new Date(date + "T00:00:00");
   return Math.round((d.getTime() - today.getTime()) / 86400000);
+}
+
+function fmtTime(t: string) {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 export const TaskItem = memo(function TaskItem({
@@ -164,11 +170,17 @@ export const TaskItem = memo(function TaskItem({
                     >
                       {task.title}
                     </span>
-                    {((showWhenDate && task.whenDate) || task.notes || (showCompletedTime && task.completedAt)) && (
+                    {((showWhenDate && task.whenDate) || task.scheduledTime || task.notes || (showCompletedTime && task.completedAt)) && (
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {showWhenDate && task.whenDate && (
                           <span className="text-[11px] text-muted-foreground/50 font-mono">
                             {formatWhenDate(task.whenDate)}
+                          </span>
+                        )}
+                        {task.scheduledTime && (
+                          <span className="inline-flex items-center gap-0.5 text-[11px] text-teal-600/70 dark:text-teal-400/70 font-mono">
+                            <Clock className="h-2.5 w-2.5" />
+                            {fmtTime(task.scheduledTime)}
                           </span>
                         )}
                         {showCompletedTime && task.completedAt && (
@@ -211,6 +223,7 @@ export const TaskItem = memo(function TaskItem({
                       setNotes={setNotes}
                       onSave={save}
                       onDelete={() => deleteTask.mutate(task.id)}
+                      onClearScheduledTime={() => updateTask.mutate({ id: task.id, scheduledTime: null })}
                     />
                   </motion.div>
                 )}
@@ -295,12 +308,14 @@ function ExpandedPanel({
   setNotes,
   onSave,
   onDelete,
+  onClearScheduledTime,
 }: {
   task: Task;
   notes: string;
   setNotes: (v: string) => void;
   onSave: () => void;
   onDelete: () => void;
+  onClearScheduledTime: () => void;
 }) {
   const { data: fullTask } = useTask(task.id);
   const createTask = useCreateTask();
@@ -363,6 +378,18 @@ function ExpandedPanel({
               </span>
             )}
           </span>
+        )}
+
+        {task.scheduledTime && (
+          <button
+            className="flex items-center gap-1.5 text-teal-600/80 dark:text-teal-400/80 hover:text-destructive/70 dark:hover:text-destructive/70 transition-colors"
+            onClick={onClearScheduledTime}
+            title="Clear scheduled time"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>{fmtTime(task.scheduledTime)}</span>
+            <span className="text-muted-foreground/30 text-[10px]">· click to clear</span>
+          </button>
         )}
 
         {task.deadline && deadlineDays !== null && (
