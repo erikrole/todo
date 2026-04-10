@@ -13,6 +13,6 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const proxyConfig = {
+export const config = {
   matcher: "/api/:path*",
 };
