@@ -84,9 +84,9 @@ function ProjectItem({ project, subProjects, pathname, isSubProject = false }: P
       setAddingSubProject(false);
       return;
     }
-    await createProject.mutateAsync({ name, parentProjectId: project.id });
     setNewSubName("");
     setAddingSubProject(false);
+    await createProject.mutateAsync({ name, parentProjectId: project.id });
     toggle(true);
   }
 
@@ -216,7 +216,7 @@ export function AppSidebar() {
   const topLevelProjects = allProjects.filter((p) => !p.parentProjectId && !p.isCompleted);
   const subProjectMap = new Map<string, ProjectWithCounts[]>();
   for (const p of allProjects) {
-    if (p.parentProjectId) {
+    if (p.parentProjectId && !p.isCompleted) {
       const children = subProjectMap.get(p.parentProjectId) ?? [];
       children.push(p);
       subProjectMap.set(p.parentProjectId, children);
