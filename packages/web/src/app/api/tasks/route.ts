@@ -1,6 +1,6 @@
 import { db, tasks } from "@todo/db";
 import { CreateTaskSchema } from "@todo/shared";
-import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gt, gte, isNotNull, isNull, lt, lte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { err, nowIso, ok, todayStr } from "@/lib/api";
 
@@ -12,6 +12,11 @@ export async function GET(request: Request) {
 
   const today = todayStr();
   const conditions = [];
+
+  // Exclude soft-deleted tasks from all views except trash
+  if (filter !== "trash") {
+    conditions.push(isNull(tasks.deletedAt));
+  }
 
   if (projectId) conditions.push(eq(tasks.projectId, projectId));
   if (areaId) conditions.push(eq(tasks.areaId, areaId));
@@ -30,6 +35,19 @@ export async function GET(request: Request) {
     case "today":
       conditions.push(lte(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
       break;
+    case "completed_today": {
+      // Tasks completed today (completedAt starts with today's date string)
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+      conditions.push(
+        eq(tasks.isCompleted, true),
+        isNull(tasks.parentTaskId),
+        gte(tasks.completedAt, today),
+        lt(tasks.completedAt, tomorrowStr),
+      );
+      break;
+    }
     case "upcoming":
       conditions.push(gt(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
       break;
@@ -39,6 +57,16 @@ export async function GET(request: Request) {
     case "completed":
       conditions.push(eq(tasks.isCompleted, true), isNull(tasks.parentTaskId));
       break;
+    case "trash": {
+      // Auto-purge tasks deleted more than 30 days ago before returning results
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 30);
+      await db.delete(tasks).where(
+        and(isNotNull(tasks.deletedAt), lte(tasks.deletedAt, cutoff.toISOString())),
+      );
+      conditions.push(isNotNull(tasks.deletedAt));
+      break;
+    }
     default:
       conditions.push(isNull(tasks.parentTaskId));
   }

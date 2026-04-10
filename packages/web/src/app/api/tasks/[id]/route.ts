@@ -41,11 +41,23 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const [task] = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+  const { searchParams } = new URL(request.url);
+
+  if (searchParams.get("permanent") === "true") {
+    const [task] = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+    if (!task) return err("Not found", 404);
+    return ok(task);
+  }
+
+  const [task] = await db
+    .update(tasks)
+    .set({ deletedAt: nowIso(), updatedAt: nowIso() })
+    .where(eq(tasks.id, id))
+    .returning();
   if (!task) return err("Not found", 404);
   return ok(task);
 }
