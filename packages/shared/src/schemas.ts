@@ -33,6 +33,7 @@ export const UpdateProjectSchema = z.object({
   notes: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
   areaId: z.string().nullable().optional(),
+  parentProjectId: z.string().nullable().optional(),
   position: z.number().optional(),
 });
 

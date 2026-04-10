@@ -36,6 +36,8 @@ export interface ProjectWithCounts extends Project {
   taskCount: number;
 }
 
+// ─── Sections ────────────────────────────────────────────────────────────────
+
 export interface Section {
   id: string;
   projectId: string;
