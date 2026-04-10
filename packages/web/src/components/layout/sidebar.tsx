@@ -41,7 +41,10 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="px-4 pt-5 pb-3">
-        <span className="text-sm font-semibold tracking-tight text-foreground/80">Todo</span>
+        <span className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+          <span className="text-sm font-semibold tracking-tight text-foreground/80">Todo</span>
+        </span>
       </SidebarHeader>
 
       <SidebarContent>

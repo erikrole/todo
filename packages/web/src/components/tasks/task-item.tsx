@@ -127,7 +127,7 @@ export const TaskItem = memo(function TaskItem({
                   "group relative flex items-start gap-3 py-2",
                   isExpanded
                     ? "px-4 pt-3.5"
-                    : "pl-4 pr-3 border-l-2 border-transparent hover:border-primary/40 hover:bg-primary/[0.03]",
+                    : "pl-4 pr-3 border-l-2 border-transparent hover:border-primary/40 hover:bg-primary/[0.05]",
                   isDragging ? "cursor-grabbing" : "cursor-pointer",
                 )}
                 onClick={() => !isDragging && onToggle(task.id)}

@@ -77,7 +77,7 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
         type="button"
         variant="ghost"
         onClick={handleOpen}
-        className="w-full justify-start gap-2 pl-4 pr-3 text-muted-foreground/40 hover:text-muted-foreground hover:bg-transparent font-normal"
+        className="w-full justify-start gap-2 pl-4 pr-3 text-muted-foreground/35 hover:text-primary/60 hover:bg-transparent font-normal transition-colors duration-150"
       >
         <Plus className="h-4 w-4" />
         New task
