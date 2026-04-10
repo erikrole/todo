@@ -23,6 +23,7 @@ export const projects = sqliteTable(
     notes: text("notes"),
     color: text("color"),
     areaId: text("area_id").references(() => areas.id, { onDelete: "set null" }),
+    parentProjectId: text("parent_project_id").references((): ReturnType<typeof text> => projects.id, { onDelete: "cascade" }),
     isCompleted: integer("is_completed", { mode: "boolean" }).default(false).notNull(),
     completedAt: text("completed_at"),
     position: real("position").default(0).notNull(),
@@ -32,6 +33,25 @@ export const projects = sqliteTable(
   (t) => [
     index("idx_projects_area_id").on(t.areaId),
     index("idx_projects_is_completed").on(t.isCompleted),
+    index("idx_projects_parent_project_id").on(t.parentProjectId),
+  ],
+);
+
+// ─── Sections ────────────────────────────────────────────────────────────────
+
+export const sections = sqliteTable(
+  "sections",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    position: real("position").default(0).notNull(),
+    isCollapsed: integer("is_collapsed", { mode: "boolean" }).default(false).notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_sections_project_id").on(t.projectId),
   ],
 );
 
@@ -49,6 +69,7 @@ export const tasks = sqliteTable(
     deadline: text("deadline"),
     projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
     areaId: text("area_id").references(() => areas.id, { onDelete: "set null" }),
+    sectionId: text("section_id").references(() => sections.id, { onDelete: "set null" }),
     parentTaskId: text("parent_task_id"),
     isSomeday: integer("is_someday", { mode: "boolean" }).default(false).notNull(),
     isCompleted: integer("is_completed", { mode: "boolean" }).default(false).notNull(),
@@ -66,6 +87,7 @@ export const tasks = sqliteTable(
   (t) => [
     index("idx_tasks_project_id").on(t.projectId),
     index("idx_tasks_area_id").on(t.areaId),
+    index("idx_tasks_section_id").on(t.sectionId),
     index("idx_tasks_parent_task_id").on(t.parentTaskId),
     index("idx_tasks_when_date").on(t.whenDate),
     index("idx_tasks_is_completed").on(t.isCompleted),
@@ -79,5 +101,7 @@ export type Area = typeof areas.$inferSelect;
 export type NewArea = typeof areas.$inferInsert;
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
+export type Section = typeof sections.$inferSelect;
+export type NewSection = typeof sections.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
