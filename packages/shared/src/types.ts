@@ -62,6 +62,8 @@ export interface Task {
   isSomeday: boolean;
   isCompleted: boolean;
   completedAt: string | null;
+  isCancelled: boolean;
+  deletedAt: string | null;
   recurrenceType: RecurrenceType | null;
   recurrenceMode: RecurrenceMode | null;
   /** Multiplier for recurrenceType, e.g. 2 = "every 2 weeks" */
@@ -79,7 +81,7 @@ export interface TaskWithSubtasks extends Task {
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-export type TaskFilter = "inbox" | "today" | "upcoming" | "someday" | "completed" | "all";
+export type TaskFilter = "inbox" | "today" | "upcoming" | "someday" | "completed" | "completed_today" | "trash" | "all";
 
 export interface ApiResponse<T> {
   data: T;

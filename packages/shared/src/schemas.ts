@@ -68,6 +68,7 @@ export const UpdateTaskSchema = z.object({
   timeOfDay: TimeOfDaySchema.nullable().optional(),
   deadline: DateStringSchema.nullable().optional(),
   isSomeday: z.boolean().optional(),
+  isCancelled: z.boolean().optional(),
   projectId: z.string().nullable().optional(),
   areaId: z.string().nullable().optional(),
   parentTaskId: z.string().nullable().optional(),
