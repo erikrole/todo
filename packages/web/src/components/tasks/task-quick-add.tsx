@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Calendar, Clock, FolderOpen, Hourglass, Loader2, Plus } from "lucide-react";
 
 interface TaskQuickAddProps {
-  defaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId">>;
+  defaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId" | "sectionId">>;
 }
 
 export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
@@ -53,6 +53,7 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
         isSomeday: parsed?.isSomeday ?? false,
         projectId: parsed?.projectId ?? defaults?.projectId ?? undefined,
         areaId: defaults?.areaId ?? undefined,
+        sectionId: defaults?.sectionId ?? undefined,
       });
       setValue("");
       setOpen(false);

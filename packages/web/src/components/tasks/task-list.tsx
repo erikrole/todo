@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { Task } from "@todo/shared";
+import type { Task, Section } from "@todo/shared";
 import { TaskItem } from "./task-item";
 import { TaskQuickAdd } from "./task-quick-add";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,11 +13,12 @@ interface TaskListProps {
   isLoading?: boolean;
   showWhenDate?: boolean;
   /** Context for quick-add pre-filling */
-  quickAddDefaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId">>;
+  quickAddDefaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId" | "sectionId">>;
+  activeSections?: Section[];
   emptyMessage?: string;
 }
 
-export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, emptyMessage }: TaskListProps) {
+export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, activeSections, emptyMessage }: TaskListProps) {
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const { data: allProjects = [] } = useProjects();
   const activeProjects = allProjects.filter((p) => !p.isCompleted) as ProjectWithCounts[];
@@ -49,6 +50,7 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, emp
           isExpanded={expandedTaskId === task.id}
           onToggle={handleToggle}
           activeProjects={activeProjects}
+          activeSections={activeSections}
           showWhenDate={showWhenDate}
         />
       ))}

@@ -3,7 +3,7 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
-import type { Task } from "@todo/shared";
+import type { Task, Section } from "@todo/shared";
 import type { ProjectWithCounts } from "@todo/shared";
 import { TaskCheckbox } from "./task-checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ interface TaskItemProps {
   /** Receives the task ID so the parent can use a stable useCallback */
   onToggle: (id: string) => void;
   activeProjects: ProjectWithCounts[];
+  activeSections?: Section[];
   showWhenDate?: boolean;
   showCompletedTime?: boolean;
 }
@@ -64,6 +65,7 @@ export const TaskItem = memo(function TaskItem({
   isExpanded,
   onToggle,
   activeProjects,
+  activeSections = [],
   showWhenDate,
   showCompletedTime,
 }: TaskItemProps) {
@@ -276,6 +278,26 @@ export const TaskItem = memo(function TaskItem({
                         )}
                         {p.name}
                       </span>
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+            )}
+            {activeSections.length > 0 && (
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>Move to Section</ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  <ContextMenuItem
+                    onSelect={() => updateTask.mutate({ id: task.id, sectionId: null })}
+                  >
+                    No Section
+                  </ContextMenuItem>
+                  {activeSections.map((s) => (
+                    <ContextMenuItem
+                      key={s.id}
+                      onSelect={() => updateTask.mutate({ id: task.id, sectionId: s.id })}
+                    >
+                      {s.title}
                     </ContextMenuItem>
                   ))}
                 </ContextMenuSubContent>
