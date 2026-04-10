@@ -1,0 +1,75 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+pnpm dev          # Start Next.js dev server (web) — once packages/web exists
+pnpm build        # Build web + mcp packages
+pnpm format       # Run Prettier across all files
+
+# Database (once packages/db exists)
+pnpm db:generate  # drizzle-kit generate migrations
+pnpm db:migrate   # drizzle-kit apply migrations
+```
+
+No test runner is configured yet. The PLAN.md verification checklist (section "Verification") is the current acceptance test.
+
+## Architecture
+
+This is a **pnpm monorepo** for a personal task manager (Things 3-inspired). The project is in active scaffolding — only `packages/shared` exists today; the rest is planned in `PLAN.md`.
+
+### Package layout
+
+| Package | Purpose |
+|---|---|
+| `packages/shared` | Shared TypeScript types + Zod schemas (imported by web and mcp) |
+| `packages/db` | Drizzle ORM schema + dual-driver client (planned) |
+| `packages/web` | Next.js 15 App Router — frontend UI + REST API routes (planned) |
+| `packages/mcp` | Standalone MCP server via stdio transport (planned) |
+
+### Key architectural decisions
+
+**Single driver, two targets.** `packages/db` always uses `@libsql/client` — locally with `file:local.db` (no native build needed), in production with a Turso URL. Same Drizzle schema, same driver, zero native compilation.
+
+**Next.js as full-stack.** All REST API routes live under `packages/web/src/app/api/`. These serve both the web frontend (via TanStack Query hooks) and the future iOS Swift app. Auth is a single Bearer token (`AUTH_TOKEN` env var) checked in Next.js middleware — no auth library, no login page.
+
+**MCP server connects to DB directly.** `packages/mcp` imports `@todo/db` and writes to Turso/SQLite without an HTTP hop. This means MCP tools work even when the web app is not running.
+
+**Task routing logic** (determines which view a task appears in):
+- **Inbox:** `when_date IS NULL AND project_id IS NULL AND area_id IS NULL AND parent_task_id IS NULL AND is_completed = 0`
+- **Today:** `when_date = today AND parent_task_id IS NULL AND is_completed = 0`
+- **Upcoming:** `when_date > today AND parent_task_id IS NULL AND is_completed = 0`
+- **Logbook:** `is_completed = 1 AND parent_task_id IS NULL ORDER BY completed_at DESC`
+
+**Fractional indexing for position.** The `position` column is a `real` (float) on all three tables, enabling O(1) drag-reorder without renumbering rows.
+
+**Recurrence.** Completing a recurring task creates the next instance. Two modes (stored as `recurrence_mode`): `on_schedule` — next `when_date` advances from the original `when_date` (strict calendar); `after_completion` — next `when_date` = completion date + interval (Things 3 style). Parent completion is always manual.
+
+### Database schema summary
+
+Three tables: `areas` → `projects` (area_id FK) → `tasks` (project_id / area_id / parent_task_id FKs). Key task fields: `when_date` (YYYY-MM-DD, routes to Today/Upcoming), `time_of_day` (null/morning/day/night, groups within Today), `deadline` (separate from when_date; drives warning badges), `recurrence_type`, `recurrence_mode` (on_schedule | after_completion), `recurrence_interval`, `recurrence_ends_at`.
+
+### Environment variables
+
+| Variable | Used by | Purpose |
+|---|---|---|
+| `TURSO_URL` | db, mcp | Turso database URL |
+| `TURSO_AUTH_TOKEN` | db, mcp | Turso auth token |
+| `NEXT_PUBLIC_AUTH_TOKEN` | web (proxy + browser client) | Bearer token for REST API |
+
+Local dev uses a SQLite file (`better-sqlite3`) when `TURSO_URL` is absent.
+
+### Code style
+
+Prettier config: double quotes, semicolons, trailing commas, 100-char print width. Run `pnpm format` before committing.
+
+TypeScript strict mode is enabled. All packages extend `tsconfig.base.json`.
+
+### UI conventions
+
+- Use shadcn/ui components exclusively — avoid hand-rolling UI primitives
+- Natural language dates (via `chrono-node`) set `when_date`, never `deadline`
+- Deadline is only set from the task detail panel
+- Context-aware quick-add: infer `when_date`, `project_id`, `area_id`, `time_of_day` from the current view when creating tasks

@@ -2,15 +2,17 @@
   "name": "todo",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @todo/api dev & pnpm --filter @todo/web dev",
-    "build": "pnpm --filter @todo/web build && pnpm --filter @todo/api build && pnpm --filter @todo/mcp build",
-    "start": "node packages/api/dist/index.js",
-    "db:generate": "pnpm --filter @todo/db drizzle-kit generate",
-    "db:migrate": "pnpm --filter @todo/db drizzle-kit migrate",
+    "dev": "pnpm --filter @todo/web dev",
+    "build": "pnpm --filter @todo/web build && pnpm --filter @todo/mcp build",
+    "db:generate": "pnpm --filter @todo/db generate",
+    "db:migrate": "pnpm --filter @todo/db migrate",
     "format": "prettier --write ."
   },
   "devDependencies": {
     "prettier": "^3.2.0",
     "typescript": "^5.7.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "sharp"]
   }
 }

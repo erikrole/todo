@@ -1,0 +1,13 @@
+{
+  "_comment": "Add this block to ~/Library/Application Support/Claude/claude_desktop_config.json",
+  "mcpServers": {
+    "todo": {
+      "command": "node",
+      "args": ["/absolute/path/to/todo/packages/mcp/dist/index.js"],
+      "env": {
+        "TURSO_URL": "libsql://your-db.turso.io",
+        "TURSO_AUTH_TOKEN": "your-token-here"
+      }
+    }
+  }
+}

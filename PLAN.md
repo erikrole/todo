@@ -21,7 +21,7 @@ Build a personal task manager to replace Things 3. Standalone app with its own d
 - **Upcoming view**: date-grouped vertical list (no calendar widget). Headers: "Tomorrow", "Friday", "April 14"...
 - **Offline/PWA**: read-only offline (cache recent data). Writes require connectivity.
 - **Visual style**: shadcn/ui with **Luma preset**. Things 3 / Notion / Linear mashup. Lean into shadcn components — avoid hand-rolling UI elements. Use shadcn's Checkbox, Card, Sheet, Command, Calendar, Select, Popover, Sidebar, Badge, Separator, Tooltip, DropdownMenu, etc.
-- **Recurrence picker**: presets (daily/weekly/monthly/yearly) + "Custom..." option with interval input
+- **Recurrence picker**: mode selector first ("after completion" | on a schedule), then preset (daily/weekly/monthly/yearly) + custom interval. Mirrors Things 3 UI. "After completion" = next when_date rolls from completion date; "on schedule" = next when_date rolls from original when_date.
 - **Mobile sidebar**: hamburger menu overlay on narrow screens
 - **Auth**: single shared Bearer token from `AUTH_TOKEN` env var. No login page.
 
@@ -34,7 +34,7 @@ Build a personal task manager to replace Things 3. Standalone app with its own d
 - **Deploy to Vercel** (user already uses)
 - **MCP server** — separate package, runs locally, connects to DB directly (local SQLite or Turso)
 - **TypeScript** (strict mode)
-- **shadcn/ui** + **Tailwind CSS v4**
+- **shadcn/ui** + **Tailwind CSS v4** — init with `npx shadcn@latest init` then apply preset `b2D0wqNxT`
 - **TanStack Query v5** (React Query) — server state + optimistic updates
 - **Framer Motion** — completion animations, layout transitions
 - **@dnd-kit** — drag-to-reorder
@@ -177,6 +177,7 @@ todo/
 | is_completed | integer DEFAULT 0 | |
 | completed_at | text | |
 | recurrence_type | text | null / daily / weekly / monthly / yearly / custom |
+| recurrence_mode | text | null / on_schedule / after_completion |
 | recurrence_interval | integer | e.g. 2 for "every 2 weeks" |
 | recurrence_ends_at | text | optional end date |
 | position | real DEFAULT 0 | |
@@ -270,9 +271,11 @@ All responses: `{ data: T }`. Auth: `Authorization: Bearer <token>` checked in m
 
 ### Phase 4: MCP Server
 - [ ] All 8 tools with Zod validation, Drizzle queries to Turso
-- [ ] Recurring task completion handler
+- [ ] Recurring task completion handler (respects recurrence_mode: on_schedule vs after_completion)
 - [ ] Test with MCP inspector
-- [ ] Document Claude Desktop / Claude Code config
+- [ ] Register server in both config locations:
+  - Claude Desktop: `~/Library/Application Support/Claude/claude_desktop_config.json`
+  - Claude Code: `.claude/settings.json` (project-level MCP server)
 
 ### Phase 5: Production
 - [ ] PWA manifest + service worker (offline support)
