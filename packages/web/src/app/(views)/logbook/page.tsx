@@ -58,7 +58,6 @@ export default function LogbookPage() {
                   onToggle={handleToggle}
                   activeProjects={activeProjects}
                   showWhenDate
-                  showCompletedTime
                 />
               ))}
             </div>

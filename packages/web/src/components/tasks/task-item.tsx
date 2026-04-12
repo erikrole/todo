@@ -39,7 +39,6 @@ interface TaskItemProps {
   activeProjects: ProjectWithCounts[];
   activeSections?: Section[];
   showWhenDate?: boolean;
-  showCompletedTime?: boolean;
 }
 
 function todayStr() {
@@ -72,7 +71,6 @@ export const TaskItem = memo(function TaskItem({
   activeProjects,
   activeSections = [],
   showWhenDate,
-  showCompletedTime,
 }: TaskItemProps) {
   const completeTask = useCompleteTask();
   const uncompleteTask = useUncompleteTask();
@@ -80,7 +78,6 @@ export const TaskItem = memo(function TaskItem({
   const duplicateTask = useDuplicateTask();
   const restoreTask = useRestoreTask();
   const updateTask = useUpdateTask();
-  const [completing, setCompleting] = useState(false);
   const { focusedTaskId } = useFocusedTask();
   const isFocused = focusedTaskId === task.id;
 
@@ -141,18 +138,14 @@ export const TaskItem = memo(function TaskItem({
     : undefined;
 
   function handleComplete() {
-    setCompleting(true);
     completeTask.mutate(task.id, {
       onSuccess: () => notify.undoable("Task completed", () => uncompleteTask.mutate(task.id)),
-      onError: () => setCompleting(false),
     });
   }
 
   function handleUncomplete() {
-    setCompleting(true);
     uncompleteTask.mutate(task.id, {
       onSuccess: () => notify.undoable("Marked incomplete", () => completeTask.mutate(task.id)),
-      onError: () => setCompleting(false),
     });
   }
 
@@ -178,149 +171,137 @@ export const TaskItem = memo(function TaskItem({
   }
 
   return (
-    <AnimatePresence>
-      {!completing && (
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
-            <motion.div
-              ref={setRefs}
-              layout
-              initial={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-              transition={{
-                opacity: { duration: 0.18, ease: "easeOut" },
-                height: { duration: 0.22, delay: 0.12, ease: [0.4, 0, 0.2, 1] },
-                marginTop: { duration: 0.22, delay: 0.12 },
-                marginBottom: { duration: 0.22, delay: 0.12 },
-              }}
-              style={{ ...dragStyle, opacity: isDragging ? 0.3 : 1 }}
-              className={cn(
-                "transition-[border-color,background-color,box-shadow,border-radius] duration-150",
-                isExpanded && "rounded-xl border border-border/70 bg-card shadow-sm my-1.5",
-              )}
-              data-task-id={task.id}
-              data-focused={isFocused ? "true" : undefined}
-              {...attributes}
-              {...listeners}
-            >
-              {/* Title row */}
-              <div
-                className={cn(
-                  "group relative flex items-start gap-3 py-2",
-                  isExpanded
-                    ? "px-4 pt-3.5"
-                    : cn(
-                        "pl-4 pr-3 border-l-2",
-                        isFocused
-                          ? "border-primary/70 bg-primary/[0.04]"
-                          : "border-transparent hover:border-primary/40 hover:bg-primary/[0.05]",
-                      ),
-                  isDragging ? "cursor-grabbing" : "cursor-pointer",
-                )}
-                onClick={() => !isDragging && onToggle(task.id)}
-              >
-                <div className="mt-[3px] shrink-0" onClick={(e) => e.stopPropagation()}>
-                  <TaskCheckbox
-                    checked={task.isCompleted}
-                    onComplete={handleComplete}
-                    onUncomplete={handleUncomplete}
-                    completing={completing}
-                    disabled={completing}
-                  />
-                </div>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <motion.div
+          ref={setRefs}
+          layout
+          style={{ ...dragStyle, opacity: isDragging ? 0.3 : 1 }}
+          className={cn(
+            "transition-[border-color,background-color,box-shadow,border-radius] duration-150",
+            isExpanded && "rounded-xl border border-border/70 bg-card shadow-sm my-1.5",
+          )}
+          data-task-id={task.id}
+          data-focused={isFocused ? "true" : undefined}
+          {...attributes}
+          {...listeners}
+        >
+          {/* Title row */}
+          <div
+            className={cn(
+              "group relative flex items-start gap-3 py-2",
+              isExpanded
+                ? "px-4 pt-3.5"
+                : cn(
+                    "pl-4 pr-3 border-l-2",
+                    isFocused
+                      ? "border-primary/70 bg-primary/[0.04]"
+                      : "border-transparent hover:border-primary/40 hover:bg-primary/[0.05]",
+                  ),
+              isDragging ? "cursor-grabbing" : "cursor-pointer",
+            )}
+            onClick={() => !isDragging && onToggle(task.id)}
+          >
+            <div className="mt-[3px] shrink-0" onClick={(e) => e.stopPropagation()}>
+              <TaskCheckbox
+                checked={task.isCompleted}
+                onComplete={handleComplete}
+                onUncomplete={handleUncomplete}
+              />
+            </div>
 
-                {isExpanded ? (
-                  <input
-                    ref={titleRef}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onBlur={save}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); save(); titleRef.current?.blur(); } }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 min-w-0 bg-transparent text-sm font-medium outline-none text-foreground"
-                    placeholder="Task title"
-                  />
-                ) : (
-                  <div className="flex flex-1 flex-col min-w-0">
-                    <span
-                      className={cn(
-                        "text-sm leading-snug tracking-[-0.006em]",
-                        task.isCompleted
-                          ? "text-muted-foreground/40"
-                          : task.isCancelled
-                            ? "line-through text-muted-foreground/25"
-                            : "text-foreground",
-                      )}
-                    >
-                      {task.title}
-                    </span>
-                    {((showWhenDate && task.whenDate) || task.scheduledTime || task.notes) && (
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {showWhenDate && task.whenDate && (
-                          <span className="text-[11px] text-muted-foreground/50 font-mono">
-                            {formatWhenDate(task.whenDate)}
-                          </span>
-                        )}
-                        {task.scheduledTime && (
-                          <span className="inline-flex items-center gap-0.5 text-[11px] text-teal-600/70 dark:text-teal-400/70 font-mono">
-                            <Clock className="h-2.5 w-2.5" />
-                            {fmtTime(task.scheduledTime)}
-                          </span>
-                        )}
-                        {task.notes && (
-                          <span className="text-[11px] text-muted-foreground/30">·</span>
-                        )}
-                      </div>
+            {isExpanded ? (
+              <input
+                ref={titleRef}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={save}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); save(); titleRef.current?.blur(); } }}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-1 min-w-0 bg-transparent text-sm font-medium outline-none text-foreground"
+                placeholder="Task title"
+              />
+            ) : (
+              <div className="flex flex-1 flex-col min-w-0">
+                <span
+                  className={cn(
+                    "text-sm leading-snug tracking-[-0.006em]",
+                    task.isCompleted
+                      ? "text-muted-foreground/40"
+                      : task.isCancelled
+                        ? "line-through text-muted-foreground/25"
+                        : "text-foreground",
+                  )}
+                >
+                  {task.title}
+                </span>
+                {((showWhenDate && task.whenDate) || task.scheduledTime || task.notes) && (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {showWhenDate && task.whenDate && (
+                      <span className="text-[11px] text-muted-foreground/50 font-mono">
+                        {formatWhenDate(task.whenDate)}
+                      </span>
+                    )}
+                    {task.scheduledTime && (
+                      <span className="inline-flex items-center gap-0.5 text-[11px] text-teal-600/70 dark:text-teal-400/70 font-mono">
+                        <Clock className="h-2.5 w-2.5" />
+                        {fmtTime(task.scheduledTime)}
+                      </span>
+                    )}
+                    {task.notes && (
+                      <span className="text-[11px] text-muted-foreground/30">·</span>
                     )}
                   </div>
                 )}
-
-                {!isExpanded && (task.isCompleted ? (showCompletedTime && !!task.completedAt) : !!task.deadline) && (
-                  <div className="ml-auto shrink-0 self-center">
-                    {showCompletedTime && task.isCompleted && task.completedAt ? (
-                      <span className="text-[10px] font-mono text-muted-foreground/30">
-                        {new Date(task.completedAt).toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    ) : task.deadline ? (
-                      <DeadlineBadge deadline={task.deadline} />
-                    ) : null}
-                  </div>
-                )}
               </div>
+            )}
 
-              {/* Inline expanded panel */}
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                    className="overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExpandedPanel
-                      task={task}
-                      notes={notes}
-                      setNotes={setNotes}
-                      onSave={save}
-                      onDelete={() => deleteTask.mutate(task.id, {
-                onSuccess: () => notify.undoable("Task deleted", () => restoreTask.mutate(task.id)),
-              })}
-                      onClearScheduledTime={() => updateTask.mutate({ id: task.id, scheduledTime: null })}
-                      onDateChange={(date) => updateTask.mutate({ id: task.id, whenDate: date, isSomeday: false })}
-                      onDeadlineChange={(date) => updateTask.mutate({ id: task.id, deadline: date })}
-                      onTimeOfDayChange={(tod) => updateTask.mutate({ id: task.id, timeOfDay: tod })}
-                      onRecurrenceChange={(r) => updateTask.mutate({ id: task.id, ...r })}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </ContextMenuTrigger>
+            {!isExpanded && (task.isCompleted ? !!task.completedAt : !!task.deadline) && (
+              <div className="ml-auto shrink-0 self-center">
+                {task.isCompleted && task.completedAt ? (
+                  <span className="text-[10px] font-mono text-muted-foreground/30">
+                    {new Date(task.completedAt).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                ) : task.deadline ? (
+                  <DeadlineBadge deadline={task.deadline} />
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          {/* Inline expanded panel */}
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExpandedPanel
+                  task={task}
+                  notes={notes}
+                  setNotes={setNotes}
+                  onSave={save}
+                  onDelete={() => deleteTask.mutate(task.id, {
+                    onSuccess: () => notify.undoable("Task deleted", () => restoreTask.mutate(task.id)),
+                  })}
+                  onClearScheduledTime={() => updateTask.mutate({ id: task.id, scheduledTime: null })}
+                  onDateChange={(date) => updateTask.mutate({ id: task.id, whenDate: date, isSomeday: false })}
+                  onDeadlineChange={(date) => updateTask.mutate({ id: task.id, deadline: date })}
+                  onTimeOfDayChange={(tod) => updateTask.mutate({ id: task.id, timeOfDay: tod })}
+                  onRecurrenceChange={(r) => updateTask.mutate({ id: task.id, ...r })}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </ContextMenuTrigger>
 
           <ContextMenuContent className="w-52">
             <ContextMenuItem onSelect={() => moveTask({ whenDate: todayStr(), timeOfDay: null, isSomeday: false }, "Moved to Today")}>
@@ -401,8 +382,6 @@ export const TaskItem = memo(function TaskItem({
             </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
-      )}
-    </AnimatePresence>
   );
 });
 
