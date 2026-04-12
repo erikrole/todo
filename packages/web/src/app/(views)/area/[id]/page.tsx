@@ -1,24 +1,50 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useAreas } from "@/hooks/use-areas";
-import { useProjects } from "@/hooks/use-projects";
+import { useAreas, useUpdateArea } from "@/hooks/use-areas";
+import { useProjects, useCreateProject } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
 import { TaskList } from "@/components/tasks/task-list";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FolderOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FolderOpen, Plus } from "lucide-react";
 
 export default function AreaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: areas = [] } = useAreas();
   const { data: projects = [] } = useProjects(id);
   const { data: looseTasks = [], isLoading } = useTasks("all", undefined, id);
+  const updateArea = useUpdateArea();
+  const createProject = useCreateProject();
 
   const area = areas.find((a) => a.id === id);
   const areaProjects = projects.filter((p) => !p.isCompleted);
+
+  const [notes, setNotes] = useState("");
+  useEffect(() => { setNotes(area?.notes ?? ""); }, [id, area?.notes]);
+
+  const [addingProject, setAddingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const newProjectRef = useRef<HTMLInputElement>(null);
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (addingProject) setTimeout(() => newProjectRef.current?.focus(), 50);
+  }, [addingProject]);
+
+  async function submitProject() {
+    if (submittedRef.current) return;
+    const name = newProjectName.trim();
+    if (!name) { setAddingProject(false); return; }
+    submittedRef.current = true;
+    setNewProjectName("");
+    setAddingProject(false);
+    await createProject.mutateAsync({ name, areaId: id });
+    submittedRef.current = false;
+  }
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
@@ -29,41 +55,74 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
         <h1 className="text-lg font-semibold tracking-tight">{area?.name ?? "Area"}</h1>
       </div>
 
-      {area?.notes && (
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{area.notes}</p>
-      )}
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        onBlur={() => {
+          const trimmed = notes.trim();
+          if (trimmed !== (area?.notes ?? "").trim()) {
+            updateArea.mutate({ id, notes: trimmed || null });
+          }
+        }}
+        placeholder="Add notes…"
+        rows={2}
+        className="w-full bg-transparent text-sm text-muted-foreground resize-none outline-none placeholder:text-muted-foreground/25 leading-relaxed"
+      />
 
       {/* Projects in this area */}
-      {areaProjects.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em]">Projects</h2>
-          <div className="grid gap-2">
-            {areaProjects.map((project) => (
-              <Link key={project.id} href={`/project/${project.id}`}>
-                <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-                  <CardHeader className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                        {project.color && (
-                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />
-                        )}
-                        <CardTitle className="text-sm font-medium">{project.name}</CardTitle>
-                      </div>
-                      {project.taskCount > 0 && (
-                        <Badge variant="secondary" className="text-xs">{project.taskCount}</Badge>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em]">Projects</h2>
+        <div className="grid gap-2">
+          {areaProjects.map((project) => (
+            <Link key={project.id} href={`/project/${project.id}`}>
+              <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                <CardHeader className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                      {project.color && (
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />
                       )}
+                      <CardTitle className="text-sm font-medium">{project.name}</CardTitle>
                     </div>
-                    {project.notes && (
-                      <CardDescription className="text-xs mt-1 line-clamp-1">{project.notes}</CardDescription>
+                    {project.taskCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">{project.taskCount}</Badge>
                     )}
-                  </CardHeader>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+                  </div>
+                  {project.notes && (
+                    <CardDescription className="text-xs mt-1 line-clamp-1">{project.notes}</CardDescription>
+                  )}
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
+          {addingProject && (
+            <div className="flex items-center gap-2 px-1 py-1">
+              <input
+                ref={newProjectRef}
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); submitProject(); }
+                  if (e.key === "Escape") { setNewProjectName(""); setAddingProject(false); }
+                }}
+                onBlur={submitProject}
+                placeholder="Project name"
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40 border-b border-border pb-1"
+              />
+            </div>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => { submittedRef.current = false; setAddingProject(true); }}
+          className="w-fit text-muted-foreground/40 hover:text-muted-foreground/70 hover:bg-transparent -ml-1 gap-1.5 font-normal"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          New Project
+        </Button>
+      </section>
 
       {/* Loose tasks assigned directly to this area */}
       <section className="flex flex-col gap-2">
