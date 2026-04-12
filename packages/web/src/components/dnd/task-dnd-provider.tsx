@@ -41,6 +41,10 @@ function resolveUpdate(dropId: string): Omit<Parameters<ReturnType<typeof useUpd
     const sub = dropId.slice("section:today:".length);
     return { whenDate: todayStr(), timeOfDay: sub === "anytime" ? null : (sub as TimeOfDay), isSomeday: false };
   }
+  if (dropId.startsWith("section:upcoming:")) {
+    const date = dropId.slice("section:upcoming:".length);
+    return { whenDate: date, isSomeday: false };
+  }
   if (dropId === "section:upcoming") {
     return { whenDate: tomorrowStr(), isSomeday: false };
   }

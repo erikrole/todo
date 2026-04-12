@@ -1,6 +1,13 @@
 import * as chrono from "chrono-node";
 import type { TimeOfDay } from "@todo/shared";
 
+function toLocalDateStr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 const TIME_ALIASES: Record<string, TimeOfDay> = {
   morning: "morning",
   morn: "morning",
@@ -76,7 +83,7 @@ export function parseTaskInput(
     const results = chrono.parse(afterBangs, new Date(), { forwardDate: true });
     if (results.length > 0) {
       const r = results[0];
-      deadline = r.date().toISOString().slice(0, 10);
+      deadline = toLocalDateStr(r.date());
       text =
         text.slice(0, bangIdx) +
         afterBangs.slice(0, r.index) +
@@ -91,7 +98,7 @@ export function parseTaskInput(
     const dateResults = chrono.parse(text, new Date(), { forwardDate: true });
     if (dateResults.length > 0) {
       const r = dateResults[0];
-      whenDate = r.date().toISOString().slice(0, 10);
+      whenDate = toLocalDateStr(r.date());
       // Only extract a scheduled time if the user explicitly stated one (not inferred)
       if (r.start.isCertain("hour")) {
         const h = String(r.start.get("hour")).padStart(2, "0");

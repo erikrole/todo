@@ -4,7 +4,7 @@ import { useTasks } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { TaskItem } from "@/components/tasks/task-item";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { Task, ProjectWithCounts } from "@todo/shared";
 
 export default function LogbookPage() {
@@ -12,6 +12,10 @@ export default function LogbookPage() {
   const { data: allProjects = [] } = useProjects();
   const activeProjects = allProjects.filter((p) => !p.isCompleted) as ProjectWithCounts[];
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+  const handleToggle = useCallback(
+    (id: string) => setExpandedTaskId((prev) => (prev === id ? null : id)),
+    [],
+  );
 
   // Group by completion date
   const groups = tasks.reduce<Map<string, Task[]>>((acc, task) => {
@@ -51,7 +55,7 @@ export default function LogbookPage() {
                   key={task.id}
                   task={task}
                   isExpanded={expandedTaskId === task.id}
-                  onToggle={(id) => setExpandedTaskId((prev) => (prev === id ? null : id))}
+                  onToggle={handleToggle}
                   activeProjects={activeProjects}
                   showWhenDate
                   showCompletedTime

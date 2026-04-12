@@ -35,7 +35,7 @@ export default function UpcomingPage() {
             <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em] mb-1 px-4">
               {date === "No date" ? date : formatWhenDate(date)}
             </h2>
-            <DroppableZone id="section:upcoming">
+            <DroppableZone id={`section:upcoming:${date}`}>
               <TaskList tasks={groups.get(date) ?? []} quickAddDefaults={{ whenDate: date }} />
             </DroppableZone>
           </section>

@@ -1,10 +1,25 @@
 import * as chrono from "chrono-node";
 
+/** Format a Date to a local YYYY-MM-DD string (avoids UTC offset shifting the date). */
+function toLocalDateStr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 /** Parse a natural language string into a YYYY-MM-DD date, or null if unrecognised. */
 export function parseNaturalDate(text: string): string | null {
   const result = chrono.parseDate(text, new Date(), { forwardDate: true });
   if (!result) return null;
-  return result.toISOString().slice(0, 10);
+  return toLocalDateStr(result);
+}
+
+/** Format HH:MM (24h) to a display string like "3:45 PM". */
+export function fmtTime(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
 /** Format a YYYY-MM-DD string for display (e.g. "Today", "Tomorrow", "Apr 14"). */

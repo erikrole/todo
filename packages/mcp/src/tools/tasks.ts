@@ -50,18 +50,19 @@ export function registerTaskTools(server: McpServer) {
       let query = db.select().from(tasks).$dynamic();
 
       const conditions = [];
+      conditions.push(isNull(tasks.deletedAt));
       if (projectId) conditions.push(eq(tasks.projectId, projectId));
       if (areaId) conditions.push(eq(tasks.areaId, areaId));
 
       switch (filter) {
         case "inbox":
-          conditions.push(isNull(tasks.whenDate), isNull(tasks.projectId), isNull(tasks.areaId), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
+          conditions.push(isNull(tasks.whenDate), isNull(tasks.projectId), isNull(tasks.areaId), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false), eq(tasks.isCancelled, false), eq(tasks.isSomeday, false));
           break;
         case "today":
-          conditions.push(lte(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
+          conditions.push(lte(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false), eq(tasks.isCancelled, false));
           break;
         case "upcoming":
-          conditions.push(gt(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false));
+          conditions.push(gt(tasks.whenDate, today), isNull(tasks.parentTaskId), eq(tasks.isCompleted, false), eq(tasks.isCancelled, false));
           break;
         case "completed":
           conditions.push(eq(tasks.isCompleted, true), isNull(tasks.parentTaskId));
@@ -89,6 +90,7 @@ export function registerTaskTools(server: McpServer) {
       deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
       projectId: z.string().optional(),
       areaId: z.string().optional(),
+      sectionId: z.string().optional(),
       parentTaskId: z.string().optional(),
       recurrenceType: z.enum(["daily", "weekly", "monthly", "yearly", "custom"]).optional(),
       recurrenceMode: z.enum(["on_schedule", "after_completion"]).optional(),
@@ -118,6 +120,7 @@ export function registerTaskTools(server: McpServer) {
       deadline: z.string().nullable().optional(),
       projectId: z.string().nullable().optional(),
       areaId: z.string().nullable().optional(),
+      sectionId: z.string().nullable().optional(),
       recurrenceType: z.enum(["daily", "weekly", "monthly", "yearly", "custom"]).nullable().optional(),
       recurrenceMode: z.enum(["on_schedule", "after_completion"]).nullable().optional(),
       recurrenceInterval: z.number().int().positive().nullable().optional(),
@@ -143,7 +146,7 @@ export function registerTaskTools(server: McpServer) {
       const now = nowIso();
       const today = todayStr();
 
-      const [original] = await db.select().from(tasks).where(eq(tasks.id, id));
+      const [original] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt)));
       if (!original) return { content: [{ type: "text", text: `Task ${id} not found` }], isError: true };
 
       const [completed] = await db

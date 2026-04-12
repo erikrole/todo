@@ -85,7 +85,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
 
     const reordered = arrayMove(sections, oldIndex, newIndex);
 
-    // Optimistically update the cache before the network request
+    // Capture snapshot before optimistic write so rollback is correct even if
+    // another mutation updated the cache between drag-start and drag-end.
+    const snapshot = queryClient.getQueryData(["sections", id]);
     queryClient.setQueryData(["sections", id], reordered);
 
     const prev = reordered[newIndex - 1];
@@ -103,8 +105,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       { id: active.id as string, projectId: id, position: newPosition },
       {
         onError: () => {
-          // Roll back to the pre-drag order on failure
-          queryClient.setQueryData(["sections", id], sections);
+          queryClient.setQueryData(["sections", id], snapshot);
         },
       },
     );

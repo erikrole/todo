@@ -5,7 +5,7 @@ import type { Task } from "@todo/shared";
 import { useCreateTask } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { parseTaskInput } from "@/lib/parse-task";
-import { formatWhenDate } from "@/lib/dates";
+import { fmtTime, formatWhenDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Calendar, Clock, FolderOpen, Hourglass, Loader2, Plus } from "lucide-react";
@@ -19,6 +19,7 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const submittedRef = useRef(false);
   const createTask = useCreateTask();
   const { data: projects = [] } = useProjects();
 
@@ -26,21 +27,18 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
   const parsed = value.trim() ? parseTaskInput(value, projects) : null;
   const hasChips = parsed && (parsed.whenDate || parsed.timeOfDay || parsed.scheduledTime || parsed.projectId || parsed.deadline || parsed.isSomeday);
 
-  function fmtTime(t: string) {
-    const [h, m] = t.split(":").map(Number);
-    const ampm = h >= 12 ? "PM" : "AM";
-    return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
-  }
-
   function handleOpen() {
+    submittedRef.current = false;
     setOpen(true);
     setError(null);
     setTimeout(() => inputRef.current?.focus(), 50);
   }
 
   async function submit() {
+    if (submittedRef.current) return;
     const title = parsed?.title || value.trim();
     if (!title || createTask.isPending) return;
+    submittedRef.current = true;
     setError(null);
 
     try {
@@ -58,6 +56,7 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
       setValue("");
       setOpen(false);
     } catch (e) {
+      submittedRef.current = false;
       setError(e instanceof Error ? e.message : "Failed to create task");
       setTimeout(() => inputRef.current?.focus(), 50);
     }

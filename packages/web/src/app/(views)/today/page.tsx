@@ -13,9 +13,8 @@ const SECTIONS: { id: TimeOfDay | null; label: string }[] = [
   { id: null, label: "Anytime" },
 ];
 
-const todayStr = new Date().toISOString().slice(0, 10);
-
 export default function TodayPage() {
+  const todayStr = new Date().toISOString().slice(0, 10);
   const { data: activeTasks = [], isLoading } = useTasks("today");
   const { data: completedTodayTasks = [] } = useTasks("completed_today");
 

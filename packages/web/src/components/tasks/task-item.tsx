@@ -20,8 +20,9 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
-import { deadlineUrgency, formatWhenDate } from "@/lib/dates";
-import { useCompleteTask, useCreateTask, useDeleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
+import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
+import { useCompleteTask, useCreateTask, useDeleteTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
+import { notify } from "@/lib/toast";
 import { Calendar, Clock, Flag, ListTree, Plus, Repeat2, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -54,12 +55,6 @@ function daysUntil(date: string): number {
   return Math.round((d.getTime() - today.getTime()) / 86400000);
 }
 
-function fmtTime(t: string) {
-  const [h, m] = t.split(":").map(Number);
-  const ampm = h >= 12 ? "PM" : "AM";
-  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
-}
-
 export const TaskItem = memo(function TaskItem({
   task,
   isExpanded,
@@ -70,9 +65,20 @@ export const TaskItem = memo(function TaskItem({
   showCompletedTime,
 }: TaskItemProps) {
   const completeTask = useCompleteTask();
+  const uncompleteTask = useUncompleteTask();
   const deleteTask = useDeleteTask();
+  const restoreTask = useRestoreTask();
   const updateTask = useUpdateTask();
   const [completing, setCompleting] = useState(false);
+
+  type MoveFields = { whenDate?: string | null; timeOfDay?: "morning" | "day" | "night" | null; isSomeday?: boolean; projectId?: string | null; areaId?: string | null; sectionId?: string | null };
+  function moveTask(patch: MoveFields, label: string) {
+    const snapshot: MoveFields = { whenDate: task.whenDate, timeOfDay: task.timeOfDay, isSomeday: task.isSomeday, projectId: task.projectId, areaId: task.areaId, sectionId: task.sectionId };
+    updateTask.mutate(
+      { id: task.id, ...patch },
+      { onSuccess: () => notify.undoable(label, () => updateTask.mutate({ id: task.id, ...snapshot })) },
+    );
+  }
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
@@ -81,7 +87,7 @@ export const TaskItem = memo(function TaskItem({
   useEffect(() => {
     setTitle(task.title);
     setNotes(task.notes ?? "");
-  }, [task.id]);
+  }, [task.id, task.title, task.notes]);
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -100,7 +106,13 @@ export const TaskItem = memo(function TaskItem({
 
   function handleComplete() {
     setCompleting(true);
-    setTimeout(() => completeTask.mutate(task.id), 320);
+    setTimeout(() => {
+      completeTask.mutate(task.id, {
+        onSuccess: () => notify.undoable("Task completed", () => {
+          uncompleteTask.mutate(task.id);
+        }),
+      });
+    }, 320);
   }
 
   function save() {
@@ -224,7 +236,9 @@ export const TaskItem = memo(function TaskItem({
                       notes={notes}
                       setNotes={setNotes}
                       onSave={save}
-                      onDelete={() => deleteTask.mutate(task.id)}
+                      onDelete={() => deleteTask.mutate(task.id, {
+                onSuccess: () => notify.undoable("Task deleted", () => restoreTask.mutate(task.id)),
+              })}
                       onClearScheduledTime={() => updateTask.mutate({ id: task.id, scheduledTime: null })}
                     />
                   </motion.div>
@@ -234,30 +248,16 @@ export const TaskItem = memo(function TaskItem({
           </ContextMenuTrigger>
 
           <ContextMenuContent className="w-52">
-            <ContextMenuItem
-              onSelect={() =>
-                updateTask.mutate({ id: task.id, whenDate: todayStr(), timeOfDay: null, isSomeday: false })
-              }
-            >
+            <ContextMenuItem onSelect={() => moveTask({ whenDate: todayStr(), timeOfDay: null, isSomeday: false }, "Moved to Today")}>
               Move to Today
             </ContextMenuItem>
-            <ContextMenuItem
-              onSelect={() =>
-                updateTask.mutate({ id: task.id, whenDate: null, timeOfDay: null, isSomeday: false })
-              }
-            >
+            <ContextMenuItem onSelect={() => moveTask({ whenDate: null, timeOfDay: null, isSomeday: false }, "Moved to Inbox")}>
               Move to Inbox
             </ContextMenuItem>
-            <ContextMenuItem
-              onSelect={() => updateTask.mutate({ id: task.id, whenDate: tomorrowStr(), isSomeday: false })}
-            >
+            <ContextMenuItem onSelect={() => moveTask({ whenDate: tomorrowStr(), isSomeday: false }, "Moved to Upcoming")}>
               Move to Upcoming
             </ContextMenuItem>
-            <ContextMenuItem
-              onSelect={() =>
-                updateTask.mutate({ id: task.id, isSomeday: true, whenDate: null, timeOfDay: null })
-              }
-            >
+            <ContextMenuItem onSelect={() => moveTask({ isSomeday: true, whenDate: null, timeOfDay: null }, "Moved to Someday")}>
               Move to Someday
             </ContextMenuItem>
             {activeProjects.length > 0 && (
@@ -267,7 +267,7 @@ export const TaskItem = memo(function TaskItem({
                   {activeProjects.map((p) => (
                     <ContextMenuItem
                       key={p.id}
-                      onSelect={() => updateTask.mutate({ id: task.id, projectId: p.id })}
+                      onSelect={() => moveTask({ projectId: p.id }, `Moved to ${p.name}`)}
                     >
                       <span className="flex items-center gap-2">
                         {p.color && (
@@ -287,15 +287,13 @@ export const TaskItem = memo(function TaskItem({
               <ContextMenuSub>
                 <ContextMenuSubTrigger>Move to Section</ContextMenuSubTrigger>
                 <ContextMenuSubContent>
-                  <ContextMenuItem
-                    onSelect={() => updateTask.mutate({ id: task.id, sectionId: null })}
-                  >
+                  <ContextMenuItem onSelect={() => moveTask({ sectionId: null }, "Moved to No Section")}>
                     No Section
                   </ContextMenuItem>
                   {activeSections.map((s) => (
                     <ContextMenuItem
                       key={s.id}
-                      onSelect={() => updateTask.mutate({ id: task.id, sectionId: s.id })}
+                      onSelect={() => moveTask({ sectionId: s.id }, `Moved to ${s.title}`)}
                     >
                       {s.title}
                     </ContextMenuItem>
@@ -312,7 +310,9 @@ export const TaskItem = memo(function TaskItem({
             </ContextMenuItem>
             <ContextMenuItem
               className="text-destructive focus:text-destructive"
-              onSelect={() => deleteTask.mutate(task.id)}
+              onSelect={() => deleteTask.mutate(task.id, {
+                onSuccess: () => notify.undoable("Task deleted", () => restoreTask.mutate(task.id)),
+              })}
             >
               Delete
             </ContextMenuItem>
