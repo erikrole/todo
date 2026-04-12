@@ -1,35 +1,45 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface TaskCheckboxProps {
   checked: boolean;
   onComplete: () => void;
+  onUncomplete?: () => void;
   disabled?: boolean;
 }
 
-export function TaskCheckbox({ checked, onComplete, disabled }: TaskCheckboxProps) {
+export function TaskCheckbox({ checked, onComplete, onUncomplete, disabled }: TaskCheckboxProps) {
   const [animating, setAnimating] = useState(false);
 
   function handleClick() {
-    if (checked || disabled || animating) return;
+    if (disabled || animating) return;
+    if (checked) {
+      onUncomplete?.();
+      return;
+    }
     setAnimating(true);
     setTimeout(() => {
       onComplete();
-      setAnimating(false);
+      // Don't reset animating — the component re-renders from the optimistic update
+      // which resets local state naturally.
     }, 350);
   }
 
   const filled = checked || animating;
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={handleClick}
-      disabled={disabled || checked}
-      aria-label={checked ? "Completed" : "Mark complete"}
+      disabled={disabled}
+      aria-label={checked ? "Mark incomplete" : "Mark complete"}
       className="group relative flex items-center justify-center h-[18px] w-[18px] shrink-0 rounded-full disabled:pointer-events-none"
+      whileTap={{ scale: 0.8 }}
+      animate={{ scale: animating ? [1, 0.75, 1.2, 1] : 1 }}
+      transition={{ scale: { type: "spring", stiffness: 400, damping: 15, duration: 0.35 } }}
     >
       <svg viewBox="0 0 18 18" fill="none" className="h-[18px] w-[18px]">
         {/* Hollow outline — visible when unchecked */}
@@ -68,6 +78,6 @@ export function TaskCheckbox({ checked, onComplete, disabled }: TaskCheckboxProp
           )}
         />
       </svg>
-    </button>
+    </motion.button>
   );
 }
