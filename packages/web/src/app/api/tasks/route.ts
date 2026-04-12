@@ -1,6 +1,6 @@
 import { db, tasks } from "@todo/db";
 import { CreateTaskSchema } from "@todo/shared";
-import { and, eq, gt, gte, isNotNull, isNull, lt, lte } from "drizzle-orm";
+import { and, eq, gt, gte, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { err, nowIso, ok, todayStr } from "@/lib/api";
 
@@ -66,6 +66,28 @@ export async function GET(request: Request) {
         eq(tasks.isCancelled, false),
       );
       break;
+    case "today_all": {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+      conditions.push(
+        or(
+          and(
+            lte(tasks.whenDate, today),
+            eq(tasks.isCompleted, false),
+            eq(tasks.isCancelled, false),
+            isNull(tasks.parentTaskId),
+          ),
+          and(
+            eq(tasks.isCompleted, true),
+            isNull(tasks.parentTaskId),
+            gte(tasks.completedAt, today),
+            lt(tasks.completedAt, tomorrowStr),
+          ),
+        ),
+      );
+      break;
+    }
     case "trash": {
       // Auto-purge tasks deleted more than 30 days ago before returning results
       const cutoff = new Date();
