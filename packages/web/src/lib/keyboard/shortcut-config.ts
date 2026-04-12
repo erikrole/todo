@@ -64,6 +64,7 @@ export function matchesKey(e: KeyboardEvent, keyDef: string): boolean {
   if (!keyDef) return false;
   const parts = keyDef.split("+");
   const key = parts[parts.length - 1];
+  if (!key) return false;
   const needsMeta = parts.includes("Meta");
   const needsCtrl = parts.includes("Ctrl");
   const needsAlt = parts.includes("Alt");
@@ -88,6 +89,7 @@ export function loadOverrides(): ShortcutOverrides {
 
 /** Persist overrides to localStorage. */
 export function saveOverrides(overrides: ShortcutOverrides): void {
+  if (typeof window === "undefined") return;
   localStorage.setItem(SHORTCUT_STORAGE_KEY, JSON.stringify(overrides));
 }
 
