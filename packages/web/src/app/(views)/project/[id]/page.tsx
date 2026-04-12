@@ -2,7 +2,7 @@
 
 import { use, useState, useRef, useEffect } from "react";
 import { useTasks } from "@/hooks/use-tasks";
-import { useProjects, useCompleteProject } from "@/hooks/use-projects";
+import { useProjects, useCompleteProject, useUpdateProject } from "@/hooks/use-projects";
 import { useSections, useCreateSection, useUpdateSection } from "@/hooks/use-sections";
 import { TaskList } from "@/components/tasks/task-list";
 import { SectionBlock } from "@/components/projects/section-block";
@@ -30,8 +30,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const { data: projects = [] } = useProjects();
   const { data: sections = [] } = useSections(id);
   const completeProject = useCompleteProject();
+  const updateProject = useUpdateProject();
   const createSection = useCreateSection();
   const updateSection = useUpdateSection();
+  const [notes, setNotes] = useState("");
   const queryClient = useQueryClient();
   const [activeDragSection, setActiveDragSection] = useState<Section | null>(null);
   const sensors = useSensors(
@@ -48,6 +50,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   }, [addingSection]);
 
   const project = projects.find((p) => p.id === id);
+
+  // Sync notes when project data arrives
+  useEffect(() => {
+    setNotes(project?.notes ?? "");
+  }, [id, project?.notes]);
+
   const openTasks = tasks.filter((t) => !t.isCompleted);
   const completedCount = tasks.filter((t) => t.isCompleted).length;
   const total = tasks.length;
@@ -155,9 +163,19 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         {project?.isCompleted && <Badge variant="secondary">Completed</Badge>}
       </div>
 
-      {project?.notes && (
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.notes}</p>
-      )}
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        onBlur={() => {
+          const trimmed = notes.trim();
+          if (trimmed !== (project?.notes ?? "").trim()) {
+            updateProject.mutate({ id, notes: trimmed || null });
+          }
+        }}
+        placeholder="Add notes…"
+        rows={2}
+        className="w-full bg-transparent text-sm text-muted-foreground resize-none outline-none placeholder:text-muted-foreground/25 leading-relaxed"
+      />
 
       {/* Unsectioned tasks */}
       <DroppableZone id={`section:project:${id}`}>
