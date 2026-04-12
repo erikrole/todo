@@ -24,7 +24,7 @@ import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
 import { parseTaskInput } from "@/lib/parse-task";
 import { useCompleteTask, useCreateTask, useDeleteTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
 import { notify } from "@/lib/toast";
-import { Calendar as CalendarIcon, Clock, Flag, ListTree, Plus, Repeat2, Trash2, X } from "lucide-react";
+import { Calendar as CalendarIcon, Check, Clock, Flag, ListTree, Plus, Repeat2, Trash2, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -284,6 +284,7 @@ export const TaskItem = memo(function TaskItem({
                       onDateChange={(date) => updateTask.mutate({ id: task.id, whenDate: date, isSomeday: false })}
                       onDeadlineChange={(date) => updateTask.mutate({ id: task.id, deadline: date })}
                       onTimeOfDayChange={(tod) => updateTask.mutate({ id: task.id, timeOfDay: tod })}
+                      onRecurrenceChange={(r) => updateTask.mutate({ id: task.id, ...r })}
                     />
                   </motion.div>
                 )}
@@ -376,6 +377,21 @@ const TIME_OF_DAY_OPTIONS = [
 
 type TimeOfDay = "morning" | "day" | "night";
 
+type RecurrenceType = "daily" | "weekly" | "monthly" | "yearly";
+type RecurrenceMode = "on_schedule" | "after_completion";
+interface RecurrencePatch {
+  recurrenceType: RecurrenceType | null;
+  recurrenceMode?: RecurrenceMode | null;
+  recurrenceInterval?: number | null;
+}
+
+const RECURRENCE_OPTIONS: { value: RecurrenceType; label: string }[] = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+];
+
 function ExpandedPanel({
   task,
   notes,
@@ -386,6 +402,7 @@ function ExpandedPanel({
   onDateChange,
   onDeadlineChange,
   onTimeOfDayChange,
+  onRecurrenceChange,
 }: {
   task: Task;
   notes: string;
@@ -396,6 +413,7 @@ function ExpandedPanel({
   onDateChange: (date: string | null) => void;
   onDeadlineChange: (date: string | null) => void;
   onTimeOfDayChange: (tod: TimeOfDay | null) => void;
+  onRecurrenceChange: (r: RecurrencePatch) => void;
 }) {
   const { data: fullTask } = useTask(task.id);
   const createTask = useCreateTask();
@@ -408,6 +426,7 @@ function ExpandedPanel({
 
   const [dateOpen, setDateOpen] = useState(false);
   const [deadlineOpen, setDeadlineOpen] = useState(false);
+  const [recurrenceOpen, setRecurrenceOpen] = useState(false);
 
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
@@ -584,12 +603,87 @@ function ExpandedPanel({
           </PopoverContent>
         </Popover>
 
-        {task.recurrenceType && (
-          <span className="flex items-center gap-1.5">
-            <Repeat2 className="h-3.5 w-3.5" />
-            <span>{task.recurrenceType}</span>
-          </span>
-        )}
+        {/* Recurrence picker */}
+        <Popover open={recurrenceOpen} onOpenChange={setRecurrenceOpen}>
+          <PopoverTrigger asChild>
+            <button className={cn(
+              "flex items-center gap-1.5 transition-colors rounded px-1 -mx-1",
+              task.recurrenceType
+                ? "text-foreground/70 hover:text-foreground"
+                : "text-muted-foreground/30 hover:text-muted-foreground/60",
+            )}>
+              <Repeat2 className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                {task.recurrenceType
+                  ? `${task.recurrenceType.charAt(0).toUpperCase()}${task.recurrenceType.slice(1)}`
+                  : "Repeat"}
+              </span>
+              {task.recurrenceMode === "after_completion" && (
+                <span className="text-muted-foreground/50 text-[10px]">· after</span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2" align="start">
+            <div className="flex flex-col gap-0.5">
+              {RECURRENCE_OPTIONS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => {
+                    if (task.recurrenceType === value) {
+                      onRecurrenceChange({ recurrenceType: null, recurrenceMode: null });
+                    } else {
+                      onRecurrenceChange({ recurrenceType: value, recurrenceMode: task.recurrenceMode as RecurrenceMode ?? "on_schedule" });
+                    }
+                    setRecurrenceOpen(false);
+                  }}
+                  className={cn(
+                    "flex items-center justify-between w-full px-2 py-1.5 rounded text-sm text-left transition-colors",
+                    task.recurrenceType === value
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-muted text-foreground/80",
+                  )}
+                >
+                  {label}
+                  {task.recurrenceType === value && <Check className="h-3.5 w-3.5" />}
+                </button>
+              ))}
+              {task.recurrenceType && (
+                <>
+                  <div className="border-t border-border/50 my-1" />
+                  <p className="text-[10px] text-muted-foreground/50 px-2 pb-1">Reschedule mode</p>
+                  {(["on_schedule", "after_completion"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        onRecurrenceChange({ recurrenceType: task.recurrenceType as RecurrenceType, recurrenceMode: mode });
+                        setRecurrenceOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center justify-between w-full px-2 py-1.5 rounded text-xs text-left transition-colors",
+                        task.recurrenceMode === mode
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-muted text-foreground/60",
+                      )}
+                    >
+                      {mode === "on_schedule" ? "On schedule" : "After completion"}
+                      {task.recurrenceMode === mode && <Check className="h-3 w-3" />}
+                    </button>
+                  ))}
+                  <div className="border-t border-border/50 my-1" />
+                  <button
+                    onClick={() => {
+                      onRecurrenceChange({ recurrenceType: null, recurrenceMode: null });
+                      setRecurrenceOpen(false);
+                    }}
+                    className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-xs text-muted-foreground/50 hover:text-destructive/70 hover:bg-muted transition-colors"
+                  >
+                    <X className="h-3 w-3" /> Remove recurrence
+                  </button>
+                </>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {!hasMetadata && !subtasks.length && (
           <span className="text-muted-foreground/30 sr-only">No date set</span>
