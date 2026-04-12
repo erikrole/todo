@@ -25,3 +25,14 @@ test.describe("v1.3 — sidebar badges", () => {
     await expect(inboxLink.locator("span.tabular-nums")).toBeVisible();
   });
 });
+
+test.describe("v1.3 — overdue section in Today", () => {
+  test("overdue filter returns tasks with past when_date", async ({ request }) => {
+    const res = await request.get("http://localhost:3000/api/tasks?filter=overdue", {
+      headers: { Authorization: `Bearer ${process.env.NEXT_PUBLIC_AUTH_TOKEN ?? "dev"}` },
+    });
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    expect(Array.isArray(body.data)).toBe(true);
+  });
+});

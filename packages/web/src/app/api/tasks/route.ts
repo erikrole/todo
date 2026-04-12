@@ -58,6 +58,14 @@ export async function GET(request: Request) {
     case "completed":
       conditions.push(eq(tasks.isCompleted, true), isNull(tasks.parentTaskId));
       break;
+    case "overdue":
+      conditions.push(
+        lt(tasks.whenDate, today),
+        isNull(tasks.parentTaskId),
+        eq(tasks.isCompleted, false),
+        eq(tasks.isCancelled, false),
+      );
+      break;
     case "trash": {
       // Auto-purge tasks deleted more than 30 days ago before returning results
       const cutoff = new Date();
