@@ -102,3 +102,20 @@ test.describe("Keyboard shortcuts — new task", () => {
     await expect(page.getByPlaceholder(/new task/i)).toBeFocused();
   });
 });
+
+test.describe("Keyboard shortcuts — overlay", () => {
+  test("? opens the shortcuts reference overlay", async ({ page }) => {
+    await page.goto("/inbox");
+    await page.keyboard.press("?");
+    await expect(page.getByText("Keyboard Shortcuts")).toBeVisible();
+    await expect(page.getByText("Go to Today")).toBeVisible();
+  });
+
+  test("Esc closes the overlay", async ({ page }) => {
+    await page.goto("/inbox");
+    await page.keyboard.press("?");
+    await expect(page.getByText("Keyboard Shortcuts")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("Keyboard Shortcuts")).not.toBeVisible({ timeout: 1000 });
+  });
+});
