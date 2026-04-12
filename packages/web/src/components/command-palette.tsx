@@ -11,10 +11,12 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { useTasks } from "@/hooks/use-tasks";
+import { useTasks, useCreateTask } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { useAreas } from "@/hooks/use-areas";
-import { Inbox, Sun, Calendar, BookOpen, CheckSquare, FolderOpen, Layers, Hourglass } from "lucide-react";
+import { parseTaskInput } from "@/lib/parse-task";
+import { formatWhenDate } from "@/lib/dates";
+import { Inbox, Sun, Calendar, BookOpen, CheckSquare, FolderOpen, Layers, Hourglass, Plus } from "lucide-react";
 import type { Task } from "@todo/shared";
 
 function taskDestination(task: Task): string {
@@ -29,11 +31,16 @@ function taskDestination(task: Task): string {
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const router = useRouter();
+  const createTask = useCreateTask();
 
   const { data: tasks = [] } = useTasks("all", undefined, undefined, { enabled: open });
   const { data: projects = [] } = useProjects(undefined, { enabled: open });
   const { data: areas = [] } = useAreas({ enabled: open });
+
+  const activeProjects = projects.filter((p) => !p.isCompleted);
+  const parsed = query.trim() ? parseTaskInput(query, activeProjects) : null;
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -51,11 +58,55 @@ export function CommandPalette() {
     setOpen(false);
   }
 
+  async function handleCreateTask() {
+    if (!query.trim() || createTask.isPending) return;
+    const title = parsed?.title || query.trim();
+    await createTask.mutateAsync({
+      title,
+      whenDate: parsed?.whenDate ?? undefined,
+      timeOfDay: parsed?.timeOfDay ?? undefined,
+      scheduledTime: parsed?.scheduledTime ?? undefined,
+      deadline: parsed?.deadline ?? undefined,
+      isSomeday: parsed?.isSomeday ?? false,
+      projectId: parsed?.projectId ?? undefined,
+    });
+    setQuery("");
+    setOpen(false);
+  }
+
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Search tasks, projects, views…" />
+    <CommandDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setQuery(""); }}>
+      <CommandInput
+        placeholder="Search or create a task…"
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
+
+        {/* Quick create — shown when there's a typed query */}
+        {query.trim() && (
+          <CommandGroup heading="Create">
+            <CommandItem
+              value={`create:${query}`}
+              onSelect={handleCreateTask}
+              disabled={createTask.isPending}
+            >
+              <Plus className="mr-2 h-4 w-4 text-primary" />
+              <span className="flex-1">
+                Create &ldquo;{parsed?.title || query.trim()}&rdquo;
+              </span>
+              {parsed?.whenDate && (
+                <span className="text-xs text-muted-foreground ml-2">{formatWhenDate(parsed.whenDate)}</span>
+              )}
+              {parsed?.projectName && (
+                <span className="text-xs text-muted-foreground ml-2">→ {parsed.projectName}</span>
+              )}
+            </CommandItem>
+          </CommandGroup>
+        )}
+
+        {query.trim() && <CommandSeparator />}
 
         <CommandGroup heading="Views">
           {[
