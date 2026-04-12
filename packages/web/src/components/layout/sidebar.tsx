@@ -26,10 +26,10 @@ import {
 } from "@/components/ui/context-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAreas } from "@/hooks/use-areas";
-import { useProjects, useCreateProject } from "@/hooks/use-projects";
+import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
-import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2 } from "lucide-react";
+import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus } from "lucide-react";
 import type { ProjectWithCounts } from "@todo/shared";
 
 const NAV_ITEMS = [
@@ -66,10 +66,16 @@ interface ProjectItemProps {
 
 function ProjectItem({ project, subProjects, pathname, isSubProject = false }: ProjectItemProps) {
   const createProject = useCreateProject();
+  const updateProject = useUpdateProject();
+  const deleteProject = useDeleteProject();
   const { isOpen, toggle } = useProjectCollapseState(project.id);
   const [addingSubProject, setAddingSubProject] = useState(false);
   const [newSubName, setNewSubName] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(project.name);
   const inputRef = useRef<HTMLInputElement>(null);
+  const renameRef = useRef<HTMLInputElement>(null);
+  const renameSubmittedRef = useRef(false);
   const hasChildren = subProjects.length > 0;
   const isActive = pathname === `/project/${project.id}`;
   const isParentActive = !isActive && subProjects.some((s) => pathname === `/project/${s.id}`);
@@ -77,6 +83,20 @@ function ProjectItem({ project, subProjects, pathname, isSubProject = false }: P
   useEffect(() => {
     if (addingSubProject) setTimeout(() => inputRef.current?.focus(), 50);
   }, [addingSubProject]);
+
+  useEffect(() => {
+    if (renaming) { setRenameValue(project.name); setTimeout(() => renameRef.current?.focus(), 50); }
+  }, [renaming, project.name]);
+
+  async function submitRename() {
+    if (renameSubmittedRef.current) return;
+    const name = renameValue.trim();
+    if (!name || name === project.name) { setRenaming(false); return; }
+    renameSubmittedRef.current = true;
+    setRenaming(false);
+    await updateProject.mutateAsync({ id: project.id, name });
+    renameSubmittedRef.current = false;
+  }
 
   async function submitSubProject() {
     const name = newSubName.trim();
@@ -104,54 +124,99 @@ function ProjectItem({ project, subProjects, pathname, isSubProject = false }: P
   if (isSubProject) {
     return (
       <SidebarMenuSubItem>
-        <SidebarMenuSubButton asChild isActive={isActive}>
-          <Link href={`/project/${project.id}`}>
-            {project.color && (
-              <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            {renaming ? (
+              <div className="flex items-center gap-2 px-2 py-1">
+                <input
+                  ref={renameRef}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); submitRename(); }
+                    if (e.key === "Escape") { setRenaming(false); }
+                  }}
+                  onBlur={submitRename}
+                  className="flex-1 bg-transparent text-xs outline-none border-b border-border pb-0.5"
+                />
+              </div>
+            ) : (
+              <SidebarMenuSubButton asChild isActive={isActive}>
+                <Link href={`/project/${project.id}`}>
+                  {project.color && (
+                    <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
+                  )}
+                  <span className="truncate">{project.name}</span>
+                  {project.taskCount > 0 && (
+                    <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
+                  )}
+                </Link>
+              </SidebarMenuSubButton>
             )}
-            <span className="truncate">{project.name}</span>
-            {project.taskCount > 0 && (
-              <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
-            )}
-          </Link>
-        </SidebarMenuSubButton>
+          </ContextMenuTrigger>
+          <ContextMenuContent className="w-44">
+            <ContextMenuItem onSelect={() => setRenaming(true)}>Rename</ContextMenuItem>
+            <ContextMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => deleteProject.mutate(project.id)}
+            >
+              Delete
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       </SidebarMenuSubItem>
     );
   }
 
   const projectLinkContent = (
     <DroppableZone id={`sidebar:project:${project.id}`} className="w-full">
-      <SidebarMenuButton
-        asChild={false}
-        isActive={isActive || isParentActive}
-        className={cn(isParentActive && !isActive && "opacity-60")}
-      >
-        <Link
-          href={`/project/${project.id}`}
-          className="flex flex-1 items-center gap-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {project.color && (
-            <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
-          )}
-          <span className="flex-1 truncate">{project.name}</span>
-          {project.taskCount > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
-          )}
-        </Link>
-        {hasChildren && (
-          <ChevronRight
-            className={cn(
-              "ml-1 h-3 w-3 transition-transform shrink-0",
-              isOpen && "rotate-90",
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggle(!isOpen);
+      {renaming ? (
+        <div className="flex items-center gap-2 px-2 py-1.5">
+          <input
+            ref={renameRef}
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); submitRename(); }
+              if (e.key === "Escape") { setRenaming(false); }
             }}
+            onBlur={submitRename}
+            className="flex-1 bg-transparent text-xs outline-none border-b border-border pb-0.5"
           />
-        )}
-      </SidebarMenuButton>
+        </div>
+      ) : (
+        <SidebarMenuButton
+          asChild={false}
+          isActive={isActive || isParentActive}
+          className={cn(isParentActive && !isActive && "opacity-60")}
+        >
+          <Link
+            href={`/project/${project.id}`}
+            className="flex flex-1 items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {project.color && (
+              <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
+            )}
+            <span className="flex-1 truncate">{project.name}</span>
+            {project.taskCount > 0 && (
+              <span className="ml-auto text-xs text-muted-foreground">{project.taskCount}</span>
+            )}
+          </Link>
+          {hasChildren && (
+            <ChevronRight
+              className={cn(
+                "ml-1 h-3 w-3 transition-transform shrink-0",
+                isOpen && "rotate-90",
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggle(!isOpen);
+              }}
+            />
+          )}
+        </SidebarMenuButton>
+      )}
     </DroppableZone>
   );
 
@@ -167,8 +232,13 @@ function ProjectItem({ project, subProjects, pathname, isSubProject = false }: P
             )}
           </ContextMenuTrigger>
           <ContextMenuContent className="w-44">
-            <ContextMenuItem onSelect={() => setAddingSubProject(true)}>
-              Add Sub-project
+            <ContextMenuItem onSelect={() => setAddingSubProject(true)}>Add Sub-project</ContextMenuItem>
+            <ContextMenuItem onSelect={() => setRenaming(true)}>Rename</ContextMenuItem>
+            <ContextMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => deleteProject.mutate(project.id)}
+            >
+              Delete
             </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
@@ -212,6 +282,26 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { data: areas = [] } = useAreas();
   const { data: allProjects = [] } = useProjects();
+  const createProject = useCreateProject();
+  const [addingProject, setAddingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const newProjectRef = useRef<HTMLInputElement>(null);
+  const newProjectSubmittedRef = useRef(false);
+
+  useEffect(() => {
+    if (addingProject) setTimeout(() => newProjectRef.current?.focus(), 50);
+  }, [addingProject]);
+
+  async function submitNewProject() {
+    if (newProjectSubmittedRef.current) return;
+    const name = newProjectName.trim();
+    if (!name) { setAddingProject(false); return; }
+    newProjectSubmittedRef.current = true;
+    setNewProjectName("");
+    setAddingProject(false);
+    await createProject.mutateAsync({ name });
+    newProjectSubmittedRef.current = false;
+  }
 
   const topLevelProjects = allProjects.filter((p) => !p.parentProjectId && !p.isCompleted);
   const subProjectMap = new Map<string, ProjectWithCounts[]>();
@@ -332,23 +422,49 @@ export function AppSidebar() {
         )}
 
         {/* Standalone projects (no area, no parent) */}
-        {topLevelProjects.filter((p) => !p.areaId).length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Projects</SidebarGroupLabel>
-            <SidebarMenu>
-              {topLevelProjects
-                .filter((p) => !p.areaId)
-                .map((project) => (
-                  <ProjectItem
-                    key={project.id}
-                    project={project}
-                    subProjects={subProjectMap.get(project.id) ?? []}
-                    pathname={pathname}
+        <SidebarGroup>
+          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarMenu>
+            {topLevelProjects
+              .filter((p) => !p.areaId)
+              .map((project) => (
+                <ProjectItem
+                  key={project.id}
+                  project={project}
+                  subProjects={subProjectMap.get(project.id) ?? []}
+                  pathname={pathname}
+                />
+              ))}
+            {addingProject && (
+              <SidebarMenuItem>
+                <div className="flex items-center gap-2 px-2 py-1.5">
+                  <input
+                    ref={newProjectRef}
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); submitNewProject(); }
+                      if (e.key === "Escape") { setNewProjectName(""); setAddingProject(false); }
+                    }}
+                    onBlur={submitNewProject}
+                    placeholder="Project name"
+                    className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/40 border-b border-border pb-0.5"
                   />
-                ))}
-            </SidebarMenu>
-          </SidebarGroup>
-        )}
+                </div>
+              </SidebarMenuItem>
+            )}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild={false}
+                className="text-muted-foreground/40 hover:text-primary/60 hover:bg-transparent font-normal"
+                onClick={() => setAddingProject(true)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>New Project</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="p-3">
