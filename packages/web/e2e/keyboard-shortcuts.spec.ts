@@ -19,3 +19,44 @@ test.describe("Keyboard shortcuts — navigation", () => {
     await expect(page).toHaveURL(/\/upcoming/);
   });
 });
+
+test.describe("Keyboard shortcuts — task navigation", () => {
+  test("J focuses the first task, second J moves to the next", async ({ page }) => {
+    await page.goto("/inbox");
+
+    // Create two tasks to navigate between
+    const t1 = `Nav task A ${Date.now()}`;
+    const t2 = `Nav task B ${Date.now()}`;
+    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByPlaceholder(/new task/i).fill(t1);
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByPlaceholder(/new task/i).fill(t2);
+    await page.keyboard.press("Enter");
+
+    // Press J — should focus first task (indigo border)
+    await page.keyboard.press("j");
+    const firstTask = page.locator(`[data-task-id]`).first();
+    await expect(firstTask).toHaveAttribute("data-focused", "true");
+
+    // Press J again — should move to next task
+    await page.keyboard.press("j");
+    const secondTask = page.locator(`[data-task-id]`).nth(1);
+    await expect(secondTask).toHaveAttribute("data-focused", "true");
+  });
+
+  test("K moves focus backwards", async ({ page }) => {
+    await page.goto("/inbox");
+
+    const title = `Nav K test ${Date.now()}`;
+    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByPlaceholder(/new task/i).fill(title);
+    await page.keyboard.press("Enter");
+
+    await page.keyboard.press("j"); // focus first
+    await page.keyboard.press("j"); // move to second (if exists) or stays
+    await page.keyboard.press("k"); // move back
+    const firstTask = page.locator(`[data-task-id]`).first();
+    await expect(firstTask).toHaveAttribute("data-focused", "true");
+  });
+});

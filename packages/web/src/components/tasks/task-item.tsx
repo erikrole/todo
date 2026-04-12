@@ -20,6 +20,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
+import { useFocusedTask } from "@/components/keyboard/keyboard-provider";
 import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
 import { parseTaskInput } from "@/lib/parse-task";
 import { useCompleteTask, useCreateTask, useDeleteTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
@@ -73,6 +74,8 @@ export const TaskItem = memo(function TaskItem({
   const restoreTask = useRestoreTask();
   const updateTask = useUpdateTask();
   const [completing, setCompleting] = useState(false);
+  const { focusedTaskId } = useFocusedTask();
+  const isFocused = focusedTaskId === task.id;
 
   type MoveFields = { whenDate?: string | null; timeOfDay?: "morning" | "day" | "night" | null; isSomeday?: boolean; projectId?: string | null; areaId?: string | null; sectionId?: string | null };
   function moveTask(patch: MoveFields, label: string) {
@@ -178,6 +181,8 @@ export const TaskItem = memo(function TaskItem({
                 "transition-[border-color,background-color,box-shadow,border-radius] duration-150",
                 isExpanded && "rounded-xl border border-border/70 bg-card shadow-sm my-1.5",
               )}
+              data-task-id={task.id}
+              data-focused={isFocused ? "true" : undefined}
               {...attributes}
               {...listeners}
             >
@@ -187,7 +192,12 @@ export const TaskItem = memo(function TaskItem({
                   "group relative flex items-start gap-3 py-2",
                   isExpanded
                     ? "px-4 pt-3.5"
-                    : "pl-4 pr-3 border-l-2 border-transparent hover:border-primary/40 hover:bg-primary/[0.05]",
+                    : cn(
+                        "pl-4 pr-3 border-l-2",
+                        isFocused
+                          ? "border-primary/70 bg-primary/[0.04]"
+                          : "border-transparent hover:border-primary/40 hover:bg-primary/[0.05]",
+                      ),
                   isDragging ? "cursor-grabbing" : "cursor-pointer",
                 )}
                 onClick={() => !isDragging && onToggle(task.id)}

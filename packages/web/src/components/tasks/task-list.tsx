@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { Task, Section } from "@todo/shared";
 import { TaskItem } from "./task-item";
 import { TaskQuickAdd } from "./task-quick-add";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProjects } from "@/hooks/use-projects";
 import type { ProjectWithCounts } from "@todo/shared";
+import { useRegisterTaskList, useFocusedTask } from "@/components/keyboard/keyboard-provider";
 
 interface TaskListProps {
   tasks: Task[];
   isLoading?: boolean;
   showWhenDate?: boolean;
-  /** Context for quick-add pre-filling */
   quickAddDefaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId" | "sectionId">>;
   activeSections?: Section[];
   emptyMessage?: string;
@@ -22,11 +22,17 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const { data: allProjects = [] } = useProjects();
   const activeProjects = allProjects.filter((p) => !p.isCompleted) as ProjectWithCounts[];
+  const { setFocusedTaskId } = useFocusedTask();
 
-  // Stable reference — doesn't change when expandedTaskId changes
+  // Register ordered task IDs for j/k navigation
+  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
+  useRegisterTaskList(taskIds);
+
+  // Clicking a task sets focus AND toggles expand/collapse
   const handleToggle = useCallback((id: string) => {
+    setFocusedTaskId(id);
     setExpandedTaskId((prev) => (prev === id ? null : id));
-  }, []);
+  }, [setFocusedTaskId]);
 
   if (isLoading) {
     return (
