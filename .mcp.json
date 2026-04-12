@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "todo": {
+      "command": "node",
+      "args": ["packages/mcp/dist/index.js"],
+      "env": {
+        "SQLITE_PATH": "packages/db/local.db"
+      }
+    }
+  }
+}

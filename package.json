@@ -7,6 +7,9 @@
     "db:generate": "pnpm --filter @todo/db generate",
     "predb:migrate": "cp packages/db/local.db packages/db/local.db.bak 2>/dev/null || true",
     "db:migrate": "dotenv -e packages/web/.env.local -- pnpm --filter @todo/db migrate",
+    "db:seed": "dotenv -e packages/web/.env.local -- pnpm --filter @todo/db seed",
+    "e2e": "pnpm --filter @todo/web e2e",
+    "e2e:ui": "pnpm --filter @todo/web e2e:ui",
     "format": "prettier --write ."
   },
   "devDependencies": {

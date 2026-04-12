@@ -11,13 +11,16 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
     "@modelcontextprotocol/sdk": "^1.11.0",
     "@todo/db": "workspace:*",
     "@todo/shared": "workspace:*",
-    "nanoid": "^5.1.5",
-    "zod": "^3.24.0"
+    "drizzle-orm": "catalog:",
+    "nanoid": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   }
 }

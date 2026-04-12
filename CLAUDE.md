@@ -9,12 +9,18 @@ pnpm dev          # Start Next.js dev server (web) — once packages/web exists
 pnpm build        # Build web + mcp packages
 pnpm format       # Run Prettier across all files
 
-# Database (once packages/db exists)
+# Database
 pnpm db:generate  # drizzle-kit generate migrations
 pnpm db:migrate   # drizzle-kit apply migrations
+pnpm db:seed      # populate local.db with dev sample data (clears existing data)
 ```
 
-No test runner is configured yet. The PLAN.md verification checklist (section "Verification") is the current acceptance test.
+```bash
+pnpm e2e        # Run Playwright E2E tests (headless, reuses running dev server)
+pnpm e2e:ui     # Open Playwright UI for interactive test runs
+```
+
+Tests live in `packages/web/e2e/`. The dev server must be running (or `pnpm e2e` will start it automatically).
 
 ## Architecture
 
@@ -58,8 +64,18 @@ Three tables: `areas` → `projects` (area_id FK) → `tasks` (project_id / area
 | `TURSO_URL` | db, mcp | Turso database URL |
 | `TURSO_AUTH_TOKEN` | db, mcp | Turso auth token |
 | `NEXT_PUBLIC_AUTH_TOKEN` | web (proxy + browser client) | Bearer token for REST API |
+| `ANTHROPIC_API_KEY` | mcp | Required for `plan_project` / `apply_project_plan` architect tools |
+| `ARCHITECT_MODEL` | mcp | Override Claude model for architect tools (default: `claude-sonnet-4-5`) |
 
 Local dev uses a SQLite file (`better-sqlite3`) when `TURSO_URL` is absent.
+
+### Deployment
+
+- **Production URL:** https://todo.erikrole.com
+- **Vercel project:** `erikroles-projects/todo`
+- **Deploy:** `vercel --prod` from repo root
+- **Env vars:** `vercel env ls production` / `vercel env pull`
+- **DB:** Turso `todo-prod` (libsql://todo-prod-erikrole.aws-us-east-1.turso.io)
 
 ### Code style
 

@@ -7,3 +7,7 @@ dist/
 .DS_Store
 *.tsbuildinfo
 .vercel
+.superpowers/
+playwright-report/
+test-results/
+.claude/settings.local.json
