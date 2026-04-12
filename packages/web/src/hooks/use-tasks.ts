@@ -72,11 +72,23 @@ export function useCompleteTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.post<Task>(`/api/tasks/${id}/complete`, {}),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["tasks"] });
+      const snapshots = qc.getQueriesData<Task[]>({ queryKey: ["tasks"] });
+      const now = new Date().toISOString();
+      qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, isCompleted: true, completedAt: now } : t)),
+      );
+      return { snapshots };
+    },
+    onError: (_err, _id, ctx) => {
+      ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
+      notify.error("Failed to complete task");
+    },
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["task", id] });
     },
-    onError: (err) => notify.error("Failed to complete task", err),
   });
 }
 
@@ -84,11 +96,22 @@ export function useUncompleteTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.post<Task>(`/api/tasks/${id}/uncomplete`, {}),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["tasks"] });
+      const snapshots = qc.getQueriesData<Task[]>({ queryKey: ["tasks"] });
+      qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) =>
+        old?.map((t) => (t.id === id ? { ...t, isCompleted: false, completedAt: null } : t)),
+      );
+      return { snapshots };
+    },
+    onError: (_err, _id, ctx) => {
+      ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
+      notify.error("Failed to undo completion");
+    },
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["task", id] });
     },
-    onError: (err) => notify.error("Failed to undo completion", err),
   });
 }
 

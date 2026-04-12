@@ -142,13 +142,18 @@ export const TaskItem = memo(function TaskItem({
 
   function handleComplete() {
     setCompleting(true);
-    setTimeout(() => {
-      completeTask.mutate(task.id, {
-        onSuccess: () => notify.undoable("Task completed", () => {
-          uncompleteTask.mutate(task.id);
-        }),
-      });
-    }, 320);
+    completeTask.mutate(task.id, {
+      onSuccess: () => notify.undoable("Task completed", () => uncompleteTask.mutate(task.id)),
+      onError: () => setCompleting(false),
+    });
+  }
+
+  function handleUncomplete() {
+    setCompleting(true);
+    uncompleteTask.mutate(task.id, {
+      onSuccess: () => notify.undoable("Marked incomplete", () => completeTask.mutate(task.id)),
+      onError: () => setCompleting(false),
+    });
   }
 
   function save() {
@@ -182,7 +187,12 @@ export const TaskItem = memo(function TaskItem({
               layout
               initial={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{
+                opacity: { duration: 0.18, ease: "easeOut" },
+                height: { duration: 0.22, delay: 0.12, ease: [0.4, 0, 0.2, 1] },
+                marginTop: { duration: 0.22, delay: 0.12 },
+                marginBottom: { duration: 0.22, delay: 0.12 },
+              }}
               style={{ ...dragStyle, opacity: isDragging ? 0.3 : 1 }}
               className={cn(
                 "transition-[border-color,background-color,box-shadow,border-radius] duration-150",
@@ -213,6 +223,8 @@ export const TaskItem = memo(function TaskItem({
                   <TaskCheckbox
                     checked={task.isCompleted}
                     onComplete={handleComplete}
+                    onUncomplete={handleUncomplete}
+                    completing={completing}
                     disabled={completing}
                   />
                 </div>
@@ -234,7 +246,7 @@ export const TaskItem = memo(function TaskItem({
                       className={cn(
                         "text-sm leading-snug tracking-[-0.006em]",
                         task.isCompleted
-                          ? "line-through text-muted-foreground/40"
+                          ? "text-muted-foreground/40"
                           : task.isCancelled
                             ? "line-through text-muted-foreground/25"
                             : "text-foreground",
@@ -242,7 +254,7 @@ export const TaskItem = memo(function TaskItem({
                     >
                       {task.title}
                     </span>
-                    {((showWhenDate && task.whenDate) || task.scheduledTime || task.notes || (showCompletedTime && task.completedAt)) && (
+                    {((showWhenDate && task.whenDate) || task.scheduledTime || task.notes) && (
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {showWhenDate && task.whenDate && (
                           <span className="text-[11px] text-muted-foreground/50 font-mono">
@@ -255,14 +267,6 @@ export const TaskItem = memo(function TaskItem({
                             {fmtTime(task.scheduledTime)}
                           </span>
                         )}
-                        {showCompletedTime && task.completedAt && (
-                          <span className="text-[11px] text-muted-foreground/30 font-mono">
-                            {new Date(task.completedAt).toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        )}
                         {task.notes && (
                           <span className="text-[11px] text-muted-foreground/30">·</span>
                         )}
@@ -271,9 +275,18 @@ export const TaskItem = memo(function TaskItem({
                   </div>
                 )}
 
-                {!isExpanded && task.deadline && (
+                {!isExpanded && (task.isCompleted ? (showCompletedTime && !!task.completedAt) : !!task.deadline) && (
                   <div className="ml-auto shrink-0 self-center">
-                    <DeadlineBadge deadline={task.deadline} />
+                    {showCompletedTime && task.isCompleted && task.completedAt ? (
+                      <span className="text-[10px] font-mono text-muted-foreground/30">
+                        {new Date(task.completedAt).toLocaleTimeString("en-US", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    ) : task.deadline ? (
+                      <DeadlineBadge deadline={task.deadline} />
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -367,7 +380,9 @@ export const TaskItem = memo(function TaskItem({
               </ContextMenuSub>
             )}
             <ContextMenuSeparator />
-            <ContextMenuItem onSelect={handleComplete}>Complete</ContextMenuItem>
+            <ContextMenuItem onSelect={task.isCompleted ? handleUncomplete : handleComplete}>
+              {task.isCompleted ? "Incomplete" : "Complete"}
+            </ContextMenuItem>
             <ContextMenuItem
               onSelect={() => updateTask.mutate({ id: task.id, isCancelled: !task.isCancelled })}
             >
@@ -740,7 +755,7 @@ function ExpandedPanel({
                 <span
                   className={cn(
                     "text-xs flex-1",
-                    sub.isCompleted ? "line-through text-muted-foreground/40" : "text-foreground/80",
+                    sub.isCompleted ? "text-muted-foreground/40" : "text-foreground/80",
                   )}
                 >
                   {sub.title}
