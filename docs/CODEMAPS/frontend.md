@@ -1,11 +1,11 @@
-<!-- Generated: 2026-04-12 | Files scanned: 98 | Token estimate: ~800 -->
+<!-- Generated: 2026-04-12 | Updated: 2026-04-12 (keyboard shortcuts) | Files scanned: 98 -->
 # Frontend
 
 ## Page Tree (`packages/web/src/app/`)
 
 ```
 layout.tsx              Root — fonts, Providers
-providers.tsx           QueryClient, ThemeProvider, CommandPalette, Toaster
+providers.tsx           QueryClient, ThemeProvider, KeyboardProvider, CommandPalette, Toaster
 page.tsx                / → redirect to /inbox
 
 (views)/layout.tsx      Shell with AppSidebar + TaskDndProvider
@@ -17,24 +17,27 @@ page.tsx                / → redirect to /inbox
 (views)/trash/          Soft-deleted tasks
 (views)/project/[id]/   Project page — sections + tasks + notes
 (views)/area/[id]/      Area page — projects grid + loose tasks + notes
+(views)/settings/shortcuts/  Keyboard shortcut rebinding UI
 ```
 
 ## Component Hierarchy
 
 ```
-AppSidebar (sidebar.tsx, 614 lines)
+AppSidebar (sidebar.tsx, ~624 lines)
   ├── NAV_ITEMS (Inbox/Today/Upcoming/Someday/Logbook/Trash)
   ├── AreaItem[]            ← per-area collapsible with context menu (CRUD)
   │   └── ProjectItem[]     ← sub-projects with context menu (rename/delete)
-  └── ProjectItem[]         ← top-level standalone projects
-      └── ProjectItem[]     ← sub-projects (1 level max)
+  ├── ProjectItem[]         ← top-level standalone projects
+  │   └── ProjectItem[]     ← sub-projects (1 level max)
+  └── SidebarFooter         ← Settings (Keyboard Shortcuts) link + ThemeToggle
 
 TaskDndProvider (task-dnd-provider.tsx)
   └── DndContext            ← @dnd-kit global drag handler
       └── TaskList (task-list.tsx)
-          ├── TaskItem[]  (task-item.tsx, 784 lines)
+          ├── TaskItem[]  (task-item.tsx, ~794 lines)
           │   ├── TaskCheckbox
           │   ├── ContextMenu (move to view/project/section, complete, delete)
+          │   ├── data-task-id / data-focused attrs  ← keyboard focus ring
           │   └── ExpandedPanel (inline expanded detail)
           │       ├── Notes textarea (auto-save on blur)
           │       ├── Date picker (Popover + Calendar)
@@ -43,14 +46,18 @@ TaskDndProvider (task-dnd-provider.tsx)
           │       ├── Recurrence picker (Popover — Daily/Weekly/Monthly/Yearly)
           │       ├── Subtask list + inline add
           │       └── Delete button
-          └── TaskQuickAdd (task-quick-add.tsx)
+          └── TaskQuickAdd (task-quick-add.tsx)  ← exposes focus() handle via forwardRef
               └── NLP parse preview chips (date, time, project, deadline)
 
 SectionBlock (section-block.tsx)
   └── @dnd-kit/sortable — section drag reorder within project page
 
-CommandPalette (command-palette.tsx)  ← Cmd+K
+CommandPalette (command-palette.tsx)  ← Cmd+K (via keyboard system)
   └── CommandDialog → navigate views/projects/areas OR create task with NLP
+
+KeyboardProvider (components/keyboard/keyboard-provider.tsx)  ← wraps all views
+  ├── ShortcutsOverlay (shortcuts-overlay.tsx)  ← ? quick-reference modal
+  └── useShortcutAction / useRegisterTaskList / useFocusedTask hooks
 ```
 
 ## State Management
@@ -84,6 +91,7 @@ Mutations invalidate parent query keys on success. Optimistic updates used for s
 - `dates.ts` — `formatWhenDate`, `fmtTime`, `deadlineUrgency`, `toLocalDateStr`, `parseNaturalDate`
 - `fetch.ts` — `api` object with typed `.get/.post/.patch/.delete`
 - `toast.ts` — `notify.success / notify.error / notify.undoable`
+- `keyboard/shortcut-config.ts` — `SHORTCUT_DEFS` (20 shortcuts), `eventToKey`, `matchesKey`, `loadOverrides`, `saveOverrides`, `formatKeyParts`; localStorage key: `todo-keyboard-shortcuts`
 
 ## DnD Drop ID Convention
 

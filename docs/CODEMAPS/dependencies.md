@@ -25,7 +25,8 @@
 | `sonner` | Toast notifications |
 | `drizzle-orm` + `@libsql/client` | DB access (same driver as `packages/db`) |
 | `radix-ui` | Headless primitives (via shadcn/ui) |
-| `@hugeicons/react` | Icon set |
+| `lucide-react` | Icon set (sidebar, keyboard settings UI) |
+| `@hugeicons/react` | Extended icon set |
 
 ### `packages/mcp`
 

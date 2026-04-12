@@ -26,7 +26,7 @@ POST   /api/sections         → create section
 PATCH  /api/sections/[id]    → update section (title, position, isCollapsed)
 DELETE /api/sections/[id]    → delete section (unassigns tasks, doesn't delete)
 
-GET    /api/tasks            → list tasks (?view=inbox|today|upcoming|someday|logbook|all, ?projectId=, ?areaId=)
+GET    /api/tasks            → list tasks (?filter=inbox|today|upcoming|someday|logbook|completed|trash|all, ?projectId=, ?areaId=)
 POST   /api/tasks            → create task
 GET    /api/tasks/[id]       → get task + subtasks
 PATCH  /api/tasks/[id]       → update task
