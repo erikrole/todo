@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect, useRef } from "react";
+import { memo, useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
 import type { Task, Section } from "@todo/shared";
@@ -21,10 +21,13 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
+import { parseTaskInput } from "@/lib/parse-task";
 import { useCompleteTask, useCreateTask, useDeleteTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
 import { notify } from "@/lib/toast";
-import { Calendar, Clock, Flag, ListTree, Plus, Repeat2, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Flag, ListTree, Plus, Repeat2, Trash2, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface TaskItemProps {
   task: Task;
@@ -83,6 +86,7 @@ export const TaskItem = memo(function TaskItem({
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
   const titleRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setTitle(task.title);
@@ -95,10 +99,32 @@ export const TaskItem = memo(function TaskItem({
     return () => clearTimeout(timer);
   }, [isExpanded]);
 
+  // Close on click outside, but not when clicking inside a Radix portal (context menu, popover)
+  useEffect(() => {
+    if (!isExpanded) return;
+    function handleMouseDown(e: MouseEvent) {
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if ((target as Element).closest?.("[data-radix-popper-content-wrapper]")) return;
+      onToggle(task.id);
+    }
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [isExpanded, onToggle, task.id]);
+
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     data: { task },
   });
+
+  // Combine dnd ref and containerRef
+  const setRefs = useCallback(
+    (el: HTMLElement | null) => {
+      setNodeRef(el);
+      (containerRef as React.MutableRefObject<HTMLElement | null>).current = el;
+    },
+    [setNodeRef],
+  );
 
   const dragStyle = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -118,8 +144,22 @@ export const TaskItem = memo(function TaskItem({
   function save() {
     const trimmed = title.trim();
     if (!trimmed) { setTitle(task.title); return; }
-    if (trimmed === task.title && notes === (task.notes ?? "")) return;
-    updateTask.mutate({ id: task.id, title: trimmed, notes: notes || null });
+
+    const parsed = parseTaskInput(trimmed, activeProjects);
+    const cleanTitle = parsed.title || trimmed;
+
+    if (cleanTitle === task.title && notes === (task.notes ?? "") && !parsed.whenDate && !parsed.timeOfDay && !parsed.deadline && !parsed.projectId && !parsed.isSomeday) return;
+
+    // Always update title + notes; only apply parsed fields when tokens were found
+    const patch: Parameters<typeof updateTask.mutate>[0] = { id: task.id, title: cleanTitle, notes: notes || null };
+    if (parsed.whenDate) patch.whenDate = parsed.whenDate;
+    if (parsed.timeOfDay) patch.timeOfDay = parsed.timeOfDay;
+    if (parsed.deadline) patch.deadline = parsed.deadline;
+    if (parsed.projectId) patch.projectId = parsed.projectId;
+    if (parsed.isSomeday) patch.isSomeday = parsed.isSomeday;
+
+    if (cleanTitle !== trimmed) setTitle(cleanTitle);
+    updateTask.mutate(patch);
   }
 
   return (
@@ -128,7 +168,7 @@ export const TaskItem = memo(function TaskItem({
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <motion.div
-              ref={(el) => setNodeRef(el as HTMLElement | null)}
+              ref={setRefs}
               layout
               initial={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
@@ -166,6 +206,7 @@ export const TaskItem = memo(function TaskItem({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     onBlur={save}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); save(); titleRef.current?.blur(); } }}
                     onClick={(e) => e.stopPropagation()}
                     className="flex-1 min-w-0 bg-transparent text-sm font-medium outline-none text-foreground"
                     placeholder="Task title"
@@ -240,6 +281,9 @@ export const TaskItem = memo(function TaskItem({
                 onSuccess: () => notify.undoable("Task deleted", () => restoreTask.mutate(task.id)),
               })}
                       onClearScheduledTime={() => updateTask.mutate({ id: task.id, scheduledTime: null })}
+                      onDateChange={(date) => updateTask.mutate({ id: task.id, whenDate: date, isSomeday: false })}
+                      onDeadlineChange={(date) => updateTask.mutate({ id: task.id, deadline: date })}
+                      onTimeOfDayChange={(tod) => updateTask.mutate({ id: task.id, timeOfDay: tod })}
                     />
                   </motion.div>
                 )}
@@ -324,6 +368,14 @@ export const TaskItem = memo(function TaskItem({
 });
 
 // Separate component so useTask / useCreateTask only fire when a task is expanded
+const TIME_OF_DAY_OPTIONS = [
+  { value: "morning", label: "Morning" },
+  { value: "day", label: "Day" },
+  { value: "night", label: "Evening" },
+] as const;
+
+type TimeOfDay = "morning" | "day" | "night";
+
 function ExpandedPanel({
   task,
   notes,
@@ -331,6 +383,9 @@ function ExpandedPanel({
   onSave,
   onDelete,
   onClearScheduledTime,
+  onDateChange,
+  onDeadlineChange,
+  onTimeOfDayChange,
 }: {
   task: Task;
   notes: string;
@@ -338,6 +393,9 @@ function ExpandedPanel({
   onSave: () => void;
   onDelete: () => void;
   onClearScheduledTime: () => void;
+  onDateChange: (date: string | null) => void;
+  onDeadlineChange: (date: string | null) => void;
+  onTimeOfDayChange: (tod: TimeOfDay | null) => void;
 }) {
   const { data: fullTask } = useTask(task.id);
   const createTask = useCreateTask();
@@ -347,6 +405,9 @@ function ExpandedPanel({
   const deadlineDays = task.deadline ? daysUntil(task.deadline) : null;
   const urgency = task.deadline ? deadlineUrgency(task.deadline) : null;
   const hasMetadata = task.whenDate || task.scheduledTime || task.deadline || task.recurrenceType;
+
+  const [dateOpen, setDateOpen] = useState(false);
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
 
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
@@ -390,16 +451,66 @@ function ExpandedPanel({
         className="flex items-center gap-3 py-2 text-xs text-muted-foreground flex-wrap"
         style={{ paddingLeft: "3.25rem", paddingRight: "1rem" }}
       >
-        {task.whenDate && (
-          <span className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-primary/60" />
-            <span className="text-foreground/70">{formatWhenDate(task.whenDate)}</span>
-            {task.timeOfDay && (
-              <span className="text-muted-foreground/50">
-                · {task.timeOfDay.charAt(0).toUpperCase() + task.timeOfDay.slice(1)}
-              </span>
+        {/* When date — picker */}
+        <Popover open={dateOpen} onOpenChange={setDateOpen}>
+          <PopoverTrigger asChild>
+            <button className={cn(
+              "flex items-center gap-1.5 transition-colors rounded px-1 -mx-1",
+              task.whenDate
+                ? "text-foreground/70 hover:text-foreground"
+                : "text-muted-foreground/30 hover:text-muted-foreground/60",
+            )}>
+              <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
+              <span>{task.whenDate ? formatWhenDate(task.whenDate) : "Set date"}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={task.whenDate ? new Date(task.whenDate + "T00:00:00") : undefined}
+              onSelect={(date) => {
+                if (date) {
+                  const y = date.getFullYear();
+                  const m = String(date.getMonth() + 1).padStart(2, "0");
+                  const d = String(date.getDate()).padStart(2, "0");
+                  onDateChange(`${y}-${m}-${d}`);
+                } else {
+                  onDateChange(null);
+                }
+                setDateOpen(false);
+              }}
+            />
+            {task.whenDate && (
+              <div className="border-t border-border/50 px-3 pb-3 pt-2">
+                <button
+                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 hover:text-destructive/70 transition-colors"
+                  onClick={() => { onDateChange(null); setDateOpen(false); }}
+                >
+                  <X className="h-3 w-3" /> Clear date
+                </button>
+              </div>
             )}
-          </span>
+          </PopoverContent>
+        </Popover>
+
+        {/* Time-of-day segmented control — only when a date is set */}
+        {task.whenDate && (
+          <div className="flex items-center gap-0.5 rounded-md border border-border/50 p-0.5">
+            {TIME_OF_DAY_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => onTimeOfDayChange(task.timeOfDay === value ? null : value)}
+                className={cn(
+                  "px-1.5 py-0.5 text-[10px] rounded transition-colors",
+                  task.timeOfDay === value
+                    ? "bg-primary/15 text-primary font-medium"
+                    : "text-muted-foreground/40 hover:text-muted-foreground/70",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         )}
 
         {task.scheduledTime && (
@@ -414,26 +525,64 @@ function ExpandedPanel({
           </button>
         )}
 
-        {task.deadline && deadlineDays !== null && (
-          <span
-            className={cn(
-              "flex items-center gap-1.5",
-              urgency === "overdue" && "text-destructive",
-              urgency === "soon" && "text-amber-500 dark:text-amber-400",
-              urgency === "normal" && "text-muted-foreground",
+        {/* Deadline — picker */}
+        <Popover open={deadlineOpen} onOpenChange={setDeadlineOpen}>
+          <PopoverTrigger asChild>
+            <button className={cn(
+              "flex items-center gap-1.5 transition-colors rounded px-1 -mx-1",
+              task.deadline
+                ? urgency === "overdue"
+                  ? "text-destructive"
+                  : urgency === "soon"
+                    ? "text-amber-500 dark:text-amber-400"
+                    : "text-muted-foreground"
+                : "text-muted-foreground/30 hover:text-muted-foreground/60",
+            )}>
+              <Flag className="h-3.5 w-3.5 shrink-0" />
+              {task.deadline && deadlineDays !== null ? (
+                <>
+                  <span>Deadline: {formatWhenDate(task.deadline)}</span>
+                  <span className="text-muted-foreground/50">
+                    {deadlineDays < 0
+                      ? `· ${Math.abs(deadlineDays)}d overdue`
+                      : deadlineDays === 0
+                        ? "· today"
+                        : `· ${deadlineDays}d left`}
+                  </span>
+                </>
+              ) : (
+                <span>Set deadline</span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={task.deadline ? new Date(task.deadline + "T00:00:00") : undefined}
+              onSelect={(date) => {
+                if (date) {
+                  const y = date.getFullYear();
+                  const m = String(date.getMonth() + 1).padStart(2, "0");
+                  const d = String(date.getDate()).padStart(2, "0");
+                  onDeadlineChange(`${y}-${m}-${d}`);
+                } else {
+                  onDeadlineChange(null);
+                }
+                setDeadlineOpen(false);
+              }}
+            />
+            {task.deadline && (
+              <div className="border-t border-border/50 px-3 pb-3 pt-2">
+                <button
+                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 hover:text-destructive/70 transition-colors"
+                  onClick={() => { onDeadlineChange(null); setDeadlineOpen(false); }}
+                >
+                  <X className="h-3 w-3" /> Clear deadline
+                </button>
+              </div>
             )}
-          >
-            <Flag className="h-3.5 w-3.5" />
-            <span>Deadline: {formatWhenDate(task.deadline)}</span>
-            <span className="text-muted-foreground/50">
-              {deadlineDays < 0
-                ? `· ${Math.abs(deadlineDays)}d overdue`
-                : deadlineDays === 0
-                  ? "· today"
-                  : `· ${deadlineDays}d left`}
-            </span>
-          </span>
-        )}
+          </PopoverContent>
+        </Popover>
 
         {task.recurrenceType && (
           <span className="flex items-center gap-1.5">
@@ -443,7 +592,7 @@ function ExpandedPanel({
         )}
 
         {!hasMetadata && !subtasks.length && (
-          <span className="text-muted-foreground/30">No date set</span>
+          <span className="text-muted-foreground/30 sr-only">No date set</span>
         )}
 
         <div className="ml-auto">
