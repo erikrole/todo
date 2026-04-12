@@ -81,9 +81,9 @@ export function useCompleteTask() {
       );
       return { snapshots };
     },
-    onError: (_err, _id, ctx) => {
+    onError: (err, _id, ctx) => {
       ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
-      notify.error("Failed to complete task");
+      notify.error("Failed to complete task", err);
     },
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
@@ -104,9 +104,9 @@ export function useUncompleteTask() {
       );
       return { snapshots };
     },
-    onError: (_err, _id, ctx) => {
+    onError: (err, _id, ctx) => {
       ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
-      notify.error("Failed to undo completion");
+      notify.error("Failed to undo completion", err);
     },
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });

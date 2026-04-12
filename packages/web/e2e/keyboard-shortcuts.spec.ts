@@ -24,14 +24,14 @@ test.describe("Keyboard shortcuts — navigation", () => {
     // Meta+1 is intercepted by Chromium as a tab-switch shortcut; dispatch directly to document
     await page.goto("/inbox");
     // Wait for the page to hydrate and register shortcuts before dispatching
-    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
     await dispatchKey(page, "1", { metaKey: true });
     await expect(page).toHaveURL(/\/today/);
   });
 
   test("Cmd+3 navigates to Upcoming", async ({ page }) => {
     await page.goto("/inbox");
-    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
     await page.keyboard.press("Meta+3");
     await expect(page).toHaveURL(/\/upcoming/);
   });
@@ -40,14 +40,15 @@ test.describe("Keyboard shortcuts — navigation", () => {
 test.describe("Keyboard shortcuts — task navigation", () => {
   test("J focuses the first task, second J moves to the next", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 
     // Create two tasks to navigate between
     const t1 = `Nav task A ${Date.now()}`;
     const t2 = `Nav task B ${Date.now()}`;
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.keyboard.press("n");
     await page.getByPlaceholder(/new task/i).fill(t1);
     await page.keyboard.press("Enter");
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.keyboard.press("n");
     await page.getByPlaceholder(/new task/i).fill(t2);
     await page.keyboard.press("Enter");
 
@@ -64,9 +65,10 @@ test.describe("Keyboard shortcuts — task navigation", () => {
 
   test("K moves focus backwards", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 
     const title = `Nav K test ${Date.now()}`;
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.keyboard.press("n");
     await page.getByPlaceholder(/new task/i).fill(title);
     await page.keyboard.press("Enter");
 
@@ -81,9 +83,10 @@ test.describe("Keyboard shortcuts — task navigation", () => {
 test.describe("Keyboard shortcuts — task actions", () => {
   test("C completes the focused task", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 
     const title = `Complete via C ${Date.now()}`;
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.keyboard.press("n");
     await page.getByPlaceholder(/new task/i).fill(title);
     await page.keyboard.press("Enter");
     await expect(page.getByText(title)).toBeVisible();
@@ -104,9 +107,10 @@ test.describe("Keyboard shortcuts — task actions", () => {
 
   test("T moves focused task to Today", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 
     const title = `Move to Today ${Date.now()}`;
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.keyboard.press("n");
     await page.getByPlaceholder(/new task/i).fill(title);
     await page.keyboard.press("Enter");
 
@@ -122,7 +126,7 @@ test.describe("Keyboard shortcuts — new task", () => {
   test("N opens the quick-add input", async ({ page }) => {
     await page.goto("/inbox");
     // Wait for TaskList to mount and register shortcuts
-    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
     await page.keyboard.press("n");
     await expect(page.getByPlaceholder(/new task/i)).toBeVisible();
     await expect(page.getByPlaceholder(/new task/i)).toBeFocused();
@@ -133,7 +137,7 @@ test.describe("Keyboard shortcuts — overlay", () => {
   test("? opens the shortcuts reference overlay", async ({ page }) => {
     await page.goto("/inbox");
     // Wait for page to fully hydrate before pressing bare keys
-    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
     await page.keyboard.press("?");
     await expect(page.getByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
     await expect(page.getByText("Go to Today")).toBeVisible();
@@ -141,7 +145,7 @@ test.describe("Keyboard shortcuts — overlay", () => {
 
   test("Esc closes the overlay", async ({ page }) => {
     await page.goto("/inbox");
-    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
     await page.keyboard.press("?");
     await expect(page.getByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
     await page.keyboard.press("Escape");

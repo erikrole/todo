@@ -1,17 +1,17 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Inbox", () => {
-  test("page loads with quick-add button", async ({ page }) => {
+  test("page loads", async ({ page }) => {
     await page.goto("/inbox");
     await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
   });
 
   test("quick-add creates a task", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 
     const title = `Test task ${Date.now()}`;
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.keyboard.press("n");
     await page.getByPlaceholder(/new task/i).fill(title);
     await page.keyboard.press("Enter");
 
@@ -20,10 +20,11 @@ test.describe("Inbox", () => {
 
   test("completing a task removes it from inbox", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 
     // Create a fresh task so we have a known, unique target
     const title = `Complete me ${Date.now()}`;
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.keyboard.press("n");
     await page.getByPlaceholder(/new task/i).fill(title);
     await page.keyboard.press("Enter");
     await expect(page.getByText(title)).toBeVisible();
