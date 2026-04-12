@@ -119,3 +119,33 @@ test.describe("Keyboard shortcuts — overlay", () => {
     await expect(page.getByText("Keyboard Shortcuts")).not.toBeVisible({ timeout: 1000 });
   });
 });
+
+test.describe("Keyboard shortcuts — settings page", () => {
+  test("settings page loads and lists shortcuts", async ({ page }) => {
+    await page.goto("/settings/shortcuts");
+    await expect(page.getByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
+    await expect(page.getByText("Go to Today")).toBeVisible();
+    await expect(page.getByText("Complete task")).toBeVisible();
+  });
+
+  test("toggle disables a shortcut", async ({ page }) => {
+    await page.evaluate(() => localStorage.clear());
+    await page.goto("/settings/shortcuts");
+
+    // Find the toggle for "Go to Today" and click it (turns off)
+    const todayRow = page.locator("tr").filter({ hasText: "Go to Today" });
+    const toggle = todayRow.getByRole("switch");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+
+    // Verify shortcut no longer navigates
+    await page.goto("/inbox");
+    await page.keyboard.press("Meta+1");
+    await expect(page).toHaveURL(/\/inbox/); // stayed on inbox
+
+    // Re-enable for cleanup
+    await page.goto("/settings/shortcuts");
+    const todayRow2 = page.locator("tr").filter({ hasText: "Go to Today" });
+    await todayRow2.getByRole("switch").click();
+  });
+});
