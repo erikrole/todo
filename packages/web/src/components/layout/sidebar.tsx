@@ -29,7 +29,7 @@ import { useAreas, useCreateArea, useUpdateArea, useDeleteArea } from "@/hooks/u
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
-import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus } from "lucide-react";
+import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus, Settings } from "lucide-react";
 import type { AreaWithCounts, ProjectWithCounts } from "@todo/shared";
 
 const NAV_ITEMS = [
@@ -606,7 +606,17 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-3 flex flex-col gap-1">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link href="/settings/shortcuts">
+                <Settings className="h-4 w-4" />
+                <span>Keyboard Shortcuts</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
         <ThemeToggle />
       </SidebarFooter>
     </Sidebar>
