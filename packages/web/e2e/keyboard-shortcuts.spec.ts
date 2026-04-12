@@ -60,3 +60,36 @@ test.describe("Keyboard shortcuts — task navigation", () => {
     await expect(firstTask).toHaveAttribute("data-focused", "true");
   });
 });
+
+test.describe("Keyboard shortcuts — task actions", () => {
+  test("C completes the focused task", async ({ page }) => {
+    await page.goto("/inbox");
+
+    const title = `Complete via C ${Date.now()}`;
+    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByPlaceholder(/new task/i).fill(title);
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(title)).toBeVisible();
+
+    // Focus the task with J, then complete with C
+    await page.keyboard.press("j");
+    await page.keyboard.press("c");
+
+    await expect(page.getByText(title)).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test("T moves focused task to Today", async ({ page }) => {
+    await page.goto("/inbox");
+
+    const title = `Move to Today ${Date.now()}`;
+    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByPlaceholder(/new task/i).fill(title);
+    await page.keyboard.press("Enter");
+
+    await page.keyboard.press("j");
+    await page.keyboard.press("t");
+
+    // Task should leave inbox
+    await expect(page.getByText(title)).not.toBeVisible({ timeout: 2000 });
+  });
+});
