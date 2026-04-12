@@ -31,7 +31,8 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
   { id: "task-edit",         defaultKey: "e",         label: "Edit title",            category: "task-actions", description: "Focuses the title input" },
   { id: "task-move-today",   defaultKey: "t",         label: "Move → Today",          category: "task-actions" },
   { id: "task-move-inbox",   defaultKey: "i",         label: "Move → Inbox",          category: "task-actions" },
-  { id: "task-move-someday", defaultKey: "s",         label: "Move → Someday",        category: "task-actions" },
+  { id: "task-move-someday",    defaultKey: "s",         label: "Move → Someday",        category: "task-actions" },
+  { id: "task-move-next-week", defaultKey: "w",         label: "Move → Next Week",      category: "task-actions" },
   // App
   { id: "show-shortcuts",    defaultKey: "?",         label: "Show shortcuts",        category: "app" },
   { id: "undo",              defaultKey: "Meta+z",    label: "Undo",                  category: "app" },

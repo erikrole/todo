@@ -30,6 +30,12 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function nextWeekStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toISOString().slice(0, 10);
+}
+
 export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, activeSections, emptyMessage }: TaskListProps) {
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const { data: allProjects = [] } = useProjects();
@@ -104,6 +110,18 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
     updateTask.mutate(
       { id, isSomeday: true, whenDate: null, timeOfDay: null },
       { onSuccess: () => notify.undoable("Moved to Someday", () => updateTask.mutate({ id, ...prev })) },
+    );
+  });
+
+  useShortcutAction("task-move-next-week", () => {
+    const id = focusedTaskId;
+    if (!id) return;
+    const focused = tasks.find((t) => t.id === id);
+    if (!focused) return;
+    const prev = { whenDate: focused.whenDate, timeOfDay: focused.timeOfDay, isSomeday: focused.isSomeday };
+    updateTask.mutate(
+      { id, whenDate: nextWeekStr(), timeOfDay: null, isSomeday: false },
+      { onSuccess: () => notify.undoable("Moved to Next Week", () => updateTask.mutate({ id, ...prev })) },
     );
   });
 

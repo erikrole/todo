@@ -52,6 +52,12 @@ function tomorrowStr() {
   return d.toISOString().slice(0, 10);
 }
 
+function nextWeekStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toISOString().slice(0, 10);
+}
+
 function daysUntil(date: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -312,6 +318,9 @@ export const TaskItem = memo(function TaskItem({
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => moveTask({ whenDate: tomorrowStr(), isSomeday: false }, "Moved to Upcoming")}>
               Move to Upcoming
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => moveTask({ whenDate: nextWeekStr(), isSomeday: false }, "Moved to Next Week")}>
+              Move to Next Week
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => moveTask({ isSomeday: true, whenDate: null, timeOfDay: null }, "Moved to Someday")}>
               Move to Someday

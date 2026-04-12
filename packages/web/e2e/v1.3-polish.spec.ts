@@ -56,3 +56,33 @@ test.describe("v1.3 — duplicate task", () => {
     await expect(page.getByText(title)).toHaveCount(2);
   });
 });
+
+test.describe("v1.3 — move to next week", () => {
+  test("W shortcut moves focused inbox task to 7 days from today", async ({ page }) => {
+    await page.goto("/inbox");
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+
+    const title = `MoveNextWeek ${Date.now()}`;
+    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByPlaceholder(/new task/i).fill(title);
+    await page.keyboard.press("Enter");
+
+    // Wait for the task to appear in the DOM (may be below fold)
+    const taskItem = page.locator("[data-task-id]").filter({ hasText: title });
+    await expect(taskItem).toBeAttached({ timeout: 5000 });
+    await taskItem.scrollIntoViewIfNeeded();
+    await expect(taskItem).toBeVisible();
+
+    // Navigate to the task with J and press W
+    const taskCount = await page.locator("[data-task-id]").count();
+    for (let i = 0; i < taskCount; i++) {
+      await page.keyboard.press("j");
+      if ((await taskItem.getAttribute("data-focused")) === "true") break;
+    }
+    await expect(taskItem).toHaveAttribute("data-focused", "true");
+    await page.keyboard.press("w");
+
+    // Task leaves inbox
+    await expect(page.getByText(title)).not.toBeVisible({ timeout: 3000 });
+  });
+});
