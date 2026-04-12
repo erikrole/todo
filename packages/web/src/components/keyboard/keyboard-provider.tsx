@@ -1,7 +1,7 @@
 // packages/web/src/components/keyboard/keyboard-provider.tsx
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   SHORTCUT_DEFS,
@@ -57,7 +57,7 @@ export function useRegisterTaskList(ids: string[]) {
 export function useShortcutAction(id: string, handler: () => void) {
   const { registerAction, unregisterAction } = useKeyboard();
   const handlerRef = useRef(handler);
-  useEffect(() => { handlerRef.current = handler; });
+  useLayoutEffect(() => { handlerRef.current = handler; });
   useEffect(() => {
     const stable = () => handlerRef.current();
     registerAction(id, stable);

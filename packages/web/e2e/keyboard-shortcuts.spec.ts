@@ -1,20 +1,37 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/** Dispatch a keydown event directly to the document, bypassing browser-level shortcut interception. */
+async function dispatchKey(page: Page, key: string, modifiers: { metaKey?: boolean } = {}) {
+  await page.evaluate(
+    ({ key, metaKey }: { key: string; metaKey: boolean }) => {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { key, metaKey, bubbles: true, cancelable: true }),
+      );
+    },
+    { key, metaKey: modifiers.metaKey ?? false },
+  );
+}
 
 test.describe("Keyboard shortcuts — navigation", () => {
   test("Cmd+2 navigates to Inbox", async ({ page }) => {
     await page.goto("/today");
+    await expect(page.getByRole("link", { name: "Inbox" })).toBeVisible();
     await page.keyboard.press("Meta+2");
     await expect(page).toHaveURL(/\/inbox/);
   });
 
   test("Cmd+1 navigates to Today", async ({ page }) => {
+    // Meta+1 is intercepted by Chromium as a tab-switch shortcut; dispatch directly to document
     await page.goto("/inbox");
-    await page.keyboard.press("Meta+1");
+    // Wait for the page to hydrate and register shortcuts before dispatching
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await dispatchKey(page, "1", { metaKey: true });
     await expect(page).toHaveURL(/\/today/);
   });
 
   test("Cmd+3 navigates to Upcoming", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
     await page.keyboard.press("Meta+3");
     await expect(page).toHaveURL(/\/upcoming/);
   });
@@ -71,8 +88,15 @@ test.describe("Keyboard shortcuts — task actions", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByText(title)).toBeVisible();
 
-    // Focus the task with J, then complete with C
-    await page.keyboard.press("j");
+    // Navigate with J until our specific task is focused (inbox may have other tasks from prior tests)
+    const taskItem = page.locator("[data-task-id]").filter({ hasText: title });
+    const taskCount = await page.locator("[data-task-id]").count();
+    for (let i = 0; i < taskCount; i++) {
+      await page.keyboard.press("j");
+      const focused = await taskItem.getAttribute("data-focused");
+      if (focused === "true") break;
+    }
+    await expect(taskItem).toHaveAttribute("data-focused", "true");
     await page.keyboard.press("c");
 
     await expect(page.getByText(title)).not.toBeVisible({ timeout: 3000 });
@@ -97,6 +121,8 @@ test.describe("Keyboard shortcuts — task actions", () => {
 test.describe("Keyboard shortcuts — new task", () => {
   test("N opens the quick-add input", async ({ page }) => {
     await page.goto("/inbox");
+    // Wait for TaskList to mount and register shortcuts
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
     await page.keyboard.press("n");
     await expect(page.getByPlaceholder(/new task/i)).toBeVisible();
     await expect(page.getByPlaceholder(/new task/i)).toBeFocused();
@@ -106,17 +132,22 @@ test.describe("Keyboard shortcuts — new task", () => {
 test.describe("Keyboard shortcuts — overlay", () => {
   test("? opens the shortcuts reference overlay", async ({ page }) => {
     await page.goto("/inbox");
+    // Wait for page to fully hydrate before pressing bare keys
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
     await page.keyboard.press("?");
-    await expect(page.getByText("Keyboard Shortcuts")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
     await expect(page.getByText("Go to Today")).toBeVisible();
   });
 
   test("Esc closes the overlay", async ({ page }) => {
     await page.goto("/inbox");
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
     await page.keyboard.press("?");
-    await expect(page.getByText("Keyboard Shortcuts")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByText("Keyboard Shortcuts")).not.toBeVisible({ timeout: 1000 });
+    await expect(page.getByRole("heading", { name: "Keyboard Shortcuts" })).not.toBeVisible({
+      timeout: 1000,
+    });
   });
 });
 
@@ -129,8 +160,11 @@ test.describe("Keyboard shortcuts — settings page", () => {
   });
 
   test("toggle disables a shortcut", async ({ page }) => {
-    await page.evaluate(() => localStorage.clear());
+    // Clear localStorage after navigating so we're on the right origin
     await page.goto("/settings/shortcuts");
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Keyboard Shortcuts" })).toBeVisible();
 
     // Find the toggle for "Go to Today" and click it (turns off)
     const todayRow = page.locator("tr").filter({ hasText: "Go to Today" });
@@ -138,9 +172,9 @@ test.describe("Keyboard shortcuts — settings page", () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-checked", "false");
 
-    // Verify shortcut no longer navigates
+    // Verify shortcut no longer navigates (use dispatchKey since Meta+1 is Chromium-intercepted)
     await page.goto("/inbox");
-    await page.keyboard.press("Meta+1");
+    await dispatchKey(page, "1", { metaKey: true });
     await expect(page).toHaveURL(/\/inbox/); // stayed on inbox
 
     // Re-enable for cleanup
