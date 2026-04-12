@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import type { Task, Section } from "@todo/shared";
 import { TaskItem } from "./task-item";
-import { TaskQuickAdd } from "./task-quick-add";
+import { TaskQuickAdd, TaskQuickAddHandle } from "./task-quick-add";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProjects } from "@/hooks/use-projects";
 import type { ProjectWithCounts } from "@todo/shared";
@@ -35,6 +35,7 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
   const { data: allProjects = [] } = useProjects();
   const activeProjects = allProjects.filter((p) => !p.isCompleted) as ProjectWithCounts[];
   const { focusedTaskId, setFocusedTaskId } = useFocusedTask();
+  const quickAddRef = useRef<TaskQuickAddHandle>(null);
 
   // Register ordered task IDs for j/k navigation
   const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
@@ -125,6 +126,10 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
     setExpandedTaskId(focusedTaskId);
   });
 
+  useShortcutAction("task-new", () => {
+    quickAddRef.current?.focus();
+  });
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2">
@@ -151,7 +156,7 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
           showWhenDate={showWhenDate}
         />
       ))}
-      <TaskQuickAdd defaults={quickAddDefaults} />
+      <TaskQuickAdd ref={quickAddRef} defaults={quickAddDefaults} />
     </div>
   );
 }

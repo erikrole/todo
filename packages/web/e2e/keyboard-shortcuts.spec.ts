@@ -93,3 +93,12 @@ test.describe("Keyboard shortcuts — task actions", () => {
     await expect(page.getByText(title)).not.toBeVisible({ timeout: 2000 });
   });
 });
+
+test.describe("Keyboard shortcuts — new task", () => {
+  test("N opens the quick-add input", async ({ page }) => {
+    await page.goto("/inbox");
+    await page.keyboard.press("n");
+    await expect(page.getByPlaceholder(/new task/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/new task/i)).toBeFocused();
+  });
+});

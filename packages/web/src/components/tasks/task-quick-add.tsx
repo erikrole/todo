@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import type { Task } from "@todo/shared";
 import { useCreateTask } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
@@ -14,12 +14,22 @@ interface TaskQuickAddProps {
   defaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId" | "sectionId">>;
 }
 
-export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
+export interface TaskQuickAddHandle {
+  focus: () => void;
+}
+
+export const TaskQuickAdd = forwardRef<TaskQuickAddHandle, TaskQuickAddProps>(
+  function TaskQuickAdd({ defaults }: TaskQuickAddProps, ref) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const submittedRef = useRef(false);
+
+  useImperativeHandle(ref, () => ({
+    focus: handleOpen,
+  }));
+
   const createTask = useCreateTask();
   const { data: projects = [] } = useProjects();
 
@@ -170,4 +180,5 @@ export function TaskQuickAdd({ defaults }: TaskQuickAddProps) {
       {error && <p className="text-xs text-destructive pl-6">{error}</p>}
     </form>
   );
-}
+},
+);
