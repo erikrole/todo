@@ -29,6 +29,20 @@ export function useTask(id: string) {
   });
 }
 
+export interface TaskCounts {
+  inbox: number;
+  today: number;
+  overdue: number;
+}
+
+export function useTaskCounts() {
+  return useQuery({
+    queryKey: ["task-counts"] as const,
+    queryFn: () => api.get<TaskCounts>("/api/tasks/counts"),
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
