@@ -14,3 +14,14 @@ test.describe("v1.3 — sidebar badges", () => {
     });
   });
 });
+
+test.describe("v1.3 — sidebar badges", () => {
+  test("inbox badge is visible when there are inbox tasks", async ({ page }) => {
+    await page.goto("/inbox");
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+
+    // Badge should appear next to Inbox in the sidebar
+    const inboxLink = page.getByRole("link", { name: /Inbox/ });
+    await expect(inboxLink.locator("span.tabular-nums")).toBeVisible();
+  });
+});

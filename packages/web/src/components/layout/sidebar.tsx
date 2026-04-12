@@ -27,6 +27,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAreas, useCreateArea, useUpdateArea, useDeleteArea } from "@/hooks/use-areas";
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
+import { useTaskCounts } from "@/hooks/use-tasks";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
 import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus, Settings } from "lucide-react";
@@ -464,6 +465,7 @@ export function AppSidebar() {
     newProjectSubmittedRef.current = false;
   }
 
+  const { data: counts } = useTaskCounts();
   const topLevelProjects = allProjects.filter((p) => !p.parentProjectId && !p.isCompleted);
   const subProjectMap = new Map<string, ProjectWithCounts[]>();
   for (const p of allProjects) {
@@ -487,27 +489,38 @@ export function AppSidebar() {
         {/* Main nav */}
         <SidebarGroup>
           <SidebarMenu>
-            {NAV_ITEMS.map(({ href, label, icon: Icon, dropId }) => (
-              <SidebarMenuItem key={href}>
-                {dropId ? (
-                  <DroppableZone id={dropId} className="w-full">
+            {NAV_ITEMS.map(({ href, label, icon: Icon, dropId }) => {
+              const badgeCount =
+                href === "/inbox" ? counts?.inbox :
+                href === "/today" ? counts?.today :
+                undefined;
+              const linkContent = (
+                <Link href={href} className="flex items-center gap-2 w-full">
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">{label}</span>
+                  {badgeCount != null && badgeCount > 0 && (
+                    <span className="text-[11px] tabular-nums text-muted-foreground/50 font-mono">
+                      {badgeCount}
+                    </span>
+                  )}
+                </Link>
+              );
+              return (
+                <SidebarMenuItem key={href}>
+                  {dropId ? (
+                    <DroppableZone id={dropId} className="w-full">
+                      <SidebarMenuButton asChild isActive={pathname === href}>
+                        {linkContent}
+                      </SidebarMenuButton>
+                    </DroppableZone>
+                  ) : (
                     <SidebarMenuButton asChild isActive={pathname === href}>
-                      <Link href={href}>
-                        <Icon className="h-4 w-4" />
-                        <span>{label}</span>
-                      </Link>
+                      {linkContent}
                     </SidebarMenuButton>
-                  </DroppableZone>
-                ) : (
-                  <SidebarMenuButton asChild isActive={pathname === href}>
-                    <Link href={href}>
-                      <Icon className="h-4 w-4" />
-                      <span>{label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                )}
-              </SidebarMenuItem>
-            ))}
+                  )}
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
 
