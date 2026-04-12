@@ -29,10 +29,9 @@ function loadCollapsed(): Record<string, boolean> {
 }
 
 export default function TodayPage() {
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const { data: activeTasks = [], isLoading } = useTasks("today");
-  const { data: completedTodayTasks = [] } = useTasks("completed_today");
-  const { data: overdueTasks = [] } = useTasks("overdue");
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: allTasks = [], isLoading } = useTasks("today_all");
+  const overdueTasks = allTasks.filter((t) => !t.isCompleted && t.whenDate !== null && t.whenDate < today);
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
 
@@ -46,22 +45,27 @@ export default function TodayPage() {
     });
   }
 
-  const totalForProgress = activeTasks.filter((t) => !t.isCancelled).length + completedTodayTasks.length;
-  const progressPct = totalForProgress > 0 ? (completedTodayTasks.length / totalForProgress) * 100 : 0;
+  const completedCount = allTasks.filter((t) => t.isCompleted && !t.isCancelled).length;
+  const totalForProgress = allTasks.filter((t) => !t.isCancelled).length;
+  const progressPct = totalForProgress > 0 ? (completedCount / totalForProgress) * 100 : 0;
 
   function tasksBySection(sectionId: TimeOfDay | null): Task[] {
-    return activeTasks
+    return allTasks
+      .filter((t) => t.isCompleted || (t.whenDate !== null && t.whenDate >= today))
       .filter((t) => (t.timeOfDay ?? null) === sectionId)
       .sort((a, b) => {
-        if (!a.scheduledTime && !b.scheduledTime) return 0;
-        if (!a.scheduledTime) return 1;
-        if (!b.scheduledTime) return -1;
-        return a.scheduledTime.localeCompare(b.scheduledTime);
+        // Active tasks before completed tasks
+        if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+        // Active: sort by scheduledTime ascending
+        if (!a.isCompleted) {
+          if (!a.scheduledTime && !b.scheduledTime) return 0;
+          if (!a.scheduledTime) return 1;
+          if (!b.scheduledTime) return -1;
+          return a.scheduledTime.localeCompare(b.scheduledTime);
+        }
+        // Completed: sort by completedAt descending (most recent first)
+        return (b.completedAt ?? "").localeCompare(a.completedAt ?? "");
       });
-  }
-
-  function completedBySection(sectionId: TimeOfDay | null): Task[] {
-    return completedTodayTasks.filter((t) => (t.timeOfDay ?? null) === sectionId);
   }
 
   return (
@@ -72,7 +76,7 @@ export default function TodayPage() {
           <div className="flex items-center gap-3 px-4">
             <Progress value={progressPct} className="h-1.5 flex-1" />
             <span className="text-[11px] text-muted-foreground/40 font-mono shrink-0 tabular-nums">
-              {completedTodayTasks.length}/{totalForProgress}
+              {completedCount}/{totalForProgress}
             </span>
           </div>
         )}
@@ -95,13 +99,12 @@ export default function TodayPage() {
 
           {SECTIONS.map(({ id, label, key }) => {
             const dropId = `section:today:${key}`;
-            const active = tasksBySection(id);
-            const completed = completedBySection(id);
-            const hasContent = active.length > 0 || completed.length > 0;
+            const sectionTasks = tasksBySection(id);
+            const hasContent = sectionTasks.length > 0;
             if (!hasContent) return null;
 
             const isCollapsed = !!collapsed[key];
-            const taskCount = active.length + completed.length;
+            const taskCount = sectionTasks.length;
 
             return (
               <section key={label}>
@@ -135,21 +138,10 @@ export default function TodayPage() {
                     >
                       <DroppableZone id={dropId}>
                         <TaskList
-                          tasks={active}
-                          quickAddDefaults={{ whenDate: todayStr, timeOfDay: id ?? undefined }}
+                          tasks={sectionTasks}
+                          quickAddDefaults={{ whenDate: today, timeOfDay: id ?? undefined }}
                           emptyMessage=""
                         />
-                        {completed.map((task) => (
-                          <div
-                            key={task.id}
-                            className="flex items-center gap-3 py-2 pl-4 pr-3 border-l-2 border-transparent opacity-40"
-                          >
-                            <div className="h-4 w-4 rounded-full border-2 border-primary/60 bg-primary/60 shrink-0 mt-[3px]" />
-                            <span className="text-sm line-through text-muted-foreground leading-snug tracking-[-0.006em]">
-                              {task.title}
-                            </span>
-                          </div>
-                        ))}
                       </DroppableZone>
                     </motion.div>
                   )}
