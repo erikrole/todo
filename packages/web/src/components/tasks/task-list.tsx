@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { Task, Section } from "@todo/shared";
 import { TaskItem } from "./task-item";
 import { TaskQuickAdd, TaskQuickAddHandle } from "./task-quick-add";
@@ -163,17 +164,24 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
       {tasks.length === 0 && emptyMessage && (
         <p className="text-sm text-muted-foreground py-6 text-center">{emptyMessage}</p>
       )}
-      {tasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          isExpanded={expandedTaskId === task.id}
-          onToggle={handleToggle}
-          activeProjects={activeProjects}
-          activeSections={activeSections}
-          showWhenDate={showWhenDate}
-        />
-      ))}
+      <AnimatePresence initial={false}>
+        {tasks.map((task) => (
+          <motion.div
+            key={task.id}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+          >
+            <TaskItem
+              task={task}
+              isExpanded={expandedTaskId === task.id}
+              onToggle={handleToggle}
+              activeProjects={activeProjects}
+              activeSections={activeSections}
+              showWhenDate={showWhenDate}
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
       <TaskQuickAdd ref={quickAddRef} defaults={quickAddDefaults} />
     </div>
   );
