@@ -1,0 +1,33 @@
+Codemap Analysis Report — 2026-04-12
+======================================
+
+Status: INITIAL SCAN (no prior codemaps)
+
+Files scanned: 98 (54 .ts + 44 .tsx)
+Codemaps generated: 5
+
+architecture.md  — system diagram, data flow, package layout
+backend.md       — 12 REST routes, MCP tools (14), auth middleware
+frontend.md      — page tree, component hierarchy, TanStack Query hooks, DnD
+data.md          — 4 DB tables, relationships, recurrence logic, driver config
+dependencies.md  — external services, 15+ key runtime deps
+
+New dependencies detected (since baseline):
+  react-day-picker   ^9.14.0   (calendar date picker)
+
+Architecture changes since last documented state (PLAN.md → current):
+  + All packages fully implemented (db, web, mcp were "planned")
+  + sections table added
+  + Soft-delete on tasks (deleted_at)
+  + Task uncomplete + restore endpoints
+  + MCP architect tools (plan_project, apply_project_plan)
+  + Command palette (Cmd+K) with task creation
+  + DnD: task drag to views, section drag reorder
+  + Sidebar: area CRUD + project CRUD with context menus
+  + Expanded task panel: date/deadline/time-of-day/recurrence pickers
+  + E2E Playwright setup
+
+Staleness warnings:
+  PLAN.md              — historical, intentionally preserved
+  ARCHITECT_AGENT_PLAN.md — historical, intentionally preserved
+  PLAN_v1.2.md         — historical, intentionally preserved
