@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { useFocusedTask } from "@/components/keyboard/keyboard-provider";
 import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
 import { parseTaskInput } from "@/lib/parse-task";
-import { useCompleteTask, useCreateTask, useDeleteTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
+import { useCompleteTask, useCreateTask, useDeleteTask, useDuplicateTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
 import { notify } from "@/lib/toast";
 import { Calendar as CalendarIcon, Check, Clock, Flag, ListTree, Plus, Repeat2, Trash2, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -71,6 +71,7 @@ export const TaskItem = memo(function TaskItem({
   const completeTask = useCompleteTask();
   const uncompleteTask = useUncompleteTask();
   const deleteTask = useDeleteTask();
+  const duplicateTask = useDuplicateTask();
   const restoreTask = useRestoreTask();
   const updateTask = useUpdateTask();
   const [completing, setCompleting] = useState(false);
@@ -362,6 +363,9 @@ export const TaskItem = memo(function TaskItem({
               onSelect={() => updateTask.mutate({ id: task.id, isCancelled: !task.isCancelled })}
             >
               {task.isCancelled ? "Uncancel" : "Cancel"}
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => duplicateTask.mutate(task.id)}>
+              Duplicate
             </ContextMenuItem>
             <ContextMenuItem
               className="text-destructive focus:text-destructive"

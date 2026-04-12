@@ -124,3 +124,12 @@ export function useDeleteTaskPermanent() {
     onError: (err) => notify.error("Failed to delete task", err),
   });
 }
+
+export function useDuplicateTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post<Task>(`/api/tasks/${id}/duplicate`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (err) => notify.error("Failed to duplicate task", err),
+  });
+}

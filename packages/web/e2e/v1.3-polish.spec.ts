@@ -36,3 +36,23 @@ test.describe("v1.3 — overdue section in Today", () => {
     expect(Array.isArray(body.data)).toBe(true);
   });
 });
+
+test.describe("v1.3 — duplicate task", () => {
+  test("duplicate creates a copy via context menu", async ({ page }) => {
+    await page.goto("/inbox");
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+
+    const title = `Duplicate me ${Date.now()}`;
+    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByPlaceholder(/new task/i).fill(title);
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(title)).toBeVisible();
+
+    // Right-click to open context menu and duplicate
+    await page.getByText(title).click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Duplicate" }).click();
+
+    // Two tasks with the same title should now be visible
+    await expect(page.getByText(title)).toHaveCount(2);
+  });
+});
