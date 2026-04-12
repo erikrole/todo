@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useShortcutAction } from "@/components/keyboard/keyboard-provider";
 import { useRouter } from "next/navigation";
 import {
   CommandDialog,
@@ -42,16 +43,7 @@ export function CommandPalette() {
   const activeProjects = projects.filter((p) => !p.isCompleted);
   const parsed = query.trim() ? parseTaskInput(query, activeProjects) : null;
 
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    }
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+  useShortcutAction("command-palette", () => setOpen((prev) => !prev));
 
   function go(href: string) {
     router.push(href);
