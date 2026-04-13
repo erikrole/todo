@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { useFocusedTask } from "@/components/keyboard/keyboard-provider";
+import { useSelection } from "@/hooks/use-selection";
+import { loadSelectionModifier } from "@/lib/keyboard/shortcut-config";
 import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
 import { parseTaskInput } from "@/lib/parse-task";
 import { useCompleteTask, useCreateTask, useDeleteTask, useDuplicateTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
@@ -80,6 +82,8 @@ export const TaskItem = memo(function TaskItem({
   const updateTask = useUpdateTask();
   const { focusedTaskId } = useFocusedTask();
   const isFocused = focusedTaskId === task.id;
+  const selection = useSelection();
+  const isSelected = selection.selectedIds.has(task.id);
 
   type MoveFields = { whenDate?: string | null; timeOfDay?: "morning" | "day" | "night" | null; isSomeday?: boolean; projectId?: string | null; areaId?: string | null; sectionId?: string | null };
   function moveTask(patch: MoveFields, label: string) {
@@ -183,6 +187,7 @@ export const TaskItem = memo(function TaskItem({
           )}
           data-task-id={task.id}
           data-focused={isFocused ? "true" : undefined}
+          data-selected={isSelected ? "true" : undefined}
           {...attributes}
           {...listeners}
         >
@@ -194,20 +199,66 @@ export const TaskItem = memo(function TaskItem({
                 ? "px-4 pt-3.5"
                 : cn(
                     "pl-4 pr-3 border-l-2",
-                    isFocused
-                      ? "border-primary/70 bg-primary/[0.04]"
-                      : "border-transparent hover:border-primary/40 hover:bg-primary/[0.05]",
+                    isSelected
+                      ? "border-primary/70 bg-primary/[0.07]"
+                      : isFocused
+                        ? "border-primary/70 bg-primary/[0.04]"
+                        : "border-transparent hover:border-primary/40 hover:bg-primary/[0.05]",
                   ),
               isDragging ? "cursor-grabbing" : "cursor-pointer",
             )}
-            onClick={() => !isDragging && onToggle(task.id)}
+            onClick={(e) => {
+              if (isDragging) return;
+              const modifier = loadSelectionModifier();
+              const modPressed =
+                modifier === "meta" ? e.metaKey : modifier === "ctrl" ? e.ctrlKey : e.altKey;
+              if (modPressed) {
+                e.stopPropagation();
+                selection.toggle(task.id);
+                return;
+              }
+              onToggle(task.id);
+            }}
           >
-            <div className="mt-[3px] shrink-0" onClick={(e) => e.stopPropagation()}>
-              <TaskCheckbox
-                checked={task.isCompleted}
-                onComplete={handleComplete}
-                onUncomplete={handleUncomplete}
-              />
+            <div
+              className="mt-[3px] shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selection.isActive) {
+                  selection.toggle(task.id);
+                }
+              }}
+            >
+              {selection.isActive ? (
+                <button
+                  type="button"
+                  aria-label={isSelected ? "Deselect task" : "Select task"}
+                  className={cn(
+                    "h-[18px] w-[18px] rounded-sm border-[1.5px] flex items-center justify-center transition-colors",
+                    isSelected
+                      ? "bg-primary border-primary"
+                      : "border-foreground/20 hover:border-primary/55",
+                  )}
+                >
+                  {isSelected && (
+                    <svg viewBox="0 0 10 8" fill="none" className="h-2.5 w-2.5">
+                      <path
+                        d="M1 4L3.5 6.5L9 1"
+                        stroke="white"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </button>
+              ) : (
+                <TaskCheckbox
+                  checked={task.isCompleted}
+                  onComplete={handleComplete}
+                  onUncomplete={handleUncomplete}
+                />
+              )}
             </div>
 
             {isExpanded ? (

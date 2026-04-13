@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Task, Section } from "@todo/shared";
 import { TaskItem } from "./task-item";
@@ -17,6 +17,8 @@ import {
   useUpdateTask,
 } from "@/hooks/use-tasks";
 import { notify } from "@/lib/toast";
+import { useSelection } from "@/hooks/use-selection";
+import { loadSelectionModifier } from "@/lib/keyboard/shortcut-config";
 
 interface TaskListProps {
   tasks: Task[];
@@ -47,6 +49,24 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
   // Register ordered task IDs for j/k navigation
   const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
   useRegisterTaskList(taskIds);
+
+  const selection = useSelection();
+
+  // Modifier+A — select all visible tasks
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const modifier = loadSelectionModifier();
+      const modPressed =
+        modifier === "meta" ? e.metaKey : modifier === "ctrl" ? e.ctrlKey : e.altKey;
+      if (modPressed && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        selection.selectAll(taskIds);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [taskIds, selection.selectAll]);
 
   // Clicking a task sets focus AND toggles expand/collapse
   const handleToggle = useCallback((id: string) => {
