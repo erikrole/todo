@@ -13,7 +13,11 @@ export function nowIso() {
 }
 
 export function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 /** Advance a YYYY-MM-DD date by a recurrence interval */
@@ -39,5 +43,8 @@ export function nextRecurrenceDate(
     default:
       d.setDate(d.getDate() + interval);
   }
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }

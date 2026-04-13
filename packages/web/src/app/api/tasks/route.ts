@@ -40,7 +40,7 @@ export async function GET(request: Request) {
       // Tasks completed today (completedAt starts with today's date string)
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+      const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
       conditions.push(
         eq(tasks.isCompleted, true),
         isNull(tasks.parentTaskId),
@@ -69,7 +69,7 @@ export async function GET(request: Request) {
     case "today_all": {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+      const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
       conditions.push(
         or(
           and(
