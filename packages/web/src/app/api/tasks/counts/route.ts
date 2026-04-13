@@ -2,8 +2,9 @@ import { db, tasks } from "@todo/db";
 import { and, count, eq, isNull, lt, lte } from "drizzle-orm";
 import { ok, todayStr } from "@/lib/api";
 
-export async function GET() {
-  const today = todayStr();
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const today = searchParams.get("date") || todayStr();
 
   const [inboxRow] = await db
     .select({ count: count() })

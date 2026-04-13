@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const projectId = searchParams.get("projectId");
   const areaId = searchParams.get("areaId");
 
-  const today = todayStr();
+  const today = searchParams.get("date") || todayStr();
   const conditions = [];
 
   // Exclude soft-deleted tasks from all views except trash

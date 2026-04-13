@@ -5,12 +5,20 @@ import type { Task, TaskFilter, CreateTaskInput, UpdateTaskInput } from "@todo/s
 import { api } from "@/lib/fetch";
 import { notify } from "@/lib/toast";
 
+function localDateStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function taskKeys(filter?: TaskFilter, projectId?: string, areaId?: string) {
   return ["tasks", filter, projectId, areaId] as const;
 }
 
 export function useTasks(filter: TaskFilter = "all", projectId?: string, areaId?: string, options?: { enabled?: boolean }) {
-  const params = new URLSearchParams({ filter });
+  const params = new URLSearchParams({ filter, date: localDateStr() });
   if (projectId) params.set("projectId", projectId);
   if (areaId) params.set("areaId", areaId);
 
@@ -38,7 +46,7 @@ export interface TaskCounts {
 export function useTaskCounts() {
   return useQuery({
     queryKey: ["task-counts"] as const,
-    queryFn: () => api.get<TaskCounts>("/api/tasks/counts"),
+    queryFn: () => api.get<TaskCounts>(`/api/tasks/counts?date=${localDateStr()}`),
     staleTime: 60_000,
   });
 }
