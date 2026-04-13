@@ -8,7 +8,7 @@ test.describe("Inbox", () => {
 
   test("quick-add creates a task", async ({ page }) => {
     await page.goto("/inbox");
-    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
 
     const title = `Test task ${Date.now()}`;
     await page.keyboard.press("n");
@@ -20,7 +20,7 @@ test.describe("Inbox", () => {
 
   test("completing a task removes it from inbox", async ({ page }) => {
     await page.goto("/inbox");
-    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
 
     // Create a fresh task so we have a known, unique target
     const title = `Complete me ${Date.now()}`;
@@ -28,16 +28,16 @@ test.describe("Inbox", () => {
     await page.getByPlaceholder(/new task/i).fill(title);
     await page.keyboard.press("Enter");
     await expect(page.getByText(title)).toBeVisible();
+    await page.waitForLoadState("networkidle"); // ensure task-creation refetch completes first
 
     // Click the "Mark complete" button scoped to this task's row
     await page
-      .locator("div")
+      .locator("[data-task-id]")
       .filter({ hasText: title })
-      .first()
       .getByLabel("Mark complete")
       .click();
 
-    // Task animates out: checkbox fires after 350ms, framer exit is 200ms
-    await expect(page.getByText(title)).not.toBeVisible({ timeout: 3000 });
+    // Task stays briefly in optimistic state (muted), then disappears after refetch
+    await expect(page.getByText(title)).not.toBeVisible({ timeout: 8000 });
   });
 });

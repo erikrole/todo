@@ -39,7 +39,7 @@ export function TaskCheckbox({ checked, onComplete, onUncomplete, disabled }: Ta
       className="group relative flex items-center justify-center h-[18px] w-[18px] shrink-0 rounded-full disabled:pointer-events-none"
       whileTap={{ scale: 0.8 }}
       animate={{ scale: animating ? [1, 0.75, 1.2, 1] : 1 }}
-      transition={{ scale: { type: "spring", stiffness: 400, damping: 15, duration: 0.35 } }}
+      transition={{ scale: { type: "tween", duration: 0.35, ease: "easeInOut", times: [0, 0.3, 0.6, 1] } }}
     >
       <svg viewBox="0 0 18 18" fill="none" className="h-[18px] w-[18px]">
         {/* Hollow outline — visible when unchecked */}

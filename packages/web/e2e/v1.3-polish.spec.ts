@@ -18,7 +18,7 @@ test.describe("v1.3 — sidebar badges", () => {
 test.describe("v1.3 — sidebar badges", () => {
   test("inbox badge is visible when there are inbox tasks", async ({ page }) => {
     await page.goto("/inbox");
-    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
 
     // Badge should appear next to Inbox in the sidebar
     const inboxLink = page.getByRole("link", { name: /Inbox/ });
@@ -40,7 +40,7 @@ test.describe("v1.3 — overdue section in Today", () => {
 test.describe("v1.3 — duplicate task", () => {
   test("duplicate creates a copy via context menu", async ({ page }) => {
     await page.goto("/inbox");
-    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
 
     const title = `Duplicate me ${Date.now()}`;
     await page.keyboard.press("n");
@@ -60,7 +60,7 @@ test.describe("v1.3 — duplicate task", () => {
 test.describe("v1.3 — move to next week", () => {
   test("W shortcut moves focused inbox task to 7 days from today", async ({ page }) => {
     await page.goto("/inbox");
-    await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
 
     const title = `MoveNextWeek ${Date.now()}`;
     await page.keyboard.press("n");

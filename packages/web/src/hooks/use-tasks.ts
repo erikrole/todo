@@ -76,14 +76,20 @@ export function useCompleteTask() {
       await qc.cancelQueries({ queryKey: ["tasks"] });
       const snapshots = qc.getQueriesData<Task[]>({ queryKey: ["tasks"] });
       const now = new Date().toISOString();
-      qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) =>
-        old?.map((t) => (t.id === id ? { ...t, isCompleted: true, completedAt: now } : t)),
-      );
+      snapshots.forEach(([key, data]) => {
+        const filter = (key as unknown[])[1];
+        if (filter === "today_all") {
+          // Keep task visible in Today, but mark it completed (muted style)
+          qc.setQueryData(key, data?.map((t) => (t.id === id ? { ...t, isCompleted: true, completedAt: now } : t)));
+        } else {
+          // Remove from all other views (inbox, upcoming, someday, etc.)
+          qc.setQueryData(key, data?.filter((t) => t.id !== id));
+        }
+      });
       return { snapshots };
     },
-    onError: (err, _id, ctx) => {
+    onError: (_err, _id, ctx) => {
       ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
-      notify.error("Failed to complete task", err);
     },
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
@@ -99,9 +105,13 @@ export function useUncompleteTask() {
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ["tasks"] });
       const snapshots = qc.getQueriesData<Task[]>({ queryKey: ["tasks"] });
-      qc.setQueriesData<Task[]>({ queryKey: ["tasks"] }, (old) =>
-        old?.map((t) => (t.id === id ? { ...t, isCompleted: false, completedAt: null } : t)),
-      );
+      // today_all shows active + completed tasks — update in-place; other filters can rely on invalidation
+      snapshots.forEach(([key, data]) => {
+        const filter = (key as unknown[])[1];
+        if (filter === "today_all") {
+          qc.setQueryData(key, data?.map((t) => (t.id === id ? { ...t, isCompleted: false, completedAt: null } : t)));
+        }
+      });
       return { snapshots };
     },
     onError: (err, _id, ctx) => {
