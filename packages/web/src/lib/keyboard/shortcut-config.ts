@@ -106,3 +106,29 @@ export function formatKeyParts(key: string): string[] {
     return part;
   });
 }
+
+// --- Selection modifier ---
+
+export const SELECTION_MODIFIER_STORAGE_KEY = "todo-select-modifier";
+export type SelectionModifier = "meta" | "ctrl" | "alt";
+
+export function defaultSelectionModifier(): SelectionModifier {
+  if (typeof navigator === "undefined") return "meta";
+  return navigator.platform.toLowerCase().includes("mac") ? "meta" : "ctrl";
+}
+
+export function loadSelectionModifier(): SelectionModifier {
+  if (typeof window === "undefined") return defaultSelectionModifier();
+  try {
+    const raw = localStorage.getItem(SELECTION_MODIFIER_STORAGE_KEY);
+    if (raw === "meta" || raw === "ctrl" || raw === "alt") return raw;
+  } catch {
+    // ignore
+  }
+  return defaultSelectionModifier();
+}
+
+export function saveSelectionModifier(mod: SelectionModifier): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(SELECTION_MODIFIER_STORAGE_KEY, mod);
+}

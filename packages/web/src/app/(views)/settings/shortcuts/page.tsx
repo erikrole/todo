@@ -2,7 +2,15 @@
 "use client";
 
 import { useState } from "react";
-import { SHORTCUT_DEFS, ShortcutCategory, ShortcutDef, formatKeyParts } from "@/lib/keyboard/shortcut-config";
+import {
+  SHORTCUT_DEFS,
+  ShortcutCategory,
+  ShortcutDef,
+  formatKeyParts,
+  SelectionModifier,
+  loadSelectionModifier,
+  saveSelectionModifier,
+} from "@/lib/keyboard/shortcut-config";
 import { useKeyboard } from "@/components/keyboard/keyboard-provider";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +39,13 @@ export default function ShortcutsSettingsPage() {
   const [search, setSearch] = useState("");
   const [localRecordingId, setLocalRecordingId] = useState<string | null>(null);
   const [conflict, setConflict] = useState<ConflictState | null>(null);
+
+  const [selectionModifier, setSelectionModifier] = useState<SelectionModifier>(loadSelectionModifier);
+
+  function handleModifierChange(mod: SelectionModifier) {
+    setSelectionModifier(mod);
+    saveSelectionModifier(mod);
+  }
 
   function handleRecordClick(def: ShortcutDef) {
     // Cancel if already recording this one
@@ -219,6 +234,36 @@ export default function ShortcutsSettingsPage() {
             })}
           </tbody>
         </table>
+
+      <div className="mt-8">
+        <h2 className="text-base font-semibold tracking-tight">Selection Modifier</h2>
+        <p className="text-sm text-muted-foreground mt-1 mb-3">
+          Hold this key while clicking a task to enter multi-select mode.
+        </p>
+        <div className="flex gap-2">
+          {(["meta", "ctrl", "alt"] as const).map((mod) => {
+            const labels: Record<SelectionModifier, string> = {
+              meta: "⌘ Meta",
+              ctrl: "⌃ Ctrl",
+              alt: "⌥ Alt",
+            };
+            return (
+              <button
+                key={mod}
+                onClick={() => handleModifierChange(mod)}
+                className={cn(
+                  "px-3 py-1.5 rounded-md border text-sm font-mono transition-colors",
+                  selectionModifier === mod
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-foreground/40",
+                )}
+              >
+                {labels[mod]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       </div>
     </div>
   );
