@@ -12,6 +12,7 @@
     "e2e:ui": "pnpm --filter @todo/web e2e:ui",
     "format": "prettier --write ."
   },
+  "packageManager": "pnpm@10.33.0",
   "devDependencies": {
     "dotenv-cli": "^11.0.0",
     "prettier": "^3.2.0",
