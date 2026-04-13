@@ -234,6 +234,7 @@ export default function ShortcutsSettingsPage() {
             })}
           </tbody>
         </table>
+      </div>
 
       <div className="mt-8">
         <h2 className="text-base font-semibold tracking-tight">Selection Modifier</h2>
@@ -263,7 +264,6 @@ export default function ShortcutsSettingsPage() {
             );
           })}
         </div>
-      </div>
       </div>
     </div>
   );
