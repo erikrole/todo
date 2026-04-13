@@ -26,6 +26,7 @@ import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
 import { parseTaskInput } from "@/lib/parse-task";
 import { useCompleteTask, useCreateTask, useDeleteTask, useDuplicateTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
 import { notify } from "@/lib/toast";
+import { toLocalDateStr } from "@/lib/dates";
 import { Calendar as CalendarIcon, Check, Clock, Flag, ListTree, Plus, Repeat2, Trash2, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
@@ -42,27 +43,27 @@ interface TaskItemProps {
   showWhenDate?: boolean;
 }
 
-function localDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 function todayStr() {
-  return localDateStr(new Date());
+  return toLocalDateStr(new Date());
 }
 
 function tomorrowStr() {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return localDateStr(d);
+  return toLocalDateStr(d);
 }
 
 function nextWeekStr() {
   const d = new Date();
   d.setDate(d.getDate() + 7);
-  return localDateStr(d);
+  return toLocalDateStr(d);
+}
+
+function recurrenceLabel(type: string, interval: number | null | undefined): string {
+  const n = interval ?? 1;
+  if (n <= 1) return type.charAt(0).toUpperCase() + type.slice(1);
+  const plural: Record<string, string> = { daily: "days", weekly: "weeks", monthly: "months", yearly: "years" };
+  return `Every ${n} ${plural[type] ?? type}`;
 }
 
 function daysUntil(date: string): number {
@@ -291,10 +292,15 @@ export const TaskItem = memo(function TaskItem({
                 >
                   {task.title}
                 </span>
-                {((showWhenDate && task.whenDate) || task.scheduledTime || task.notes) && (
+                {((showWhenDate && task.whenDate) || task.scheduledTime || task.recurrenceType || task.notes) && (
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {showWhenDate && task.whenDate && (
-                      <span className="text-[11px] text-muted-foreground/50 font-mono">
+                      <span className={cn(
+                        "text-[11px] font-mono",
+                        !task.isCompleted && task.whenDate < todayStr()
+                          ? "text-destructive/70"
+                          : "text-muted-foreground/50",
+                      )}>
                         {formatWhenDate(task.whenDate)}
                       </span>
                     )}
@@ -302,6 +308,11 @@ export const TaskItem = memo(function TaskItem({
                       <span className="inline-flex items-center gap-0.5 text-[11px] text-teal-600/70 dark:text-teal-400/70 font-mono">
                         <Clock className="h-2.5 w-2.5" />
                         {fmtTime(task.scheduledTime)}
+                      </span>
+                    )}
+                    {task.recurrenceType && (
+                      <span className="inline-flex items-center text-muted-foreground/30">
+                        <Repeat2 className="h-2.5 w-2.5" />
                       </span>
                     )}
                     {task.notes && (
@@ -497,19 +508,25 @@ function ExpandedPanel({
   const [dateOpen, setDateOpen] = useState(false);
   const [deadlineOpen, setDeadlineOpen] = useState(false);
   const [recurrenceOpen, setRecurrenceOpen] = useState(false);
+  const [intervalValue, setIntervalValue] = useState(task.recurrenceInterval ?? 1);
+  useEffect(() => { setIntervalValue(task.recurrenceInterval ?? 1); }, [task.recurrenceInterval]);
 
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskTitle, setSubtaskTitle] = useState("");
   const subtaskRef = useRef<HTMLInputElement>(null);
+  const subtaskSubmittedRef = useRef(false);
 
   useEffect(() => {
     if (addingSubtask) subtaskRef.current?.focus();
   }, [addingSubtask]);
 
   async function submitSubtask() {
+    if (subtaskSubmittedRef.current) return;
     const title = subtaskTitle.trim();
     if (!title) { setAddingSubtask(false); return; }
+    subtaskSubmittedRef.current = true;
     await createTask.mutateAsync({ title, parentTaskId: task.id });
+    subtaskSubmittedRef.current = false;
     setSubtaskTitle("");
     // keep input open for rapid multi-entry
   }
@@ -685,12 +702,9 @@ function ExpandedPanel({
               <Repeat2 className="h-3.5 w-3.5 shrink-0" />
               <span>
                 {task.recurrenceType
-                  ? `${task.recurrenceType.charAt(0).toUpperCase()}${task.recurrenceType.slice(1)}`
+                  ? recurrenceLabel(task.recurrenceType, task.recurrenceInterval)
                   : "Repeat"}
               </span>
-              {task.recurrenceMode === "after_completion" && (
-                <span className="text-muted-foreground/50 text-[10px]">· after</span>
-              )}
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-48 p-2" align="start">
@@ -702,7 +716,7 @@ function ExpandedPanel({
                     if (task.recurrenceType === value) {
                       onRecurrenceChange({ recurrenceType: null, recurrenceMode: null });
                     } else {
-                      onRecurrenceChange({ recurrenceType: value, recurrenceMode: task.recurrenceMode as RecurrenceMode ?? "on_schedule" });
+                      onRecurrenceChange({ recurrenceType: value, recurrenceMode: (task.recurrenceMode as RecurrenceMode | null) ?? "on_schedule" });
                     }
                     setRecurrenceOpen(false);
                   }}
@@ -719,6 +733,33 @@ function ExpandedPanel({
               ))}
               {task.recurrenceType && (
                 <>
+                  <div className="border-t border-border/50 my-1" />
+                  <div className="flex items-center gap-1.5 px-2 py-1">
+                    <span className="text-[10px] text-muted-foreground/50 flex-shrink-0">Every</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="99"
+                      value={intervalValue}
+                      onChange={(e) => setIntervalValue(Math.max(1, parseInt(e.target.value) || 1))}
+                      onBlur={() => {
+                        if (intervalValue !== (task.recurrenceInterval ?? 1)) {
+                          onRecurrenceChange({
+                            recurrenceType: task.recurrenceType as RecurrenceType,
+                            recurrenceMode: (task.recurrenceMode as RecurrenceMode) ?? "on_schedule",
+                            recurrenceInterval: intervalValue,
+                          });
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-10 bg-background border border-border rounded px-1 py-0.5 text-xs text-center outline-none focus:ring-1 focus:ring-primary/50 tabular-nums"
+                    />
+                    <span className="text-[10px] text-muted-foreground/50 flex-shrink-0">
+                      {task.recurrenceType === "daily" ? "day(s)" :
+                       task.recurrenceType === "weekly" ? "week(s)" :
+                       task.recurrenceType === "monthly" ? "month(s)" : "year(s)"}
+                    </span>
+                  </div>
                   <div className="border-t border-border/50 my-1" />
                   <p className="text-[10px] text-muted-foreground/50 px-2 pb-1">Reschedule mode</p>
                   {(["on_schedule", "after_completion"] as const).map((mode) => (

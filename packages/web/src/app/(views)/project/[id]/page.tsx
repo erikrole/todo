@@ -9,7 +9,10 @@ import { SectionBlock } from "@/components/projects/section-block";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckSquare, Plus } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CheckSquare, Plus, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { COLOR_PRESETS } from "@/lib/color-presets";
 import type { Section } from "@todo/shared";
 import {
   DndContext,
@@ -139,12 +142,37 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            {project?.color && (
-              <span
-                className="h-3 w-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: project.color }}
-              />
-            )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="h-3 w-3 rounded-full flex-shrink-0 hover:ring-2 hover:ring-primary/40 hover:ring-offset-1 transition-shadow"
+                  style={{ backgroundColor: project?.color ?? "#6b7280" }}
+                  title="Change color"
+                />
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2" align="start">
+                <div className="flex flex-wrap gap-1.5" style={{ width: 110 }}>
+                  {COLOR_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      className={cn(
+                        "h-5 w-5 rounded-full hover:scale-110 transition-transform focus:outline-none",
+                        project?.color === c && "ring-2 ring-primary/50 ring-offset-1",
+                      )}
+                      style={{ backgroundColor: c }}
+                      onClick={() => updateProject.mutate({ id, color: c })}
+                    />
+                  ))}
+                  <button
+                    className="h-5 w-5 rounded-full border border-dashed border-muted-foreground/30 hover:border-destructive/50 flex items-center justify-center transition-colors"
+                    onClick={() => updateProject.mutate({ id, color: null })}
+                    title="Remove color"
+                  >
+                    <X className="h-2.5 w-2.5 text-muted-foreground/40" />
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
             <h1 className="text-lg font-semibold tracking-tight">{project?.name ?? "Project"}</h1>
           </div>
           {total > 0 && (

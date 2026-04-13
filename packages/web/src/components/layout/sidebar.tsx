@@ -22,6 +22,9 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -30,6 +33,7 @@ import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } fro
 import { useTaskCounts } from "@/hooks/use-tasks";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
+import { COLOR_PRESETS } from "@/lib/color-presets";
 import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus, Settings } from "lucide-react";
 import type { AreaWithCounts, ProjectWithCounts } from "@todo/shared";
 
@@ -235,6 +239,24 @@ function ProjectItem({ project, subProjects, pathname, isSubProject = false }: P
           <ContextMenuContent className="w-44">
             <ContextMenuItem onSelect={() => setAddingSubProject(true)}>Add Sub-project</ContextMenuItem>
             <ContextMenuItem onSelect={() => setRenaming(true)}>Rename</ContextMenuItem>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>Change color</ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <div className="flex flex-wrap gap-1.5 p-2" style={{ width: 112 }}>
+                  {COLOR_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      className={cn(
+                        "h-5 w-5 rounded-full hover:scale-110 transition-transform focus:outline-none",
+                        project.color === c && "ring-2 ring-primary/50 ring-offset-1",
+                      )}
+                      style={{ backgroundColor: c }}
+                      onClick={() => updateProject.mutate({ id: project.id, color: c })}
+                    />
+                  ))}
+                </div>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
             <ContextMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={() => deleteProject.mutate(project.id)}
@@ -373,6 +395,24 @@ function AreaItem({ area, areaProjects, subProjectMap, pathname }: AreaItemProps
           <ContextMenuContent className="w-44">
             <ContextMenuItem onSelect={() => setAddingProject(true)}>Add Project</ContextMenuItem>
             <ContextMenuItem onSelect={() => setRenaming(true)}>Rename</ContextMenuItem>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>Change color</ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <div className="flex flex-wrap gap-1.5 p-2" style={{ width: 112 }}>
+                  {COLOR_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      className={cn(
+                        "h-5 w-5 rounded-full hover:scale-110 transition-transform focus:outline-none",
+                        area.color === c && "ring-2 ring-primary/50 ring-offset-1",
+                      )}
+                      style={{ backgroundColor: c }}
+                      onClick={() => updateArea.mutate({ id: area.id, color: c })}
+                    />
+                  ))}
+                </div>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
             <ContextMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={() => deleteArea.mutate(area.id)}

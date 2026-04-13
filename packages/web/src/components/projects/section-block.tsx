@@ -106,7 +106,7 @@ export function SectionBlock({ section, tasks, allSections }: SectionBlockProps)
             <div
               {...attributes}
               {...listeners}
-              className="opacity-0 group-hover/section:opacity-40 hover:!opacity-70 cursor-grab active:cursor-grabbing transition-opacity p-0.5"
+              className="opacity-20 group-hover/section:opacity-50 hover:!opacity-80 cursor-grab active:cursor-grabbing transition-opacity p-0.5"
             >
               <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
