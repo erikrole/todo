@@ -95,10 +95,12 @@ TypeScript strict mode is enabled. All packages extend `tsconfig.base.json`.
 | `/api/projects/[id]/complete` | POST | Complete a project |
 | `/api/sections` | GET, POST | List / create sections (scoped to project via `?projectId=`) |
 | `/api/sections/[id]` | PATCH, DELETE | Update / delete section |
-| `/api/tasks` | GET, POST | List / create tasks (filter via `?view=`, `?projectId=`, `?areaId=`) |
-| `/api/tasks/[id]` | GET, PATCH, DELETE | Get / update / delete task |
+| `/api/tasks` | GET, POST | List / create tasks (filter via `?filter=inbox\|today\|today_all\|upcoming\|someday\|logbook\|trash\|all`, `?projectId=`, `?areaId=`) |
+| `/api/tasks/counts` | GET | `{ inbox, today, overdue }` counts for sidebar badges |
+| `/api/tasks/[id]` | GET, PATCH, DELETE | Get / update / delete task (`?permanent=true` for hard delete) |
 | `/api/tasks/[id]/complete` | POST | Complete task (creates next recurrence if applicable) |
 | `/api/tasks/[id]/uncomplete` | POST | Revert completion |
+| `/api/tasks/[id]/duplicate` | POST | Clone task (inserted after original via fractional indexing) |
 | `/api/tasks/[id]/restore` | POST | Restore soft-deleted task |
 
 All routes require `Authorization: Bearer $NEXT_PUBLIC_AUTH_TOKEN`.

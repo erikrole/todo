@@ -71,8 +71,9 @@ All server state via **TanStack Query v5**.
 | `useSections` | `["sections", projectId]` | Sections for a project |
 | `useTasks` | `["tasks", view, projectId?, areaId?]` | Tasks by view/scope |
 | `useTask` | `["task", id]` | Single task + subtasks |
+| `useTaskCounts` | `["task-counts"]` | `{ inbox, today, overdue }` counts for sidebar badges (staleTime: 60s) |
 
-Mutations invalidate parent query keys on success. Optimistic updates used for section drag reorder.
+Mutations invalidate parent query keys on success. Optimistic updates used for section drag reorder and task complete/uncomplete (removes from inbox immediately; marks completed in today_all).
 
 ## Key Libraries
 

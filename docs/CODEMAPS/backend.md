@@ -1,4 +1,4 @@
-<!-- Generated: 2026-04-12 | Files scanned: 98 | Token estimate: ~700 -->
+<!-- Generated: 2026-04-12 | Updated: 2026-04-12 (counts + duplicate routes, today_all filter) | Files scanned: 98 -->
 # Backend
 
 ## Auth
@@ -26,29 +26,33 @@ POST   /api/sections         → create section
 PATCH  /api/sections/[id]    → update section (title, position, isCollapsed)
 DELETE /api/sections/[id]    → delete section (unassigns tasks, doesn't delete)
 
-GET    /api/tasks            → list tasks (?filter=inbox|today|upcoming|someday|logbook|completed|trash|all, ?projectId=, ?areaId=)
+GET    /api/tasks            → list tasks (?filter=inbox|today|today_all|upcoming|someday|logbook|completed|trash|all, ?projectId=, ?areaId=)
 POST   /api/tasks            → create task
+GET    /api/tasks/counts     → { inbox, today, overdue } counts for sidebar badges
 GET    /api/tasks/[id]       → get task + subtasks
 PATCH  /api/tasks/[id]       → update task
-DELETE /api/tasks/[id]       → soft-delete (sets deleted_at)
+DELETE /api/tasks/[id]       → soft-delete (sets deleted_at); ?permanent=true for hard delete
 POST   /api/tasks/[id]/complete   → complete; creates next recurrence if recurring
 POST   /api/tasks/[id]/uncomplete → revert completion
+POST   /api/tasks/[id]/duplicate  → clone task (fractional position between original and next sibling)
 POST   /api/tasks/[id]/restore    → clear deleted_at
 ```
 
 ## Task View Routing Logic
 
 ```
-Inbox:    when_date IS NULL AND project_id IS NULL AND area_id IS NULL
-          AND parent_task_id IS NULL AND is_completed=0 AND deleted_at IS NULL
-          AND is_cancelled=0 AND is_someday=0
-Today:    when_date = today AND parent_task_id IS NULL AND is_completed=0
-          AND is_cancelled=0 AND deleted_at IS NULL
-Upcoming: when_date > today AND parent_task_id IS NULL AND is_completed=0
-          AND is_cancelled=0 AND deleted_at IS NULL
-Someday:  is_someday=1 AND is_completed=0 AND deleted_at IS NULL
-Logbook:  is_completed=1 AND parent_task_id IS NULL ORDER BY completed_at DESC
-Trash:    deleted_at IS NOT NULL
+Inbox:     when_date IS NULL AND project_id IS NULL AND area_id IS NULL
+           AND parent_task_id IS NULL AND is_completed=0 AND deleted_at IS NULL
+           AND is_cancelled=0 AND is_someday=0
+Today:     when_date = today AND parent_task_id IS NULL AND is_completed=0
+           AND is_cancelled=0 AND deleted_at IS NULL
+today_all: when_date <= today AND parent_task_id IS NULL AND deleted_at IS NULL
+           (active + completed today + overdue; used by Today view for unified list)
+Upcoming:  when_date > today AND parent_task_id IS NULL AND is_completed=0
+           AND is_cancelled=0 AND deleted_at IS NULL
+Someday:   is_someday=1 AND is_completed=0 AND deleted_at IS NULL
+Logbook:   is_completed=1 AND parent_task_id IS NULL ORDER BY completed_at DESC
+Trash:     deleted_at IS NOT NULL
 ```
 
 ## MCP Server (`packages/mcp`)
