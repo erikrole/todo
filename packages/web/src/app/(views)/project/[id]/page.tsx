@@ -70,11 +70,15 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     if (sectionSubmittedRef.current) return;
     sectionSubmittedRef.current = true;
     const title = newSectionTitle.trim();
-    if (!title) { setAddingSection(false); return; }
+    if (!title) { sectionSubmittedRef.current = false; setAddingSection(false); return; }
     const maxPos = sections.length > 0 ? Math.max(...sections.map((s) => s.position)) : 0;
     setNewSectionTitle("");
     setAddingSection(false);
-    await createSection.mutateAsync({ projectId: id, title, position: maxPos + 1 });
+    try {
+      await createSection.mutateAsync({ projectId: id, title, position: maxPos + 1 });
+    } finally {
+      sectionSubmittedRef.current = false;
+    }
   }
 
   function handleSectionDragStart(event: DragStartEvent) {

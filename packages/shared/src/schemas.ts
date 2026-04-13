@@ -99,6 +99,21 @@ export const UpdateTaskSchema = z.object({
   position: z.number().optional(),
 });
 
+// ─── Batch task actions ───────────────────────────────────────────────────────
+
+export const BatchTaskActionSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("complete"), ids: z.array(z.string()).min(1) }),
+  z.object({ action: z.literal("uncomplete"), ids: z.array(z.string()).min(1) }),
+  z.object({ action: z.literal("delete"), ids: z.array(z.string()).min(1) }),
+  z.object({ action: z.literal("restore"), ids: z.array(z.string()).min(1) }),
+  z.object({
+    action: z.literal("update"),
+    ids: z.array(z.string()).min(1),
+    patch: UpdateTaskSchema,
+  }),
+]);
+export type BatchTaskAction = z.infer<typeof BatchTaskActionSchema>;
+
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 export type CreateAreaInput = z.infer<typeof CreateAreaSchema>;

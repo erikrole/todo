@@ -1,0 +1,1 @@
+ALTER TABLE `tasks` ADD `spawned_from_task_id` text;
