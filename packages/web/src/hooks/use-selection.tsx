@@ -1,7 +1,7 @@
 // packages/web/src/hooks/use-selection.ts
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 interface SelectionContextValue {
@@ -14,7 +14,7 @@ interface SelectionContextValue {
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
 
-export function SelectionProvider({ children }: { children: React.ReactNode }) {
+export function SelectionProvider({ children }: { children: ReactNode }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const pathname = usePathname();
 
