@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
 import type { Task, Section } from "@todo/shared";
 import type { ProjectWithCounts } from "@todo/shared";
@@ -184,9 +183,8 @@ export const TaskItem = memo(function TaskItem({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <motion.div
+        <div
           ref={setRefs}
-          layout
           style={{ ...dragStyle, opacity: isDragging ? 0.3 : 1 }}
           className={cn(
             "transition-[border-color,background-color,box-shadow,border-radius] duration-150",
@@ -331,34 +329,31 @@ export const TaskItem = memo(function TaskItem({
           </div>
 
           {/* Inline expanded panel */}
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                className="overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExpandedPanel
-                  task={task}
-                  notes={notes}
-                  setNotes={setNotes}
-                  onSave={save}
-                  onDelete={() => deleteTask.mutate(task.id, {
-                    onSuccess: () => notify.undoable("Task deleted", () => restoreTask.mutate(task.id)),
-                  })}
-                  onClearScheduledTime={() => updateTask.mutate({ id: task.id, scheduledTime: null })}
-                  onDateChange={(date) => updateTask.mutate({ id: task.id, whenDate: date, isSomeday: false })}
-                  onDeadlineChange={(date) => updateTask.mutate({ id: task.id, deadline: date })}
-                  onTimeOfDayChange={(tod) => updateTask.mutate({ id: task.id, timeOfDay: tod })}
-                  onRecurrenceChange={(r) => updateTask.mutate({ id: task.id, ...r })}
-                />
-              </motion.div>
+          <div
+            className={cn(
+              "grid transition-[grid-template-rows,opacity] duration-[180ms] ease-[cubic-bezier(0.4,0,0.2,1)]",
+              isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
             )}
-          </AnimatePresence>
-        </motion.div>
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="overflow-hidden">
+              <ExpandedPanel
+                task={task}
+                notes={notes}
+                setNotes={setNotes}
+                onSave={save}
+                onDelete={() => deleteTask.mutate(task.id, {
+                  onSuccess: () => notify.undoable("Task deleted", () => restoreTask.mutate(task.id)),
+                })}
+                onClearScheduledTime={() => updateTask.mutate({ id: task.id, scheduledTime: null })}
+                onDateChange={(date) => updateTask.mutate({ id: task.id, whenDate: date, isSomeday: false })}
+                onDeadlineChange={(date) => updateTask.mutate({ id: task.id, deadline: date })}
+                onTimeOfDayChange={(tod) => updateTask.mutate({ id: task.id, timeOfDay: tod })}
+                onRecurrenceChange={(r) => updateTask.mutate({ id: task.id, ...r })}
+              />
+            </div>
+          </div>
+        </div>
       </ContextMenuTrigger>
 
           <ContextMenuContent className="w-52">

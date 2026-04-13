@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toLocalDateStr } from "@/lib/dates";
 import { useTasks } from "@/hooks/use-tasks";
 import { TaskList } from "@/components/tasks/task-list";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
@@ -29,7 +30,7 @@ function loadCollapsed(): Record<string, boolean> {
 }
 
 export default function TodayPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateStr(new Date());
   const { data: allTasks = [], isLoading } = useTasks("today_all");
   const overdueTasks = allTasks.filter((t) => !t.isCompleted && t.whenDate !== null && t.whenDate < today);
 
@@ -127,25 +128,22 @@ export default function TodayPage() {
                     )}
                   </button>
                 </div>
-                <AnimatePresence initial={false}>
-                  {!isCollapsed && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.18, ease: "easeInOut" }}
-                      style={{ overflow: "hidden" }}
-                    >
-                      <DroppableZone id={dropId}>
-                        <TaskList
-                          tasks={sectionTasks}
-                          quickAddDefaults={{ whenDate: today, timeOfDay: id ?? undefined }}
-                          emptyMessage=""
-                        />
-                      </DroppableZone>
-                    </motion.div>
+                <div
+                  className={cn(
+                    "grid transition-[grid-template-rows,opacity] duration-200 ease-in-out",
+                    isCollapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
                   )}
-                </AnimatePresence>
+                >
+                  <div className="overflow-hidden">
+                    <DroppableZone id={dropId}>
+                      <TaskList
+                        tasks={sectionTasks}
+                        quickAddDefaults={{ whenDate: today, timeOfDay: id ?? undefined }}
+                        emptyMessage=""
+                      />
+                    </DroppableZone>
+                  </div>
+                </div>
               </section>
             );
           })}

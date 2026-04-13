@@ -16,7 +16,7 @@ import { useTasks, useCreateTask } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { useAreas } from "@/hooks/use-areas";
 import { parseTaskInput } from "@/lib/parse-task";
-import { formatWhenDate } from "@/lib/dates";
+import { formatWhenDate, toLocalDateStr } from "@/lib/dates";
 import { Inbox, Sun, Calendar, BookOpen, CheckSquare, FolderOpen, Layers, Hourglass, Plus } from "lucide-react";
 import type { Task } from "@todo/shared";
 
@@ -24,7 +24,7 @@ function taskDestination(task: Task): string {
   if (task.projectId) return `/project/${task.projectId}`;
   if (task.areaId) return `/area/${task.areaId}`;
   if (task.isSomeday) return "/someday";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateStr(new Date());
   if (task.whenDate === today) return "/today";
   if (task.whenDate && task.whenDate > today) return "/upcoming";
   return "/inbox";

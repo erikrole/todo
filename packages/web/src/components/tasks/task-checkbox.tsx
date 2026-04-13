@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface TaskCheckboxProps {
@@ -31,15 +30,15 @@ export function TaskCheckbox({ checked, onComplete, onUncomplete, disabled }: Ta
   const filled = checked || animating;
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={handleClick}
       disabled={disabled}
       aria-label={checked ? "Mark incomplete" : "Mark complete"}
-      className="group relative flex items-center justify-center h-[18px] w-[18px] shrink-0 rounded-full disabled:pointer-events-none"
-      whileTap={{ scale: 0.8 }}
-      animate={{ scale: animating ? [1, 0.75, 1.2, 1] : 1 }}
-      transition={{ scale: { type: "tween", duration: 0.35, ease: "easeInOut", times: [0, 0.3, 0.6, 1] } }}
+      className={cn(
+        "group relative flex items-center justify-center h-[18px] w-[18px] shrink-0 rounded-full disabled:pointer-events-none active:scale-[0.8] transition-transform",
+        animating && "[animation:task-complete_0.35s_ease-in-out]",
+      )}
     >
       <svg viewBox="0 0 18 18" fill="none" className="h-[18px] w-[18px]">
         {/* Hollow outline — visible when unchecked */}
@@ -78,6 +77,6 @@ export function TaskCheckbox({ checked, onComplete, onUncomplete, disabled }: Ta
           )}
         />
       </svg>
-    </motion.button>
+    </button>
   );
 }

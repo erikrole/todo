@@ -1,7 +1,7 @@
 // packages/web/src/components/tasks/bulk-action-bar.tsx
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { useSelection } from "@/hooks/use-selection";
 import {
   useCompleteTask,
@@ -71,16 +71,13 @@ export function BulkActionBar() {
   }
 
   return (
-    <AnimatePresence>
-      {isActive && (
-        <motion.div
-          data-testid="bulk-action-bar"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 16 }}
-          transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-popover shadow-lg"
-        >
+    <div
+      data-testid="bulk-action-bar"
+      className={cn(
+        "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-popover shadow-lg transition-all duration-[180ms]",
+        isActive ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none",
+      )}
+    >
           <span className="text-xs font-medium text-muted-foreground pr-1 select-none">
             {label}
           </span>
@@ -124,8 +121,6 @@ export function BulkActionBar() {
           >
             ✕
           </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </div>
   );
 }

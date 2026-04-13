@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import type { Task, Section } from "@todo/shared";
 import { TaskItem } from "./task-item";
 import { TaskQuickAdd, TaskQuickAddHandle } from "./task-quick-add";
@@ -19,6 +18,7 @@ import {
 import { notify } from "@/lib/toast";
 import { useSelection } from "@/hooks/use-selection";
 import { loadSelectionModifier } from "@/lib/keyboard/shortcut-config";
+import { toLocalDateStr } from "@/lib/dates";
 
 interface TaskListProps {
   tasks: Task[];
@@ -30,13 +30,13 @@ interface TaskListProps {
 }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateStr(new Date());
 }
 
 function nextWeekStr() {
   const d = new Date();
   d.setDate(d.getDate() + 7);
-  return d.toISOString().slice(0, 10);
+  return toLocalDateStr(d);
 }
 
 export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, activeSections, emptyMessage }: TaskListProps) {
@@ -184,24 +184,17 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
       {tasks.length === 0 && emptyMessage && (
         <p className="text-sm text-muted-foreground py-6 text-center">{emptyMessage}</p>
       )}
-      <AnimatePresence initial={false}>
-        {tasks.map((task) => (
-          <motion.div
-            key={task.id}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-          >
-            <TaskItem
-              task={task}
-              isExpanded={expandedTaskId === task.id}
-              onToggle={handleToggle}
-              activeProjects={activeProjects}
-              activeSections={activeSections}
-              showWhenDate={showWhenDate}
-            />
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {tasks.map((task) => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          isExpanded={expandedTaskId === task.id}
+          onToggle={handleToggle}
+          activeProjects={activeProjects}
+          activeSections={activeSections}
+          showWhenDate={showWhenDate}
+        />
+      ))}
       <TaskQuickAdd ref={quickAddRef} defaults={quickAddDefaults} />
     </div>
   );

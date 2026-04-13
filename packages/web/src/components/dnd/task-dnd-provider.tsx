@@ -13,15 +13,16 @@ import {
 } from "@dnd-kit/core";
 import type { Task, TimeOfDay } from "@todo/shared";
 import { useUpdateTask } from "@/hooks/use-tasks";
+import { toLocalDateStr } from "@/lib/dates";
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalDateStr(new Date());
 }
 
 function tomorrowStr() {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return toLocalDateStr(d);
 }
 
 function resolveUpdate(dropId: string): Omit<Parameters<ReturnType<typeof useUpdateTask>["mutate"]>[0], "id"> | null {
