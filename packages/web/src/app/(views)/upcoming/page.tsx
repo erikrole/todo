@@ -32,7 +32,7 @@ export default function UpcomingPage() {
       ) : (
         sortedDates.map((date) => (
           <section key={date}>
-            <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em] mb-1 px-4">
+            <h2 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-[0.12em] mb-1 px-4">
               {date === "No date" ? date : formatWhenDate(date)}
             </h2>
             <DroppableZone id={`section:upcoming:${date}`}>

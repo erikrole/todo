@@ -208,10 +208,14 @@ html.dark[data-accent="amber"] {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "ss01", "ss03";
+    font-weight: 500;
   }
   html {
     @apply font-sans;
     font-size: 17px;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
   }
   ::selection {
     background: color-mix(in oklch, var(--primary) 20%, transparent);

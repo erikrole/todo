@@ -74,14 +74,14 @@ export default function TodayPage() {
       <div className="flex flex-col gap-2">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
-          <p className="text-xs text-muted-foreground/50 mt-0.5">
+          <p className="text-xs text-muted-foreground/70 mt-0.5">
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </p>
         </div>
         {totalForProgress > 0 && (
           <div className="flex items-center gap-3 px-4">
             <Progress value={progressPct} className="h-1.5 flex-1" />
-            <span className="text-[11px] text-muted-foreground/40 shrink-0 tabular-nums">
+            <span className="text-xs text-muted-foreground/65 shrink-0 tabular-nums">
               {completedCount}/{totalForProgress}
             </span>
           </div>
@@ -94,7 +94,7 @@ export default function TodayPage() {
         <>
           {overdueTasks.length > 0 && (
             <section>
-              <h2 className="text-[10px] font-semibold text-destructive/60 uppercase tracking-[0.12em] mb-1 px-4">
+              <h2 className="text-xs font-semibold text-destructive/80 uppercase tracking-[0.12em] mb-1 px-4">
                 Overdue
               </h2>
               <DroppableZone id="section:today:overdue">
@@ -115,16 +115,16 @@ export default function TodayPage() {
             return (
               <section key={label}>
                 <div className="flex items-center justify-between px-4 mb-1">
-                  <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em]">
+                  <h2 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-[0.12em]">
                     {label}
                   </h2>
                   <button
                     onClick={() => toggleSection(key)}
                     aria-label={isCollapsed ? `Expand ${label}` : `Collapse ${label}`}
-                    className="text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
+                    className="text-muted-foreground/55 hover:text-muted-foreground/80 transition-colors"
                   >
                     {isCollapsed ? (
-                      <span className="flex items-center gap-1 text-[10px] tabular-nums">
+                      <span className="flex items-center gap-1 text-xs tabular-nums">
                         {taskCount}
                         <ChevronRight className="h-3 w-3" />
                       </span>

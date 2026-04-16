@@ -557,7 +557,7 @@ export function AppSidebar() {
                     </span>
                   ) : (
                     inboxBadge != null && inboxBadge > 0 && (
-                      <span className="text-[11px] tabular-nums text-muted-foreground/50 relative z-10">
+                      <span className="text-xs tabular-nums text-muted-foreground/70 relative z-10">
                         {inboxBadge}
                       </span>
                     )
@@ -630,7 +630,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild={false}
-                className="text-muted-foreground/40 hover:text-primary/60 hover:bg-transparent font-normal"
+                className="text-muted-foreground/65 hover:text-primary hover:bg-transparent font-normal"
                 onClick={() => setAddingArea(true)}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -675,7 +675,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild={false}
-                className="text-muted-foreground/40 hover:text-primary/60 hover:bg-transparent font-normal"
+                className="text-muted-foreground/65 hover:text-primary hover:bg-transparent font-normal"
                 onClick={() => setAddingProject(true)}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -690,7 +690,7 @@ export function AppSidebar() {
         <div className="flex items-center justify-between px-1">
           <Link
             href="/settings/shortcuts"
-            className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors py-1"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-muted-foreground transition-colors py-1"
           >
             <Settings className="h-3.5 w-3.5" />
             <span>Shortcuts</span>

@@ -42,7 +42,7 @@ export default function LogbookPage() {
       ) : (
         sortedDates.map((date) => (
           <section key={date}>
-            <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em] mb-1 px-4">
+            <h2 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-[0.12em] mb-1 px-4">
               {new Date(date + "T00:00:00").toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",

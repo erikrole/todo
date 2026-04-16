@@ -102,7 +102,7 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Projects in this area */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em]">Projects</h2>
+        <h2 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-[0.12em]">Projects</h2>
         <div className="grid gap-2">
           {areaProjects.map((project) => (
             <Link key={project.id} href={`/project/${project.id}`}>
@@ -157,7 +157,7 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Loose tasks assigned directly to this area */}
       <section className="flex flex-col gap-2">
-        <h2 className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-[0.12em]">Tasks</h2>
+        <h2 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-[0.12em]">Tasks</h2>
         <DroppableZone id={`section:area:${id}`}>
           <TaskList
             tasks={looseTasks.filter((t) => !t.projectId && !t.isCompleted)}

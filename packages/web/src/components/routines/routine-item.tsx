@@ -61,11 +61,11 @@ export function RoutineItem({ task, index = 0 }: Props) {
   const isHealthy = !isOverdue && !isDueSoon;
 
   function formatDaysToGo(): { text: string; cls: string } {
-    if (daysToGo === null) return { text: "—", cls: "text-muted-foreground/40" };
+    if (daysToGo === null) return { text: "—", cls: "text-muted-foreground/65" };
     if (daysToGo < 0) return { text: `${Math.abs(daysToGo)}d overdue`, cls: "text-destructive/80" };
     if (daysToGo === 0) return { text: "today", cls: "text-amber-500" };
     if (daysToGo <= 2) return { text: `${daysToGo}d`, cls: "text-amber-500/80" };
-    return { text: `${daysToGo}d`, cls: "text-muted-foreground/50" };
+    return { text: `${daysToGo}d`, cls: "text-muted-foreground/70" };
   }
 
   const { text: dtoText, cls: dtoCls } = formatDaysToGo();
@@ -87,7 +87,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
               <span className="text-[13px] font-medium truncate leading-snug">{task.title}</span>
               <div className="flex items-baseline gap-2 shrink-0 text-[11px] tabular-nums">
                 {daysAgo !== null && (
-                  <span className="text-muted-foreground/45">{daysAgo}d ago</span>
+                  <span className="text-muted-foreground/65">{daysAgo}d ago</span>
                 )}
                 <span className={cn("font-semibold", dtoCls)}>{dtoText}</span>
               </div>
@@ -108,7 +108,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
 
             {/* Sub-line */}
             {(count > 0 || avgDays !== null) && (
-              <div className="mt-0.5 flex items-center gap-1.5 tabular-nums text-[10px] text-muted-foreground/40">
+              <div className="mt-0.5 flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground/65">
                 {count > 0 && <span>{count}×</span>}
                 {count > 0 && avgDays !== null && <span>·</span>}
                 {avgDays !== null && <span>{Math.round(avgDays)}d avg</span>}
