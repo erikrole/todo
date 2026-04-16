@@ -48,14 +48,19 @@ export async function DELETE(
   const { searchParams } = new URL(request.url);
 
   if (searchParams.get("permanent") === "true") {
+    // Hard-delete subtasks first to avoid orphans
+    await db.delete(tasks).where(eq(tasks.parentTaskId, id));
     const [task] = await db.delete(tasks).where(eq(tasks.id, id)).returning();
     if (!task) return err("Not found", 404);
     return ok(task);
   }
 
+  const now = nowIso();
+  // Cascade soft-delete to subtasks
+  await db.update(tasks).set({ deletedAt: now, updatedAt: now }).where(eq(tasks.parentTaskId, id));
   const [task] = await db
     .update(tasks)
-    .set({ deletedAt: nowIso(), updatedAt: nowIso() })
+    .set({ deletedAt: now, updatedAt: now })
     .where(eq(tasks.id, id))
     .returning();
   if (!task) return err("Not found", 404);

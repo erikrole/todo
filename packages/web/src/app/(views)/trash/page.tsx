@@ -1,12 +1,17 @@
 "use client";
 
-import { useTasks, useRestoreTask, useDeleteTaskPermanent } from "@/hooks/use-tasks";
+import { useEffect } from "react";
+import { useTasks, useRestoreTask, useDeleteTaskPermanent, usePurgeTrashedTasks } from "@/hooks/use-tasks";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Task } from "@todo/shared";
 
 export default function TrashPage() {
   const { data: tasks = [], isLoading } = useTasks("trash");
+  const purge = usePurgeTrashedTasks();
+  // Fire-and-forget purge of tasks older than 30 days when the trash view opens.
+  // Moved out of the GET handler so reads stay idempotent.
+  useEffect(() => { purge.mutate(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const restoreTask = useRestoreTask();
   const deleteForever = useDeleteTaskPermanent();
 

@@ -1,16 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Task, TaskFilter, CreateTaskInput, UpdateTaskInput } from "@todo/shared";
+import type { Task, TaskFilter, CreateTaskInput, UpdateTaskInput, BatchTaskAction } from "@todo/shared";
 import { api } from "@/lib/fetch";
 import { notify } from "@/lib/toast";
+import { toLocalDateStr } from "@/lib/dates";
 
 function localDateStr() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return toLocalDateStr(new Date());
 }
 
 function taskKeys(filter?: TaskFilter, projectId?: string, areaId?: string) {
@@ -79,7 +76,7 @@ export function useUpdateTask() {
 export function useCompleteTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.post<Task>(`/api/tasks/${id}/complete`, {}),
+    mutationFn: (id: string) => api.post<Task>(`/api/tasks/${id}/complete?date=${localDateStr()}`, {}),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ["tasks"] });
       const snapshots = qc.getQueriesData<Task[]>({ queryKey: ["tasks"] });
@@ -172,5 +169,20 @@ export function useDuplicateTask() {
     mutationFn: (id: string) => api.post<Task>(`/api/tasks/${id}/duplicate`, {}),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
     onError: (err) => notify.error("Failed to duplicate task", err),
+  });
+}
+
+export function useBatchTaskAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (action: BatchTaskAction) => api.post<{ updated: number }>("/api/tasks/batch", action),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (err) => notify.error("Bulk action failed", err),
+  });
+}
+
+export function usePurgeTrashedTasks() {
+  return useMutation({
+    mutationFn: () => api.post<{ purged: number }>("/api/tasks/purge", {}),
   });
 }

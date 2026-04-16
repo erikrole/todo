@@ -1,5 +1,5 @@
 import { db, tasks } from "@todo/db";
-import { and, eq, gt, isNull, lte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { err, nowIso, ok } from "@/lib/api";
 
 export async function POST(
@@ -13,33 +13,10 @@ export async function POST(
   if (!original) return err("Not found", 404);
   if (!original.isCompleted) return err("Task is not completed", 400);
 
-  // Heuristic cleanup: if the task was recurring, find and delete the child
-  // instance spawned at completion time (created within 5s, same recurrence fields).
-  if (original.recurrenceType && original.recurrenceInterval && original.completedAt) {
-    const completedAt = new Date(original.completedAt);
-    // Tasks spawned within this window of the completion timestamp are recurrence candidates
-    const RECURRENCE_SPAWN_WINDOW_MS = 5_000;
-    const windowStart = new Date(completedAt.getTime() - RECURRENCE_SPAWN_WINDOW_MS).toISOString();
-    const windowEnd = new Date(completedAt.getTime() + RECURRENCE_SPAWN_WINDOW_MS).toISOString();
-
-    const candidates = await db
-      .select()
-      .from(tasks)
-      .where(
-        and(
-          isNull(tasks.deletedAt),
-          eq(tasks.recurrenceType, original.recurrenceType),
-          original.projectId ? eq(tasks.projectId, original.projectId) : isNull(tasks.projectId),
-          gt(tasks.createdAt, windowStart),
-          lte(tasks.createdAt, windowEnd),
-        ),
-      );
-
-    // Only delete if exactly one candidate — avoid clobbering unrelated tasks
-    const children = candidates.filter((c) => c.id !== id);
-    if (children.length === 1 && children[0]) {
-      await db.delete(tasks).where(eq(tasks.id, children[0].id));
-    }
+  // Delete the recurrence child spawned when this task was completed.
+  // spawnedFromTaskId is set on insert, so this is a deterministic lookup.
+  if (original.recurrenceType && original.recurrenceInterval) {
+    await db.delete(tasks).where(eq(tasks.spawnedFromTaskId, id));
   }
 
   const [task] = await db
