@@ -1,6 +1,6 @@
 import { db, tasks } from "@todo/db";
 import { CreateTaskSchema } from "@todo/shared";
-import { and, eq, gt, gte, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
+import { and, asc, eq, gt, gte, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { err, nowIso, ok, todayStr } from "@/lib/api";
 
@@ -38,9 +38,9 @@ export async function GET(request: Request) {
       break;
     case "completed_today": {
       // Tasks completed today (completedAt starts with today's date string)
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+      const tomorrowDate = new Date(today + "T00:00:00");
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      const tomorrowStr = `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth() + 1).padStart(2, "0")}-${String(tomorrowDate.getDate()).padStart(2, "0")}`;
       conditions.push(
         eq(tasks.isCompleted, true),
         isNull(tasks.parentTaskId),
@@ -67,9 +67,9 @@ export async function GET(request: Request) {
       );
       break;
     case "today_all": {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+      const tomorrowDate = new Date(today + "T00:00:00");
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      const tomorrowStr = `${tomorrowDate.getFullYear()}-${String(tomorrowDate.getMonth() + 1).padStart(2, "0")}-${String(tomorrowDate.getDate()).padStart(2, "0")}`;
       conditions.push(
         or(
           and(
@@ -89,15 +89,18 @@ export async function GET(request: Request) {
       break;
     }
     case "trash": {
-      // Auto-purge tasks deleted more than 30 days ago before returning results
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 30);
-      await db.delete(tasks).where(
-        and(isNotNull(tasks.deletedAt), lte(tasks.deletedAt, cutoff.toISOString())),
-      );
       conditions.push(isNotNull(tasks.deletedAt));
       break;
     }
+    case "routines":
+      conditions.push(
+        isNotNull(tasks.recurrenceType),
+        eq(tasks.isCompleted, false),
+        eq(tasks.isCancelled, false),
+        isNull(tasks.parentTaskId),
+        isNull(tasks.spawnedFromTaskId),
+      );
+      break;
     default:
       conditions.push(isNull(tasks.parentTaskId));
   }
@@ -105,7 +108,8 @@ export async function GET(request: Request) {
   const rows = await db
     .select()
     .from(tasks)
-    .where(conditions.length ? and(...conditions) : undefined);
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(filter === "routines" ? asc(tasks.whenDate) : asc(tasks.position));
 
   return ok(rows);
 }
