@@ -1,5 +1,5 @@
 import { db, taskCompletions, tasks } from "@todo/db";
-import { asc, eq, isNull } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { err, ok } from "@/lib/api";
 
 export async function GET(
