@@ -70,11 +70,12 @@ export function ImportSheet({ open, onOpenChange }: Props) {
     setStep("importing");
     let totalImported = 0;
 
+    const all = await api.get<Task[]>("/api/tasks?filter=all");
+
     for (const pt of parsed) {
       setProgress(`Importing ${pt.name}...`);
       try {
         // Find existing task by title
-        const all = await api.get<Task[]>("/api/tasks?filter=all");
         let task = all.find((t) => t.title === pt.name && t.recurrenceType);
 
         // Create if not found
@@ -189,6 +190,9 @@ export function ImportSheet({ open, onOpenChange }: Props) {
                   );
                 })}
               </div>
+              <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                ⚠ Importing will replace all existing completion history for these routines.
+              </p>
               <div className="flex gap-2 mt-auto pt-2">
                 <Button variant="outline" onClick={() => setStep("paste")} className="flex-1">
                   Back
