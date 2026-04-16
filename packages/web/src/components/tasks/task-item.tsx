@@ -283,18 +283,18 @@ export const TaskItem = memo(function TaskItem({
                 onBlur={save}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); save(); titleRef.current?.blur(); } }}
                 onClick={(e) => e.stopPropagation()}
-                className="flex-1 min-w-0 bg-transparent text-sm font-medium outline-none text-foreground"
+                className="flex-1 min-w-0 bg-transparent text-sm font-semibold outline-none text-foreground"
                 placeholder="Task title"
               />
             ) : (
               <div className="flex flex-1 flex-col min-w-0">
                 <span
                   className={cn(
-                    "text-sm leading-snug tracking-[-0.006em]",
+                    "text-sm font-semibold leading-snug tracking-[-0.006em]",
                     task.isCompleted
-                      ? "text-muted-foreground/40"
+                      ? "text-muted-foreground/65"
                       : task.isCancelled
-                        ? "line-through text-muted-foreground/25"
+                        ? "line-through text-muted-foreground/40"
                         : "text-foreground",
                   )}
                 >
@@ -304,27 +304,27 @@ export const TaskItem = memo(function TaskItem({
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {showWhenDate && task.whenDate && (
                       <span className={cn(
-                        "text-[11px] tabular-nums",
+                        "text-xs tabular-nums",
                         !task.isCompleted && task.whenDate < todayStr()
                           ? "text-destructive/70"
-                          : "text-muted-foreground/50",
+                          : "text-muted-foreground/70",
                       )}>
                         {formatWhenDate(task.whenDate)}
                       </span>
                     )}
                     {task.scheduledTime && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] text-teal-600/70 dark:text-teal-400/70 tabular-nums">
+                      <span className="inline-flex items-center gap-0.5 text-xs text-teal-600/70 dark:text-teal-400/70 tabular-nums">
                         <Clock className="h-2.5 w-2.5" />
                         {fmtTime(task.scheduledTime)}
                       </span>
                     )}
                     {task.recurrenceType && (
-                      <span className="inline-flex items-center text-muted-foreground/30">
+                      <span className="inline-flex items-center text-muted-foreground/60">
                         <Repeat2 className="h-2.5 w-2.5" />
                       </span>
                     )}
                     {task.notes && (
-                      <span className="text-[11px] text-muted-foreground/30">·</span>
+                      <span className="text-xs text-muted-foreground/60">·</span>
                     )}
                   </div>
                 )}
@@ -334,7 +334,7 @@ export const TaskItem = memo(function TaskItem({
             {!isExpanded && (task.isCompleted ? !!task.completedAt : !!task.deadline) && (
               <div className="ml-auto shrink-0 self-center">
                 {task.isCompleted && task.completedAt ? (
-                  <span className="text-[10px] tabular-nums text-muted-foreground/30">
+                  <span className="text-xs tabular-nums text-muted-foreground/60">
                     {new Date(task.completedAt).toLocaleTimeString("en-US", {
                       hour: "numeric",
                       minute: "2-digit",
@@ -566,7 +566,7 @@ function ExpandedPanel({
           onBlur={onSave}
           placeholder="Notes"
           rows={1}
-          className="w-full bg-transparent text-xs text-muted-foreground resize-none outline-none placeholder:text-muted-foreground/30 leading-relaxed"
+          className="w-full bg-transparent text-xs text-muted-foreground resize-none outline-none placeholder:text-muted-foreground/45 leading-relaxed"
         />
       </div>
 
@@ -584,7 +584,7 @@ function ExpandedPanel({
               "flex items-center gap-1.5 transition-colors rounded px-1 -mx-1",
               task.whenDate
                 ? "text-foreground/70 hover:text-foreground"
-                : "text-muted-foreground/30 hover:text-muted-foreground/60",
+                : "text-muted-foreground/60 hover:text-muted-foreground/75",
             )}>
               <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
               <span>{task.whenDate ? formatWhenDate(task.whenDate) : "Set date"}</span>
@@ -609,7 +609,7 @@ function ExpandedPanel({
             {task.whenDate && (
               <div className="border-t border-border/50 px-3 pb-3 pt-2">
                 <button
-                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 hover:text-destructive/70 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-destructive/70 transition-colors"
                   onClick={() => { onDateChange(null); setDateOpen(false); }}
                 >
                   <X className="h-3 w-3" /> Clear date
@@ -627,10 +627,10 @@ function ExpandedPanel({
                 key={value}
                 onClick={() => onTimeOfDayChange(task.timeOfDay === value ? null : value)}
                 className={cn(
-                  "px-1.5 py-0.5 text-[10px] rounded transition-colors",
+                  "px-1.5 py-0.5 text-xs rounded transition-colors",
                   task.timeOfDay === value
                     ? "bg-primary/15 text-primary font-medium"
-                    : "text-muted-foreground/40 hover:text-muted-foreground/70",
+                    : "text-muted-foreground/65 hover:text-muted-foreground/75",
                 )}
               >
                 {label}
@@ -647,7 +647,7 @@ function ExpandedPanel({
           >
             <Clock className="h-3.5 w-3.5" />
             <span>{fmtTime(task.scheduledTime)}</span>
-            <span className="text-muted-foreground/30 text-[10px]">· click to clear</span>
+            <span className="text-muted-foreground/60 text-xs">· click to clear</span>
           </button>
         )}
 
@@ -662,13 +662,13 @@ function ExpandedPanel({
                   : urgency === "soon"
                     ? "text-amber-500 dark:text-amber-400"
                     : "text-muted-foreground"
-                : "text-muted-foreground/30 hover:text-muted-foreground/60",
+                : "text-muted-foreground/60 hover:text-muted-foreground/75",
             )}>
               <Flag className="h-3.5 w-3.5 shrink-0" />
               {task.deadline && deadlineDays !== null ? (
                 <>
                   <span>Deadline: {formatWhenDate(task.deadline)}</span>
-                  <span className="text-muted-foreground/50">
+                  <span className="text-muted-foreground/70">
                     {deadlineDays < 0
                       ? `· ${Math.abs(deadlineDays)}d overdue`
                       : deadlineDays === 0
@@ -700,7 +700,7 @@ function ExpandedPanel({
             {task.deadline && (
               <div className="border-t border-border/50 px-3 pb-3 pt-2">
                 <button
-                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 hover:text-destructive/70 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-destructive/70 transition-colors"
                   onClick={() => { onDeadlineChange(null); setDeadlineOpen(false); }}
                 >
                   <X className="h-3 w-3" /> Clear deadline
@@ -717,7 +717,7 @@ function ExpandedPanel({
               "flex items-center gap-1.5 transition-colors rounded px-1 -mx-1",
               task.recurrenceType
                 ? "text-foreground/70 hover:text-foreground"
-                : "text-muted-foreground/30 hover:text-muted-foreground/60",
+                : "text-muted-foreground/60 hover:text-muted-foreground/75",
             )}>
               <Repeat2 className="h-3.5 w-3.5 shrink-0" />
               <span>
@@ -755,7 +755,7 @@ function ExpandedPanel({
                 <>
                   <div className="border-t border-border/50 my-1" />
                   <div className="flex items-center gap-1.5 px-2 py-1">
-                    <span className="text-[10px] text-muted-foreground/50 flex-shrink-0">Every</span>
+                    <span className="text-xs text-muted-foreground/70 flex-shrink-0">Every</span>
                     <input
                       type="number"
                       min="1"
@@ -774,14 +774,14 @@ function ExpandedPanel({
                       onClick={(e) => e.stopPropagation()}
                       className="w-10 bg-background border border-border rounded px-1 py-0.5 text-xs text-center outline-none focus:ring-1 focus:ring-primary/50 tabular-nums"
                     />
-                    <span className="text-[10px] text-muted-foreground/50 flex-shrink-0">
+                    <span className="text-xs text-muted-foreground/70 flex-shrink-0">
                       {task.recurrenceType === "daily" ? "day(s)" :
                        task.recurrenceType === "weekly" ? "week(s)" :
                        task.recurrenceType === "monthly" ? "month(s)" : "year(s)"}
                     </span>
                   </div>
                   <div className="border-t border-border/50 my-1" />
-                  <p className="text-[10px] text-muted-foreground/50 px-2 pb-1">Reschedule mode</p>
+                  <p className="text-xs text-muted-foreground/70 px-2 pb-1">Reschedule mode</p>
                   {(["on_schedule", "after_completion"] as const).map((mode) => (
                     <button
                       key={mode}
@@ -806,7 +806,7 @@ function ExpandedPanel({
                       onRecurrenceChange({ recurrenceType: null, recurrenceMode: null });
                       setRecurrenceOpen(false);
                     }}
-                    className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-xs text-muted-foreground/50 hover:text-destructive/70 hover:bg-muted transition-colors"
+                    className="flex items-center gap-1.5 w-full px-2 py-1.5 rounded text-xs text-muted-foreground/70 hover:text-destructive/70 hover:bg-muted transition-colors"
                   >
                     <X className="h-3 w-3" /> Remove recurrence
                   </button>
@@ -817,7 +817,7 @@ function ExpandedPanel({
         </Popover>
 
         {!hasMetadata && !subtasks.length && (
-          <span className="text-muted-foreground/30 sr-only">No date set</span>
+          <span className="text-muted-foreground/60 sr-only">No date set</span>
         )}
 
         <div className="ml-auto">
@@ -825,7 +825,7 @@ function ExpandedPanel({
             variant="ghost"
             size="sm"
             onClick={onDelete}
-            className="h-6 w-6 p-0 text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10"
+            className="h-6 w-6 p-0 text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -848,7 +848,7 @@ function ExpandedPanel({
                 <span
                   className={cn(
                     "text-xs flex-1",
-                    sub.isCompleted ? "text-muted-foreground/40" : "text-foreground/80",
+                    sub.isCompleted ? "text-muted-foreground/65" : "text-foreground/80",
                   )}
                 >
                   {sub.title}
@@ -866,14 +866,14 @@ function ExpandedPanel({
                   onKeyDown={handleSubtaskKeyDown}
                   onBlur={() => { submitSubtask(); setAddingSubtask(false); }}
                   placeholder="New subtask"
-                  className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/30"
+                  className="flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground/45"
                   disabled={createTask.isPending}
                 />
               </div>
             )}
 
             {subtasks.length > 0 && (
-              <p className="text-[10px] text-muted-foreground/40 mt-1">
+              <p className="text-xs text-muted-foreground/65 mt-1">
                 {completedSubtasks}/{subtasks.length} completed
               </p>
             )}
@@ -886,7 +886,7 @@ function ExpandedPanel({
         {!addingSubtask && (
           <button
             onClick={() => setAddingSubtask(true)}
-            className="flex items-center gap-1.5 text-[11px] text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground/75 transition-colors"
           >
             <Plus className="h-3 w-3" />
             Add subtask
@@ -903,10 +903,10 @@ function DeadlineBadge({ deadline }: { deadline: string }) {
     <Badge
       variant="outline"
       className={cn(
-        "text-[10px] px-1.5 py-0 tabular-nums font-normal h-4",
+        "text-xs px-1.5 py-0 tabular-nums font-normal h-4",
         urgency === "overdue" && "border-destructive/40 text-destructive",
         urgency === "soon" && "border-orange-400/40 text-orange-500 dark:text-orange-400",
-        urgency === "normal" && "border-border text-muted-foreground/50",
+        urgency === "normal" && "border-border text-muted-foreground/70",
       )}
     >
       {formatWhenDate(deadline)}
