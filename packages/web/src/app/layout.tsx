@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Barlow, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const barlow = Barlow({
+  variable: "--font-barlow",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full`} suppressHydrationWarning>
+    <html lang="en" className={`${barlow.variable} ${jetbrainsMono.variable} h-full`} suppressHydrationWarning>
       <body className="h-full bg-background text-foreground antialiased">
         {/* Sync accent before first paint to prevent flash */}
         <script

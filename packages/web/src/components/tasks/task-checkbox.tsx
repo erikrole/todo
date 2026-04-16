@@ -40,6 +40,9 @@ export function TaskCheckbox({ checked, onComplete, onUncomplete, disabled }: Ta
         animating && "[animation:task-complete_0.35s_ease-in-out]",
       )}
     >
+      {animating && (
+        <span className="absolute inset-0 rounded-full bg-primary/25 [animation:ripple-out_0.45s_ease-out_forwards] pointer-events-none" />
+      )}
       <svg viewBox="0 0 18 18" fill="none" className="h-[18px] w-[18px]">
         {/* Hollow outline — visible when unchecked */}
         <circle
