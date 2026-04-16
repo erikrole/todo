@@ -71,6 +71,7 @@ export const tasks = sqliteTable(
     areaId: text("area_id").references(() => areas.id, { onDelete: "set null" }),
     sectionId: text("section_id").references(() => sections.id, { onDelete: "set null" }),
     parentTaskId: text("parent_task_id"),
+    spawnedFromTaskId: text("spawned_from_task_id"),
     isSomeday: integer("is_someday", { mode: "boolean" }).default(false).notNull(),
     isCompleted: integer("is_completed", { mode: "boolean" }).default(false).notNull(),
     completedAt: text("completed_at"),
@@ -97,6 +98,24 @@ export const tasks = sqliteTable(
   ],
 );
 
+// ─── Task Completions ────────────────────────────────────────────────────────
+
+export const taskCompletions = sqliteTable(
+  "task_completions",
+  {
+    id: text("id").primaryKey(),
+    taskId: text("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+    completedAt: text("completed_at").notNull(),
+    intervalActual: real("interval_actual"),
+    notes: text("notes"),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    index("idx_task_completions_task_id").on(t.taskId),
+    index("idx_task_completions_completed_at").on(t.completedAt),
+  ],
+);
+
 export type Area = typeof areas.$inferSelect;
 export type NewArea = typeof areas.$inferInsert;
 export type Project = typeof projects.$inferSelect;
@@ -105,3 +124,5 @@ export type Section = typeof sections.$inferSelect;
 export type NewSection = typeof sections.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
+export type TaskCompletion = typeof taskCompletions.$inferSelect;
+export type NewTaskCompletion = typeof taskCompletions.$inferInsert;
