@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/fetch";
 import { cn } from "@/lib/utils";
 import { toLocalDateStr } from "@/lib/dates";
 import type { Task } from "@todo/shared";
+import { CompletionHistorySheet } from "./completion-history-sheet";
 
 interface CompletionStats {
   completions: unknown[];
@@ -22,6 +24,7 @@ interface Props {
 }
 
 export function RoutineItem({ task }: Props) {
+  const [historyOpen, setHistoryOpen] = useState(false);
   const today = toLocalDateStr(new Date());
 
   const { data } = useQuery({
@@ -66,22 +69,28 @@ export function RoutineItem({ task }: Props) {
   const { text: daysToGoText, color: daysToGoColor } = formatDaysToGo(daysToGo);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/40 rounded-lg cursor-default group">
-      {/* Title */}
-      <span className="flex-1 text-sm truncate">{task.title}</span>
+    <>
+      <div
+        className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/40 rounded-lg cursor-pointer group"
+        onClick={() => setHistoryOpen(true)}
+      >
+        {/* Title */}
+        <span className="flex-1 text-sm truncate">{task.title}</span>
 
-      {/* Metadata */}
-      <div className="flex items-center gap-2 shrink-0 text-[11px] font-mono">
-        <span className={cn("tabular-nums", daysToGoColor)}>{daysToGoText}</span>
-        <span className="text-muted-foreground/30">·</span>
-        <span className="text-muted-foreground/50 tabular-nums">{formatDaysAgo(daysAgo)}</span>
-        {avgDays !== null && (
-          <>
-            <span className="text-muted-foreground/30">·</span>
-            <span className="text-muted-foreground/40 tabular-nums">{Math.round(avgDays)}d avg</span>
-          </>
-        )}
+        {/* Metadata */}
+        <div className="flex items-center gap-2 shrink-0 text-[11px] font-mono">
+          <span className={cn("tabular-nums", daysToGoColor)}>{daysToGoText}</span>
+          <span className="text-muted-foreground/30">·</span>
+          <span className="text-muted-foreground/50 tabular-nums">{formatDaysAgo(daysAgo)}</span>
+          {avgDays !== null && (
+            <>
+              <span className="text-muted-foreground/30">·</span>
+              <span className="text-muted-foreground/40 tabular-nums">{Math.round(avgDays)}d avg</span>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+      <CompletionHistorySheet task={task} open={historyOpen} onOpenChange={setHistoryOpen} />
+    </>
   );
 }
