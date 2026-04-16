@@ -48,9 +48,36 @@ export async function GET(request: Request) {
       ),
     );
 
+  const [todayCompletedRow] = await db
+    .select({ count: count() })
+    .from(tasks)
+    .where(
+      and(
+        eq(tasks.whenDate, today),
+        isNull(tasks.parentTaskId),
+        eq(tasks.isCompleted, true),
+        eq(tasks.isCancelled, false),
+        isNull(tasks.deletedAt),
+      ),
+    );
+
+  const [todayTotalRow] = await db
+    .select({ count: count() })
+    .from(tasks)
+    .where(
+      and(
+        eq(tasks.whenDate, today),
+        isNull(tasks.parentTaskId),
+        eq(tasks.isCancelled, false),
+        isNull(tasks.deletedAt),
+      ),
+    );
+
   return ok({
     inbox: inboxRow.count,
     today: todayRow.count,
     overdue: overdueRow.count,
+    todayCompleted: todayCompletedRow.count,
+    todayTotal: todayTotalRow.count,
   });
 }

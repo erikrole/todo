@@ -38,6 +38,8 @@ export interface TaskCounts {
   inbox: number;
   today: number;
   overdue: number;
+  todayCompleted: number;
+  todayTotal: number;
 }
 
 export function useTaskCounts() {

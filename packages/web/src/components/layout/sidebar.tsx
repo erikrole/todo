@@ -35,6 +35,8 @@ import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
 import { COLOR_PRESETS } from "@/lib/color-presets";
 import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus, Settings, Repeat2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { TodayProgressRing } from "@/components/ui/today-progress-ring";
 import type { AreaWithCounts, ProjectWithCounts } from "@todo/shared";
 
 const NAV_ITEMS = [
@@ -531,18 +533,34 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarMenu>
             {NAV_ITEMS.map(({ href, label, icon: Icon, dropId }) => {
-              const badgeCount =
-                href === "/inbox" ? counts?.inbox :
-                href === "/today" ? counts?.today :
-                undefined;
+              const isActive = pathname === href;
+              const inboxBadge = href === "/inbox" ? counts?.inbox : undefined;
               const linkContent = (
-                <Link href={href} className="flex items-center gap-2 w-full">
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="flex-1">{label}</span>
-                  {badgeCount != null && badgeCount > 0 && (
-                    <span className="text-[11px] tabular-nums text-muted-foreground/50">
-                      {badgeCount}
+                <Link href={href} className="flex items-center gap-2 w-full relative">
+                  {isActive && (
+                    <motion.div
+                      layoutId="sidebar-nav-indicator"
+                      className="absolute inset-0 rounded-md bg-sidebar-accent"
+                      style={{ zIndex: 0 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                    />
+                  )}
+                  <Icon className="h-4 w-4 shrink-0 relative z-10" />
+                  <span className="flex-1 relative z-10">{label}</span>
+                  {href === "/today" ? (
+                    <span className="relative z-10">
+                      <TodayProgressRing
+                        completed={counts?.todayCompleted ?? 0}
+                        total={counts?.todayTotal ?? 0}
+                        remaining={counts?.today ?? 0}
+                      />
                     </span>
+                  ) : (
+                    inboxBadge != null && inboxBadge > 0 && (
+                      <span className="text-[11px] tabular-nums text-muted-foreground/50 relative z-10">
+                        {inboxBadge}
+                      </span>
+                    )
                   )}
                 </Link>
               );
@@ -550,12 +568,20 @@ export function AppSidebar() {
                 <SidebarMenuItem key={href}>
                   {dropId ? (
                     <DroppableZone id={dropId} className="w-full">
-                      <SidebarMenuButton asChild isActive={pathname === href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={false}
+                        className={cn(isActive && "text-sidebar-primary font-medium")}
+                      >
                         {linkContent}
                       </SidebarMenuButton>
                     </DroppableZone>
                   ) : (
-                    <SidebarMenuButton asChild isActive={pathname === href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={false}
+                      className={cn(isActive && "text-sidebar-primary font-medium")}
+                    >
                       {linkContent}
                     </SidebarMenuButton>
                   )}
