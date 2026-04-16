@@ -1,6 +1,6 @@
 "use client";
 
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/fetch";
 import type { Task } from "@todo/shared";
@@ -48,7 +48,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
   const maxInterval = Math.max(...completions.map((c) => c.intervalActual ?? 0), 1);
 
   function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("en-US", {
+    return new Date(iso).toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -60,6 +60,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
       <SheetContent side="right" className="w-96 flex flex-col">
         <SheetHeader>
           <SheetTitle className="text-base">{task?.title ?? ""}</SheetTitle>
+          <SheetDescription className="sr-only">Completion history</SheetDescription>
         </SheetHeader>
 
         {/* Stats row */}
