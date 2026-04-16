@@ -78,7 +78,7 @@ export function RoutineItem({ task }: Props) {
         {avgDays !== null && (
           <>
             <span className="text-muted-foreground/30">·</span>
-            <span className="text-muted-foreground/40 tabular-nums">{avgDays}d avg</span>
+            <span className="text-muted-foreground/40 tabular-nums">{Math.round(avgDays)}d avg</span>
           </>
         )}
       </div>
