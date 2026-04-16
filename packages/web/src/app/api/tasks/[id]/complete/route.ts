@@ -1,14 +1,15 @@
-import { db, tasks } from "@todo/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { db, taskCompletions, tasks } from "@todo/db";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { err, nextRecurrenceDate, nowIso, ok, todayStr } from "@/lib/api";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const { searchParams } = new URL(req.url);
   const now = nowIso();
-  const today = todayStr();
+  const today = searchParams.get("date") || todayStr();
 
   const [original] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt)));
   if (!original) return err("Not found", 404);
@@ -18,6 +19,27 @@ export async function POST(
     .set({ isCompleted: true, completedAt: now, updatedAt: now })
     .where(eq(tasks.id, id))
     .returning();
+
+  // Write completion record
+  const canonicalId = original.spawnedFromTaskId ?? original.id;
+  const [lastCompletion] = await db
+    .select()
+    .from(taskCompletions)
+    .where(eq(taskCompletions.taskId, canonicalId))
+    .orderBy(desc(taskCompletions.completedAt))
+    .limit(1);
+  const intervalActual = lastCompletion
+    ? Math.round(((Date.parse(now) - Date.parse(lastCompletion.completedAt)) / 86400000) * 100) / 100
+    : null;
+  const { nanoid: nanoidFn } = await import("nanoid");
+  await db.insert(taskCompletions).values({
+    id: nanoidFn(),
+    taskId: canonicalId,
+    completedAt: now,
+    intervalActual,
+    notes: null,
+    createdAt: now,
+  });
 
   // Spawn next recurrence instance
   if (original.recurrenceType && original.recurrenceInterval) {
@@ -30,9 +52,8 @@ export async function POST(
       const nextWhenDate = nextRecurrenceDate(baseDate, original.recurrenceType, original.recurrenceInterval);
 
       if (!endsAt || nextWhenDate <= endsAt) {
-        const { nanoid } = await import("nanoid");
         await db.insert(tasks).values({
-          id: nanoid(),
+          id: nanoidFn(),
           title: original.title,
           notes: original.notes,
           whenDate: nextWhenDate,
@@ -45,6 +66,7 @@ export async function POST(
           recurrenceMode: original.recurrenceMode,
           recurrenceInterval: original.recurrenceInterval,
           recurrenceEndsAt: original.recurrenceEndsAt,
+          spawnedFromTaskId: id,
           position: original.position,
           createdAt: now,
           updatedAt: now,
