@@ -72,7 +72,12 @@ export default function TodayPage() {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <div className="flex flex-col gap-2">
-        <h1 className="text-lg font-semibold tracking-tight">Today</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
+          <p className="text-xs text-muted-foreground/50 mt-0.5">
+            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+          </p>
+        </div>
         {totalForProgress > 0 && (
           <div className="flex items-center gap-3 px-4">
             <Progress value={progressPct} className="h-1.5 flex-1" />

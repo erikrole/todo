@@ -21,7 +21,7 @@ export default function UpcomingPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <h1 className="text-lg font-semibold tracking-tight">Upcoming</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Upcoming</h1>
 
       {isLoading ? (
         <TaskList tasks={[]} isLoading />

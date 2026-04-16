@@ -27,7 +27,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SettingsSheet } from "@/components/settings/settings-sheet";
 import { useAreas, useCreateArea, useUpdateArea, useDeleteArea } from "@/hooks/use-areas";
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from "@/hooks/use-projects";
 import { useTaskCounts } from "@/hooks/use-tasks";
@@ -660,18 +660,17 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 flex flex-col gap-1">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link href="/settings/shortcuts">
-                <Settings className="h-4 w-4" />
-                <span>Keyboard Shortcuts</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <ThemeToggle />
+      <SidebarFooter className="p-3">
+        <div className="flex items-center justify-between px-1">
+          <Link
+            href="/settings/shortcuts"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors py-1"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            <span>Shortcuts</span>
+          </Link>
+          <SettingsSheet />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

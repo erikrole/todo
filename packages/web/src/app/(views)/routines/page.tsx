@@ -43,7 +43,7 @@ export default function RoutinesPage() {
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">Routines</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Routines</h1>
         <Button variant="ghost" size="sm" onClick={() => setImportOpen(true)}>
           <Upload className="h-4 w-4 mr-1.5" />
           Import
