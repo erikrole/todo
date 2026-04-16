@@ -14,12 +14,6 @@ export async function POST(
   const [original] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt)));
   if (!original) return err("Not found", 404);
 
-  const [completed] = await db
-    .update(tasks)
-    .set({ isCompleted: true, completedAt: now, updatedAt: now })
-    .where(eq(tasks.id, id))
-    .returning();
-
   // Write completion record
   const canonicalId = original.spawnedFromTaskId ?? original.id;
   const [lastCompletion] = await db
@@ -32,48 +26,59 @@ export async function POST(
     ? Math.round(((Date.parse(now) - Date.parse(lastCompletion.completedAt)) / 86400000) * 100) / 100
     : null;
   const { nanoid: nanoidFn } = await import("nanoid");
-  await db.insert(taskCompletions).values({
-    id: nanoidFn(),
-    taskId: canonicalId,
-    completedAt: now,
-    intervalActual,
-    notes: null,
-    createdAt: now,
-  });
 
-  // Spawn next recurrence instance
-  if (original.recurrenceType && original.recurrenceInterval) {
-    const endsAt = original.recurrenceEndsAt;
-    if (!endsAt || today <= endsAt) {
-      const baseDate =
-        original.recurrenceMode === "after_completion"
-          ? today
-          : (original.whenDate ?? today);
-      const nextWhenDate = nextRecurrenceDate(baseDate, original.recurrenceType, original.recurrenceInterval);
+  const completed = await db.transaction(async (tx) => {
+    const [completedTask] = await tx
+      .update(tasks)
+      .set({ isCompleted: true, completedAt: now, updatedAt: now })
+      .where(eq(tasks.id, id))
+      .returning();
 
-      if (!endsAt || nextWhenDate <= endsAt) {
-        await db.insert(tasks).values({
-          id: nanoidFn(),
-          title: original.title,
-          notes: original.notes,
-          whenDate: nextWhenDate,
-          timeOfDay: original.timeOfDay,
-          scheduledTime: original.scheduledTime,
-          deadline: original.deadline,
-          projectId: original.projectId,
-          areaId: original.areaId,
-          recurrenceType: original.recurrenceType,
-          recurrenceMode: original.recurrenceMode,
-          recurrenceInterval: original.recurrenceInterval,
-          recurrenceEndsAt: original.recurrenceEndsAt,
-          spawnedFromTaskId: id,
-          position: original.position,
-          createdAt: now,
-          updatedAt: now,
-        });
+    await tx.insert(taskCompletions).values({
+      id: nanoidFn(),
+      taskId: canonicalId,
+      completedAt: now,
+      intervalActual,
+      notes: null,
+      createdAt: now,
+    });
+
+    // Spawn next recurrence instance
+    if (original.recurrenceType && original.recurrenceInterval) {
+      const endsAt = original.recurrenceEndsAt;
+      if (!endsAt || today <= endsAt) {
+        const baseDate =
+          original.recurrenceMode === "after_completion"
+            ? today
+            : (original.whenDate ?? today);
+        const nextWhenDate = nextRecurrenceDate(baseDate, original.recurrenceType, original.recurrenceInterval);
+
+        if (!endsAt || nextWhenDate <= endsAt) {
+          await tx.insert(tasks).values({
+            id: nanoidFn(),
+            title: original.title,
+            notes: original.notes,
+            whenDate: nextWhenDate,
+            timeOfDay: original.timeOfDay,
+            scheduledTime: original.scheduledTime,
+            deadline: original.deadline,
+            projectId: original.projectId,
+            areaId: original.areaId,
+            recurrenceType: original.recurrenceType,
+            recurrenceMode: original.recurrenceMode,
+            recurrenceInterval: original.recurrenceInterval,
+            recurrenceEndsAt: original.recurrenceEndsAt,
+            spawnedFromTaskId: canonicalId,
+            position: original.position,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
       }
     }
-  }
+
+    return completedTask;
+  });
 
   return ok(completed);
 }
