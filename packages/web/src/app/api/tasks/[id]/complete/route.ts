@@ -11,6 +11,10 @@ export async function POST(
   const now = nowIso();
   const today = searchParams.get("date") || todayStr();
 
+  const body = await req.json().catch(() => ({}));
+  const notes = typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null;
+  const completedAt = typeof body.completedAt === "string" && body.completedAt ? body.completedAt : now;
+
   const [original] = await db.select().from(tasks).where(and(eq(tasks.id, id), isNull(tasks.deletedAt)));
   if (!original) return err("Not found", 404);
 
@@ -23,23 +27,23 @@ export async function POST(
     .orderBy(desc(taskCompletions.completedAt))
     .limit(1);
   const intervalActual = lastCompletion
-    ? Math.round(((Date.parse(now) - Date.parse(lastCompletion.completedAt)) / 86400000) * 100) / 100
+    ? Math.round(((Date.parse(completedAt) - Date.parse(lastCompletion.completedAt)) / 86400000) * 100) / 100
     : null;
   const { nanoid: nanoidFn } = await import("nanoid");
 
   const completed = await db.transaction(async (tx) => {
     const [completedTask] = await tx
       .update(tasks)
-      .set({ isCompleted: true, completedAt: now, updatedAt: now })
+      .set({ isCompleted: true, completedAt, updatedAt: now })
       .where(eq(tasks.id, id))
       .returning();
 
     await tx.insert(taskCompletions).values({
       id: nanoidFn(),
       taskId: canonicalId,
-      completedAt: now,
+      completedAt,
       intervalActual,
-      notes: null,
+      notes,
       createdAt: now,
     });
 

@@ -73,32 +73,38 @@ export function useUpdateTask() {
   });
 }
 
+export interface CompleteTaskInput {
+  id: string;
+  notes?: string;
+  completedAt?: string;
+}
+
 export function useCompleteTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.post<Task>(`/api/tasks/${id}/complete?date=${localDateStr()}`, {}),
-    onMutate: async (id) => {
+    mutationFn: ({ id, notes, completedAt }: CompleteTaskInput) =>
+      api.post<Task>(`/api/tasks/${id}/complete?date=${localDateStr()}`, { notes, completedAt }),
+    onMutate: async ({ id }) => {
       await qc.cancelQueries({ queryKey: ["tasks"] });
       const snapshots = qc.getQueriesData<Task[]>({ queryKey: ["tasks"] });
       const now = new Date().toISOString();
       snapshots.forEach(([key, data]) => {
         const filter = (key as unknown[])[1];
         if (filter === "today_all") {
-          // Keep task visible in Today, but mark it completed (muted style)
           qc.setQueryData(key, data?.map((t) => (t.id === id ? { ...t, isCompleted: true, completedAt: now } : t)));
         } else {
-          // Remove from all other views (inbox, upcoming, someday, etc.)
           qc.setQueryData(key, data?.filter((t) => t.id !== id));
         }
       });
       return { snapshots };
     },
-    onError: (_err, _id, ctx) => {
+    onError: (_err, _vars, ctx) => {
       ctx?.snapshots.forEach(([key, data]) => qc.setQueryData(key, data));
     },
-    onSuccess: (_data, id) => {
+    onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["task", id] });
+      qc.invalidateQueries({ queryKey: ["task-completions"] });
     },
   });
 }

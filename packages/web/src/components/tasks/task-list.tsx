@@ -83,7 +83,7 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
   useShortcutAction("task-complete", () => {
     const id = focusedTaskId;
     if (!id) return;
-    completeTask.mutate(id, {
+    completeTask.mutate({ id }, {
       onSuccess: () => notify.undoable("Task completed", () => uncompleteTask.mutate(id)),
     });
   });

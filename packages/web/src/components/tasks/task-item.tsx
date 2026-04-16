@@ -25,6 +25,7 @@ import { loadSelectionModifier } from "@/lib/keyboard/shortcut-config";
 import { deadlineUrgency, fmtTime, formatWhenDate } from "@/lib/dates";
 import { parseTaskInput } from "@/lib/parse-task";
 import { useCompleteTask, useCreateTask, useDeleteTask, useDuplicateTask, useRestoreTask, useUncompleteTask, useUpdateTask, useTask } from "@/hooks/use-tasks";
+import { LogCompletionPopover } from "@/components/routines/log-completion-popover";
 import { notify } from "@/lib/toast";
 import { toLocalDateStr } from "@/lib/dates";
 import { Calendar as CalendarIcon, Check, Clock, Flag, ListTree, Plus, Repeat2, Trash2, X } from "lucide-react";
@@ -148,15 +149,21 @@ export const TaskItem = memo(function TaskItem({
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : undefined;
 
+  const [logPopoverOpen, setLogPopoverOpen] = useState(false);
+
   function handleComplete() {
-    completeTask.mutate(task.id, {
+    if (task.recurrenceType) {
+      setLogPopoverOpen(true);
+      return;
+    }
+    completeTask.mutate({ id: task.id }, {
       onSuccess: () => notify.undoable("Task completed", () => uncompleteTask.mutate(task.id)),
     });
   }
 
   function handleUncomplete() {
     uncompleteTask.mutate(task.id, {
-      onSuccess: () => notify.undoable("Marked incomplete", () => completeTask.mutate(task.id)),
+      onSuccess: () => notify.undoable("Marked incomplete", () => completeTask.mutate({ id: task.id })),
     });
   }
 
@@ -182,6 +189,7 @@ export const TaskItem = memo(function TaskItem({
   }
 
   return (
+    <>
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
@@ -446,6 +454,18 @@ export const TaskItem = memo(function TaskItem({
             </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
+      <LogCompletionPopover
+        task={task}
+        open={logPopoverOpen}
+        onOpenChange={setLogPopoverOpen}
+        onComplete={(notes, completedAt) => {
+          setLogPopoverOpen(false);
+          completeTask.mutate({ id: task.id, notes, completedAt }, {
+            onSuccess: () => notify.undoable("Routine logged", () => uncompleteTask.mutate(task.id)),
+          });
+        }}
+      />
+    </>
   );
 });
 
@@ -822,7 +842,7 @@ function ExpandedPanel({
                 <Checkbox
                   checked={sub.isCompleted}
                   disabled={sub.isCompleted}
-                  onCheckedChange={() => !sub.isCompleted && completeSubtask.mutate(sub.id)}
+                  onCheckedChange={() => !sub.isCompleted && completeSubtask.mutate({ id: sub.id })}
                   className="h-3.5 w-3.5"
                 />
                 <span
