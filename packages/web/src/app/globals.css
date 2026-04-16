@@ -211,6 +211,7 @@ html.dark[data-accent="amber"] {
   }
   html {
     @apply font-sans;
+    font-size: 17px;
   }
   ::selection {
     background: color-mix(in oklch, var(--primary) 20%, transparent);

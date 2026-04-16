@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="pointer-events-none absolute inset-x-0 top-0 h-32"
                 style={{
                   background:
-                    "linear-gradient(to bottom, color-mix(in oklch, var(--primary) 5%, transparent), transparent)",
+                    "linear-gradient(to bottom, color-mix(in oklch, var(--primary) 9%, transparent) 0%, color-mix(in oklch, var(--primary) 3%, transparent) 60%, transparent 100%)",
                 }}
               />
               <div className="relative">{children}</div>

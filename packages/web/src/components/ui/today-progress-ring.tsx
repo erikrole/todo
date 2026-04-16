@@ -8,7 +8,7 @@ interface TodayProgressRingProps {
 
 export function TodayProgressRing({ completed, total, remaining }: TodayProgressRingProps) {
   const progress = total > 0 ? completed / total : 0;
-  const r = 5.5;
+  const r = 6;
   const circumference = 2 * Math.PI * r;
   const filled = circumference * progress;
   // Hue: 20 (red) → 142 (green) based on progress
@@ -22,24 +22,24 @@ export function TodayProgressRing({ completed, total, remaining }: TodayProgress
 
   return (
     <span className="flex items-center gap-1.5 shrink-0">
-      <svg width="14" height="14" viewBox="0 0 14 14" style={{ transform: "rotate(-90deg)" }}>
+      <svg width="16" height="16" viewBox="0 0 16 16" style={{ transform: "rotate(-90deg)" }}>
         {/* Track */}
-        <circle cx="7" cy="7" r={r} fill="none" stroke="currentColor" strokeWidth="1.5" opacity={0.12} />
+        <circle cx="8" cy="8" r={r} fill="none" stroke="currentColor" strokeWidth="2" opacity={0.15} />
         {/* Progress */}
         <circle
-          cx="7"
-          cy="7"
+          cx="8"
+          cy="8"
           r={r}
           fill="none"
           stroke={strokeColor}
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeDasharray={`${filled} ${circumference}`}
           strokeLinecap="round"
           style={{ transition: "stroke-dasharray 0.4s ease, stroke 0.4s ease" }}
         />
       </svg>
       {remaining > 0 && (
-        <span className="text-[11px] tabular-nums text-muted-foreground/50">{remaining}</span>
+        <span className="text-xs tabular-nums text-muted-foreground/60">{remaining}</span>
       )}
     </span>
   );
