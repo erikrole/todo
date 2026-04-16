@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { toLocalDateStr } from "@/lib/dates";
 import type { Task } from "@todo/shared";
 import { CompletionHistorySheet } from "./completion-history-sheet";
+import { StatusRing } from "./status-ring";
 
 interface CompletionStats {
   completions: unknown[];
@@ -77,19 +78,8 @@ export function RoutineItem({ task, index = 0 }: Props) {
         onClick={() => setHistoryOpen(true)}
       >
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/40 transition-colors">
-          {/* Status dot */}
-          <span
-            className={cn(
-              "shrink-0 h-1.5 w-1.5 rounded-full mt-px",
-              isOverdue
-                ? "bg-destructive/70"
-                : isDueSoon
-                  ? "bg-amber-500/70"
-                  : daysToGo !== null
-                    ? "bg-emerald-500/50"
-                    : "bg-muted-foreground/25",
-            )}
-          />
+          {/* Status ring */}
+          <StatusRing progressPct={barPct} isOverdue={isOverdue} isDueSoon={isDueSoon} />
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
