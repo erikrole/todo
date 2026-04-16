@@ -97,7 +97,7 @@ export interface TaskWithSubtasks extends Task {
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-export type TaskFilter = "inbox" | "today" | "today_all" | "upcoming" | "someday" | "completed" | "completed_today" | "overdue" | "trash" | "all";
+export type TaskFilter = "inbox" | "today" | "today_all" | "upcoming" | "someday" | "completed" | "completed_today" | "overdue" | "trash" | "all" | "routines";
 
 export interface ApiResponse<T> {
   data: T;

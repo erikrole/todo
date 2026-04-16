@@ -34,7 +34,7 @@ import { useTaskCounts } from "@/hooks/use-tasks";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
 import { cn } from "@/lib/utils";
 import { COLOR_PRESETS } from "@/lib/color-presets";
-import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus, Settings } from "lucide-react";
+import { Inbox, Sun, Calendar, Hourglass, BookOpen, ChevronRight, Trash2, Plus, Settings, Repeat2 } from "lucide-react";
 import type { AreaWithCounts, ProjectWithCounts } from "@todo/shared";
 
 const NAV_ITEMS = [
@@ -42,6 +42,7 @@ const NAV_ITEMS = [
   { href: "/today", label: "Today", icon: Sun, dropId: "sidebar:today" },
   { href: "/upcoming", label: "Upcoming", icon: Calendar, dropId: "sidebar:upcoming" },
   { href: "/someday", label: "Someday", icon: Hourglass, dropId: "sidebar:someday" },
+  { href: "/routines", label: "Routines", icon: Repeat2, dropId: null },
   { href: "/logbook", label: "Logbook", icon: BookOpen, dropId: null },
   { href: "/trash", label: "Trash", icon: Trash2, dropId: null },
 ];
