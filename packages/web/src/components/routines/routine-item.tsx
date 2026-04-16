@@ -21,9 +21,10 @@ interface CompletionStats {
 
 interface Props {
   task: Task;
+  index?: number;
 }
 
-export function RoutineItem({ task }: Props) {
+export function RoutineItem({ task, index = 0 }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const today = toLocalDateStr(new Date());
 
@@ -34,15 +35,14 @@ export function RoutineItem({ task }: Props) {
 
   const lastCompletedAt = data?.stats.lastCompletedAt ?? null;
   const avgDays = data?.stats.avgDays ?? null;
+  const count = data?.stats.count ?? 0;
 
-  // "Xd to go" calculation
   const daysToGo = task.whenDate
     ? Math.round(
         (Date.parse(task.whenDate + "T00:00:00") - Date.parse(today + "T00:00:00")) / 86400000,
       )
     : null;
 
-  // "Xd ago" calculation
   const daysAgo = lastCompletedAt
     ? Math.round(
         (Date.parse(today + "T00:00:00") -
@@ -51,45 +51,83 @@ export function RoutineItem({ task }: Props) {
       )
     : null;
 
-  function formatDaysToGo(days: number | null): { text: string; color: string } {
-    if (days === null) return { text: "No date", color: "text-muted-foreground/50" };
-    if (days < 0) return { text: `${Math.abs(days)}d overdue`, color: "text-destructive/70" };
-    if (days === 0) return { text: "Due today", color: "text-amber-500/80" };
-    if (days <= 3) return { text: `${days}d to go`, color: "text-amber-500/70" };
-    return { text: `${days}d to go`, color: "text-muted-foreground/50" };
+  const cycleDays = avgDays ?? task.recurrenceInterval ?? 7;
+  const rawProgress = daysAgo !== null ? daysAgo / cycleDays : 0;
+  const barPct = Math.min(rawProgress * 100, 100);
+
+  const isOverdue = daysToGo !== null && daysToGo < 0;
+  const isDueSoon = daysToGo !== null && daysToGo >= 0 && daysToGo <= 2;
+  const isHealthy = !isOverdue && !isDueSoon;
+
+  function formatDaysToGo(): { text: string; cls: string } {
+    if (daysToGo === null) return { text: "—", cls: "text-muted-foreground/40" };
+    if (daysToGo < 0) return { text: `${Math.abs(daysToGo)}d overdue`, cls: "text-destructive/80" };
+    if (daysToGo === 0) return { text: "today", cls: "text-amber-500" };
+    if (daysToGo <= 2) return { text: `${daysToGo}d`, cls: "text-amber-500/80" };
+    return { text: `${daysToGo}d`, cls: "text-muted-foreground/50" };
   }
 
-  function formatDaysAgo(days: number | null): string {
-    if (days === null) return "Never done";
-    if (days === 0) return "Done today";
-    if (days === 1) return "1d ago";
-    return `${days}d ago`;
-  }
-
-  const { text: daysToGoText, color: daysToGoColor } = formatDaysToGo(daysToGo);
+  const { text: dtoText, cls: dtoCls } = formatDaysToGo();
 
   return (
     <>
       <div
-        className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/40 rounded-lg cursor-pointer group"
+        className="group relative flex flex-col cursor-pointer select-none"
+        style={{ animationDelay: `${index * 30}ms` }}
         onClick={() => setHistoryOpen(true)}
       >
-        {/* Title */}
-        <span className="flex-1 text-sm truncate">{task.title}</span>
+        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/40 transition-colors">
+          {/* Status dot */}
+          <span
+            className={cn(
+              "shrink-0 h-1.5 w-1.5 rounded-full mt-px",
+              isOverdue
+                ? "bg-destructive/70"
+                : isDueSoon
+                  ? "bg-amber-500/70"
+                  : daysToGo !== null
+                    ? "bg-emerald-500/50"
+                    : "bg-muted-foreground/25",
+            )}
+          />
 
-        {/* Metadata */}
-        <div className="flex items-center gap-2 shrink-0 text-[11px] font-mono">
-          <span className={cn("tabular-nums", daysToGoColor)}>{daysToGoText}</span>
-          <span className="text-muted-foreground/30">·</span>
-          <span className="text-muted-foreground/50 tabular-nums">{formatDaysAgo(daysAgo)}</span>
-          {avgDays !== null && (
-            <>
-              <span className="text-muted-foreground/30">·</span>
-              <span className="text-muted-foreground/40 tabular-nums">{Math.round(avgDays)}d avg</span>
-            </>
-          )}
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[13px] font-medium truncate leading-snug">{task.title}</span>
+              <div className="flex items-baseline gap-2 shrink-0 font-mono text-[11px] tabular-nums">
+                {daysAgo !== null && (
+                  <span className="text-muted-foreground/45">{daysAgo}d ago</span>
+                )}
+                <span className={cn("font-semibold", dtoCls)}>{dtoText}</span>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mt-1.5 h-[2px] rounded-full bg-border/50 overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  isOverdue && "bg-destructive/50",
+                  isDueSoon && "bg-amber-500/50",
+                  isHealthy && "bg-primary/25",
+                )}
+                style={{ width: `${barPct}%` }}
+              />
+            </div>
+
+            {/* Sub-line */}
+            {(count > 0 || avgDays !== null) && (
+              <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground/35">
+                {count > 0 && <span>{count}×</span>}
+                {count > 0 && avgDays !== null && <span>·</span>}
+                {avgDays !== null && <span>{Math.round(avgDays)}d avg</span>}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
       <CompletionHistorySheet task={task} open={historyOpen} onOpenChange={setHistoryOpen} />
     </>
   );

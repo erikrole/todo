@@ -28,6 +28,7 @@ export async function GET(request: Request) {
         isNull(tasks.projectId),
         isNull(tasks.areaId),
         isNull(tasks.parentTaskId),
+        isNull(tasks.recurrenceType),
         eq(tasks.isCompleted, false),
         eq(tasks.isCancelled, false),
         eq(tasks.isSomeday, false),

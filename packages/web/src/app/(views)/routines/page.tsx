@@ -6,10 +6,39 @@ import { Button } from "@/components/ui/button";
 import { useTasks } from "@/hooks/use-tasks";
 import { RoutineItem } from "@/components/routines/routine-item";
 import { ImportSheet } from "@/components/routines/import-sheet";
+import { toLocalDateStr } from "@/lib/dates";
+import type { Task } from "@todo/shared";
+
+function useSummaryStats(tasks: Task[]) {
+  const today = toLocalDateStr(new Date());
+  let overdue = 0;
+  let dueSoon = 0;
+  let healthy = 0;
+
+  tasks.forEach((task) => {
+    const daysToGo = task.whenDate
+      ? Math.round(
+          (Date.parse(task.whenDate + "T00:00:00") - Date.parse(today + "T00:00:00")) / 86400000,
+        )
+      : null;
+    if (daysToGo === null) {
+      healthy++;
+    } else if (daysToGo < 0) {
+      overdue++;
+    } else if (daysToGo <= 2) {
+      dueSoon++;
+    } else {
+      healthy++;
+    }
+  });
+
+  return { overdue, dueSoon, healthy };
+}
 
 export default function RoutinesPage() {
   const [importOpen, setImportOpen] = useState(false);
   const { data: tasks = [], isLoading } = useTasks("routines");
+  const { overdue, dueSoon, healthy } = useSummaryStats(tasks);
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
@@ -21,6 +50,27 @@ export default function RoutinesPage() {
         </Button>
       </div>
 
+      {/* Summary chips */}
+      {!isLoading && tasks.length > 0 && (
+        <div className="flex items-center gap-2 font-mono text-[11px]">
+          {overdue > 0 && (
+            <span className="px-2 py-0.5 rounded-md bg-destructive/10 text-destructive/70">
+              {overdue} overdue
+            </span>
+          )}
+          {dueSoon > 0 && (
+            <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600/70 dark:text-amber-400/70">
+              {dueSoon} due soon
+            </span>
+          )}
+          {healthy > 0 && (
+            <span className="px-2 py-0.5 rounded-md bg-muted text-muted-foreground/60">
+              {healthy} on track
+            </span>
+          )}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="text-sm text-muted-foreground px-4">Loading...</div>
       ) : tasks.length === 0 ? (
@@ -28,9 +78,9 @@ export default function RoutinesPage() {
           No routines yet. Add a recurring task to see it here.
         </div>
       ) : (
-        <div className="flex flex-col">
-          {tasks.map((task) => (
-            <RoutineItem key={task.id} task={task} />
+        <div className="flex flex-col gap-0.5">
+          {tasks.map((task, i) => (
+            <RoutineItem key={task.id} task={task} index={i} />
           ))}
         </div>
       )}
