@@ -94,7 +94,7 @@ export function ImportSheet({ open, onOpenChange }: Props) {
           {
             completions: pt.completions.map((c) => ({
               completedAt: c.completedAt,
-              notes: c.notes ?? null,
+              notes: c.notes ?? undefined,
             })),
           },
         );
