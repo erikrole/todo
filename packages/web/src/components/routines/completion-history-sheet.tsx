@@ -159,7 +159,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
               { label: "longest", value: stats.longestDays !== null ? `${stats.longestDays}d` : "—" },
             ].map((s) => (
               <div key={s.label} className="flex flex-col items-center py-3 bg-background gap-0.5">
-                <span className="font-mono text-sm font-semibold tabular-nums">{s.value}</span>
+                <span className="text-sm font-semibold tabular-nums">{s.value}</span>
                 <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">{s.label}</span>
               </div>
             ))}
@@ -227,7 +227,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
                           <span className="text-[12px] font-medium text-foreground/80">{formatDate(c.completedAt)}</span>
                           <div className="flex items-center gap-1.5">
                             {c.intervalActual !== null && (
-                              <span className="font-mono text-[11px] text-muted-foreground/45 tabular-nums">
+                              <span className="text-[11px] text-muted-foreground/45 tabular-nums">
                                 {c.intervalActual}d
                               </span>
                             )}

@@ -304,7 +304,7 @@ export const TaskItem = memo(function TaskItem({
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {showWhenDate && task.whenDate && (
                       <span className={cn(
-                        "text-[11px] font-mono",
+                        "text-[11px] tabular-nums",
                         !task.isCompleted && task.whenDate < todayStr()
                           ? "text-destructive/70"
                           : "text-muted-foreground/50",
@@ -313,7 +313,7 @@ export const TaskItem = memo(function TaskItem({
                       </span>
                     )}
                     {task.scheduledTime && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] text-teal-600/70 dark:text-teal-400/70 font-mono">
+                      <span className="inline-flex items-center gap-0.5 text-[11px] text-teal-600/70 dark:text-teal-400/70 tabular-nums">
                         <Clock className="h-2.5 w-2.5" />
                         {fmtTime(task.scheduledTime)}
                       </span>
@@ -334,7 +334,7 @@ export const TaskItem = memo(function TaskItem({
             {!isExpanded && (task.isCompleted ? !!task.completedAt : !!task.deadline) && (
               <div className="ml-auto shrink-0 self-center">
                 {task.isCompleted && task.completedAt ? (
-                  <span className="text-[10px] font-mono text-muted-foreground/30">
+                  <span className="text-[10px] tabular-nums text-muted-foreground/30">
                     {new Date(task.completedAt).toLocaleTimeString("en-US", {
                       hour: "numeric",
                       minute: "2-digit",
@@ -903,7 +903,7 @@ function DeadlineBadge({ deadline }: { deadline: string }) {
     <Badge
       variant="outline"
       className={cn(
-        "text-[10px] px-1.5 py-0 font-mono font-normal h-4",
+        "text-[10px] px-1.5 py-0 tabular-nums font-normal h-4",
         urgency === "overdue" && "border-destructive/40 text-destructive",
         urgency === "soon" && "border-orange-400/40 text-orange-500 dark:text-orange-400",
         urgency === "normal" && "border-border text-muted-foreground/50",

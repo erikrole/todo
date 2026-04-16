@@ -81,7 +81,7 @@ export default function TodayPage() {
         {totalForProgress > 0 && (
           <div className="flex items-center gap-3 px-4">
             <Progress value={progressPct} className="h-1.5 flex-1" />
-            <span className="text-[11px] text-muted-foreground/40 font-mono shrink-0 tabular-nums">
+            <span className="text-[11px] text-muted-foreground/40 shrink-0 tabular-nums">
               {completedCount}/{totalForProgress}
             </span>
           </div>

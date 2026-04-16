@@ -52,7 +52,7 @@ export default function RoutinesPage() {
 
       {/* Summary chips */}
       {!isLoading && tasks.length > 0 && (
-        <div className="flex items-center gap-2 font-mono text-[11px]">
+        <div className="flex items-center gap-2 text-[11px]">
           {overdue > 0 && (
             <span className="px-2 py-0.5 rounded-md bg-destructive/10 text-destructive/70">
               {overdue} overdue

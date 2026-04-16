@@ -95,7 +95,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-[13px] font-medium truncate leading-snug">{task.title}</span>
-              <div className="flex items-baseline gap-2 shrink-0 font-mono text-[11px] tabular-nums">
+              <div className="flex items-baseline gap-2 shrink-0 text-[11px] tabular-nums">
                 {daysAgo !== null && (
                   <span className="text-muted-foreground/45">{daysAgo}d ago</span>
                 )}
@@ -118,7 +118,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
 
             {/* Sub-line */}
             {(count > 0 || avgDays !== null) && (
-              <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground/35">
+              <div className="mt-0.5 flex items-center gap-1.5 tabular-nums text-[10px] text-muted-foreground/40">
                 {count > 0 && <span>{count}×</span>}
                 {count > 0 && avgDays !== null && <span>·</span>}
                 {avgDays !== null && <span>{Math.round(avgDays)}d avg</span>}

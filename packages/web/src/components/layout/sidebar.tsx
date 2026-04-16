@@ -540,7 +540,7 @@ export function AppSidebar() {
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1">{label}</span>
                   {badgeCount != null && badgeCount > 0 && (
-                    <span className="text-[11px] tabular-nums text-muted-foreground/50 font-mono">
+                    <span className="text-[11px] tabular-nums text-muted-foreground/50">
                       {badgeCount}
                     </span>
                   )}
