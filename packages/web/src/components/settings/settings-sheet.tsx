@@ -4,6 +4,7 @@ import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAccentColor } from "@/hooks/use-accent-color";
+import { useDensity } from "@/hooks/use-density";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ const THEME_OPTIONS = [
 export function SettingsSheet() {
   const { accent, setAccent, presets } = useAccentColor();
   const { theme, setTheme } = useTheme();
+  const { density, setDensity } = useDensity();
 
   return (
     <Sheet>
@@ -86,6 +88,28 @@ export function SettingsSheet() {
                     )}
                   >
                     {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Density */}
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/60 mb-3">
+                Density
+              </p>
+              <div className="flex gap-1 bg-muted/50 rounded-lg p-1">
+                {(["comfortable", "compact"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setDensity(mode)}
+                    className={cn(
+                      "flex-1 text-[11px] py-1 rounded-md transition-all duration-150 font-medium capitalize",
+                      density === mode
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground/70",
+                    )}
+                  >
+                    {mode}
                   </button>
                 ))}
               </div>

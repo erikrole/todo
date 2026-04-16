@@ -38,6 +38,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var a=localStorage.getItem('todo-accent');if(a)document.documentElement.setAttribute('data-accent',a);}catch(e){}})()`,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=localStorage.getItem('todo-density');if(d)document.documentElement.setAttribute('data-density',d);}catch(e){}})()`,
+          }}
+        />
         <Providers>{children}</Providers>
       </body>
     </html>

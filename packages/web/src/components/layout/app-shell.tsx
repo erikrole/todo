@@ -37,7 +37,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <header className="flex h-12 items-center gap-2 border-b px-4 md:hidden">
               <SidebarTrigger />
             </header>
-            <div className="flex flex-1 flex-col p-6">{children}</div>
+            <div className="relative flex flex-1 flex-col p-6">
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-32"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, color-mix(in oklch, var(--primary) 5%, transparent), transparent)",
+                }}
+              />
+              <div className="relative">{children}</div>
+            </div>
           </main>
         </SelectionProvider>
       </SidebarProvider>

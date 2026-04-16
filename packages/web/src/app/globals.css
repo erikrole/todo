@@ -236,3 +236,9 @@ html.dark[data-accent="amber"] {
     background: oklch(1 0 0 / 0.2);
   }
 }
+
+/* Compact density mode */
+html[data-density="compact"] [data-task-id] > div:first-child {
+  padding-top: 0.3125rem !important;
+  padding-bottom: 0.3125rem !important;
+}
