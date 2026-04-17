@@ -78,7 +78,7 @@ export default function RoutinesPage() {
           No routines yet. Add a recurring task to see it here.
         </div>
       ) : (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           {tasks.map((task, i) => (
             <RoutineItem key={task.id} task={task} index={i} />
           ))}

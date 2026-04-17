@@ -1,43 +1,42 @@
 interface StatusRingProps {
-  /** 0–100, how far through the cycle */
   progressPct: number;
   isOverdue: boolean;
   isDueSoon: boolean;
 }
 
 export function StatusRing({ progressPct, isOverdue, isDueSoon }: StatusRingProps) {
-  const r = 5;
+  const r = 9;
   const circumference = 2 * Math.PI * r;
   const filled = circumference * Math.min(progressPct / 100, 1);
 
   const trackColor = isOverdue
-    ? "oklch(0.577 0.245 27.325 / 0.15)"
+    ? "oklch(0.577 0.245 27.325 / 0.20)"
     : isDueSoon
-      ? "oklch(0.65 0.18 75 / 0.18)"
-      : "oklch(0.55 0 0 / 0.10)";
+      ? "oklch(0.65 0.18 75 / 0.22)"
+      : "oklch(0.55 0 0 / 0.15)";
 
   const fillColor = isOverdue
-    ? "oklch(0.577 0.245 27.325 / 0.75)"
+    ? "oklch(0.577 0.245 27.325 / 0.90)"
     : isDueSoon
-      ? "oklch(0.65 0.18 75 / 0.75)"
-      : "oklch(0.52 0.15 165 / 0.60)";
+      ? "oklch(0.65 0.18 75 / 0.90)"
+      : "oklch(0.52 0.18 165 / 0.82)";
 
   return (
     <svg
-      width="13"
-      height="13"
-      viewBox="0 0 13 13"
-      className="shrink-0 mt-px"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      className="shrink-0"
       style={{ transform: "rotate(-90deg)" }}
     >
-      <circle cx="6.5" cy="6.5" r={r} fill="none" stroke={trackColor} strokeWidth="2" />
+      <circle cx="12" cy="12" r={r} fill="none" stroke={trackColor} strokeWidth="2.5" />
       <circle
-        cx="6.5"
-        cy="6.5"
+        cx="12"
+        cy="12"
         r={r}
         fill="none"
         stroke={fillColor}
-        strokeWidth="2"
+        strokeWidth="2.5"
         strokeDasharray={`${filled} ${circumference}`}
         strokeLinecap="round"
       />
