@@ -1,0 +1,81 @@
+/* Upshot design tokens — scoped to .upshot-root to prevent leaking into existing app */
+
+.upshot-root {
+  --bg: oklch(0.985 0.006 80);
+  --bg-sunken: oklch(0.965 0.008 78);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.97 0.006 78);
+  --hairline: oklch(0.90 0.006 78);
+  --hairline-strong: oklch(0.82 0.008 78);
+
+  --ink: oklch(0.22 0.013 60);
+  --ink-2: oklch(0.38 0.013 60);
+  --ink-3: oklch(0.55 0.012 70);
+  --ink-4: oklch(0.72 0.010 78);
+
+  --accent: oklch(0.68 0.13 58);
+  --accent-ink: oklch(0.35 0.10 55);
+  --accent-soft: oklch(0.95 0.04 70);
+
+  --danger: oklch(0.62 0.16 28);
+  --danger-soft: oklch(0.94 0.04 28);
+  --success: oklch(0.62 0.11 150);
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
+
+  --shadow-1: 0 1px 0 oklch(0 0 0 / 0.03), 0 1px 2px oklch(0 0 0 / 0.04);
+  --shadow-2: 0 1px 0 oklch(0 0 0 / 0.02), 0 8px 28px -10px oklch(0 0 0 / 0.10);
+
+  --font-display: var(--font-newsreader, "Newsreader"), "Source Serif 4", Georgia, serif;
+  --font-ui: var(--font-barlow, "Barlow"), -apple-system, ui-sans-serif, sans-serif;
+  --font-mono: var(--font-jetbrains-mono, "JetBrains Mono"), ui-monospace, monospace;
+}
+
+.upshot-root[data-theme="dark"] {
+  --bg: oklch(0.172 0.010 60);
+  --bg-sunken: oklch(0.145 0.010 60);
+  --surface: oklch(0.205 0.012 60);
+  --surface-2: oklch(0.235 0.012 60);
+  --hairline: oklch(0.285 0.012 60);
+  --hairline-strong: oklch(0.36 0.012 60);
+
+  --ink: oklch(0.95 0.008 80);
+  --ink-2: oklch(0.82 0.010 78);
+  --ink-3: oklch(0.66 0.012 70);
+  --ink-4: oklch(0.48 0.012 65);
+
+  --accent: oklch(0.78 0.13 70);
+  --accent-ink: oklch(0.88 0.12 72);
+  --accent-soft: oklch(0.30 0.06 65);
+
+  --danger: oklch(0.72 0.15 28);
+  --danger-soft: oklch(0.30 0.07 28);
+  --success: oklch(0.76 0.12 150);
+
+  --shadow-1: 0 1px 0 oklch(0 0 0 / 0.35), 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-2: 0 1px 0 oklch(0 0 0 / 0.35), 0 10px 30px -12px oklch(0 0 0 / 0.55);
+}
+
+/* Accent presets — light */
+.upshot-root[data-accent="ochre"] { --accent: oklch(0.68 0.13 58); --accent-soft: oklch(0.95 0.04 70); --accent-ink: oklch(0.35 0.10 55); }
+.upshot-root[data-accent="clay"]  { --accent: oklch(0.63 0.13 30); --accent-soft: oklch(0.94 0.04 30); --accent-ink: oklch(0.38 0.10 28); }
+.upshot-root[data-accent="sage"]  { --accent: oklch(0.62 0.08 150); --accent-soft: oklch(0.94 0.03 150); --accent-ink: oklch(0.40 0.08 150); }
+.upshot-root[data-accent="slate"] { --accent: oklch(0.58 0.08 240); --accent-soft: oklch(0.93 0.03 240); --accent-ink: oklch(0.38 0.08 240); }
+.upshot-root[data-accent="plum"]  { --accent: oklch(0.56 0.12 320); --accent-soft: oklch(0.93 0.04 320); --accent-ink: oklch(0.38 0.10 320); }
+
+/* Accent presets — dark */
+.upshot-root[data-theme="dark"][data-accent="ochre"] { --accent: oklch(0.78 0.13 70); --accent-soft: oklch(0.30 0.06 65); --accent-ink: oklch(0.88 0.12 72); }
+.upshot-root[data-theme="dark"][data-accent="clay"]  { --accent: oklch(0.75 0.13 32); --accent-soft: oklch(0.30 0.06 32); --accent-ink: oklch(0.85 0.12 30); }
+.upshot-root[data-theme="dark"][data-accent="sage"]  { --accent: oklch(0.75 0.08 150); --accent-soft: oklch(0.28 0.04 150); --accent-ink: oklch(0.85 0.08 150); }
+.upshot-root[data-theme="dark"][data-accent="slate"] { --accent: oklch(0.74 0.09 240); --accent-soft: oklch(0.28 0.05 240); --accent-ink: oklch(0.84 0.09 240); }
+.upshot-root[data-theme="dark"][data-accent="plum"]  { --accent: oklch(0.72 0.12 320); --accent-soft: oklch(0.28 0.06 320); --accent-ink: oklch(0.84 0.11 320); }
+
+/* Scrollbar styling within upshot */
+.upshot-root ::-webkit-scrollbar { width: 8px; height: 8px; }
+.upshot-root ::-webkit-scrollbar-thumb { background: var(--hairline-strong); border-radius: 6px; border: 2px solid var(--bg); }
+.upshot-root ::-webkit-scrollbar-track { background: transparent; }
+
+::selection { background: var(--accent-soft); color: var(--accent-ink); }

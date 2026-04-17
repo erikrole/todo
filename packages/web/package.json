@@ -23,6 +23,7 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "catalog:",
     "framer-motion": "^12.38.0",
+    "ical.js": "^2.2.1",
     "lucide-react": "^1.8.0",
     "nanoid": "catalog:",
     "next": "16.2.3",
