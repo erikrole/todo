@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useUpdateTask } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
-import { todayStr, tomorrowStr, nextSaturdayStr } from "@/lib/dates";
+import { todayStr, tomorrowStr, nextSaturdayStr, toLocalDateStr } from "@/lib/dates";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -27,11 +27,13 @@ export function InboxDispatchControls({ taskId }: InboxDispatchControlsProps) {
   function pill(label: string, onClick: () => void) {
     return (
       <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onClick();
         }}
-        className="rounded-full border border-border bg-card px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+        disabled={updateTask.isPending}
+        className="rounded-full border border-border bg-card px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {label}
       </button>
@@ -50,7 +52,10 @@ export function InboxDispatchControls({ taskId }: InboxDispatchControlsProps) {
       <Popover open={overflowOpen} onOpenChange={setOverflowOpen}>
         <PopoverTrigger asChild>
           <button
-            className="rounded-full border border-border bg-card px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+            type="button"
+            aria-label="More options"
+            disabled={updateTask.isPending}
+            className="rounded-full border border-border bg-card px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={(e) => e.stopPropagation()}
           >
             ···
@@ -62,7 +67,9 @@ export function InboxDispatchControls({ taskId }: InboxDispatchControlsProps) {
             Schedule
           </p>
           <button
-            className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors"
+            type="button"
+            disabled={updateTask.isPending}
+            className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => {
               dispatch({ id: taskId, whenDate: nextSaturdayStr(), isSomeday: false });
               setOverflowOpen(false);
@@ -74,7 +81,11 @@ export function InboxDispatchControls({ taskId }: InboxDispatchControlsProps) {
           {/* Pick a date — opens nested Calendar */}
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
-              <button className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors">
+              <button
+                type="button"
+                disabled={updateTask.isPending}
+                className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Pick a date…
               </button>
             </PopoverTrigger>
@@ -88,10 +99,7 @@ export function InboxDispatchControls({ taskId }: InboxDispatchControlsProps) {
                 }}
                 onSelect={(date) => {
                   if (!date) return;
-                  const y = date.getFullYear();
-                  const m = String(date.getMonth() + 1).padStart(2, "0");
-                  const day = String(date.getDate()).padStart(2, "0");
-                  dispatch({ id: taskId, whenDate: `${y}-${m}-${day}`, isSomeday: false });
+                  dispatch({ id: taskId, whenDate: toLocalDateStr(date), isSomeday: false });
                   setCalendarOpen(false);
                   setOverflowOpen(false);
                 }}
@@ -110,7 +118,9 @@ export function InboxDispatchControls({ taskId }: InboxDispatchControlsProps) {
                 {activeProjects.map((p) => (
                   <button
                     key={p.id}
-                    className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors truncate"
+                    type="button"
+                    disabled={updateTask.isPending}
+                    className="w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted transition-colors truncate disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => {
                       dispatch({ id: taskId, projectId: p.id });
                       setOverflowOpen(false);
