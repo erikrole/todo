@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { Task } from "@todo/shared";
 import { CompletionHistorySheet } from "./completion-history-sheet";
 import { StatusRing } from "./status-ring";
@@ -55,6 +55,18 @@ export function RoutineItem({ task, index = 0 }: Props) {
       setLogOpen(false);
       setLogNotes("");
       setLogDate(new Date());
+    },
+  });
+
+  const todayMutation = useMutation({
+    mutationFn: () =>
+      api.post(`/api/tasks/${task.id}/completions`, {
+        completedAt: today + "T12:00:00",
+        notes: null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["task-completions", task.id] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
@@ -159,51 +171,67 @@ export function RoutineItem({ task, index = 0 }: Props) {
             </div>
           </div>
 
-          {/* Log completion button */}
-          <Popover open={logOpen} onOpenChange={setLogOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-7 w-7 rounded-lg flex items-center justify-center hover:bg-primary/15 text-primary/70 hover:text-primary"
-                onClick={(e) => { e.stopPropagation(); setLogOpen(true); }}
-                title="Log past completion"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="w-auto p-0"
-              align="end"
-              onClick={(e) => e.stopPropagation()}
+          {/* Split completion button */}
+          <div
+            className="opacity-0 group-hover:opacity-100 transition-opacity flex shrink-0 rounded-lg overflow-hidden border border-primary/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              aria-label="Log today"
+              className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-primary/80 hover:text-primary hover:bg-primary/10 transition-colors"
+              onClick={() => todayMutation.mutate()}
+              disabled={todayMutation.isPending}
             >
-              <div className="p-3 border-b">
-                <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Log completion</p>
-              </div>
-              <Calendar
-                mode="single"
-                selected={logDate}
-                onSelect={(d) => { if (d) setLogDate(d); }}
-                disabled={(d) => d > new Date()}
-                initialFocus
-              />
-              <div className="p-3 border-t flex flex-col gap-2">
-                <Input
-                  className="h-8 text-xs"
-                  placeholder="Notes (optional)"
-                  value={logNotes}
-                  onChange={(e) => setLogNotes(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") logMutation.mutate(); }}
-                />
-                <Button
-                  size="sm"
-                  className="w-full h-8"
-                  onClick={() => logMutation.mutate()}
-                  disabled={logMutation.isPending}
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Today
+            </button>
+            <Popover open={logOpen} onOpenChange={setLogOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  aria-label="Log past date"
+                  className="flex items-center px-1.5 py-1.5 text-primary/50 hover:text-primary hover:bg-primary/10 border-l border-primary/20 transition-colors"
+                  onClick={() => setLogOpen(true)}
                 >
-                  Log {logDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-0"
+                align="end"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-3 border-b">
+                  <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Log completion</p>
+                </div>
+                <Calendar
+                  mode="single"
+                  selected={logDate}
+                  onSelect={(d) => { if (d) setLogDate(d); }}
+                  disabled={(d) => d > new Date()}
+                  initialFocus
+                />
+                <div className="p-3 border-t flex flex-col gap-2">
+                  <Input
+                    className="h-8 text-xs"
+                    placeholder="Notes (optional)"
+                    value={logNotes}
+                    onChange={(e) => setLogNotes(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") logMutation.mutate(); }}
+                  />
+                  <Button
+                    size="sm"
+                    className="w-full h-8"
+                    onClick={() => logMutation.mutate()}
+                    disabled={logMutation.isPending}
+                  >
+                    Log {logDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
 
