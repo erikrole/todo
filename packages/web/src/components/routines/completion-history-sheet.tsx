@@ -127,6 +127,12 @@ function EditRow({ completion, taskId, onDone }: EditRowProps) {
 
 export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [addingEntry, setAddingEntry] = useState(false);
+  const [entryDate, setEntryDate] = useState<Date>(() => new Date());
+  const [entryNotes, setEntryNotes] = useState("");
+  const [entryCalOpen, setEntryCalOpen] = useState(false);
+
+  const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
     queryKey: ["task-completions", task?.id],
@@ -140,11 +146,40 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
   const maxInterval = Math.max(...completions.map((c) => c.intervalActual ?? 0), 1);
   const avgDays = stats?.avgDays ?? null;
 
+  const addMutation = useMutation({
+    mutationFn: () =>
+      api.post(`/api/tasks/${task!.id}/completions`, {
+        completedAt: toLocalDateStr(entryDate) + "T12:00:00",
+        notes: entryNotes.trim() || null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["task-completions", task?.id] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      setAddingEntry(false);
+      setEntryNotes("");
+      setEntryDate(new Date());
+    },
+  });
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-96 flex flex-col gap-0 pb-0">
         <SheetHeader className="pb-4 border-b">
-          <SheetTitle className="text-xl font-bold leading-tight">{task?.title ?? ""}</SheetTitle>
+          <div className="flex items-start justify-between gap-2">
+            <SheetTitle className="text-xl font-bold leading-tight">{task?.title ?? ""}</SheetTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs shrink-0 mt-0.5"
+              onClick={() => {
+                setAddingEntry((v) => !v);
+                setEntryDate(new Date());
+                setEntryNotes("");
+              }}
+            >
+              + Add entry
+            </Button>
+          </div>
           <SheetDescription className="sr-only">Completion history</SheetDescription>
         </SheetHeader>
 
@@ -168,31 +203,103 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Interval history bar chart */}
-        {completions.length > 1 && avgDays !== null && (
+        {/* Inline add entry form */}
+        {addingEntry && (
           <div className="px-4 py-3 border-b flex flex-col gap-2">
-            <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Interval history</span>
-            <div className="flex items-end gap-1 h-14">
-              {completions.slice(-16).map((c) => {
-                const ratio = c.intervalActual !== null ? c.intervalActual / (avgDays * 1.5) : 0;
-                const h = Math.max(Math.min(ratio * 100, 100), 8);
-                const isLong = c.intervalActual !== null && c.intervalActual > avgDays * 1.2;
-                const isShort = c.intervalActual !== null && c.intervalActual < avgDays * 0.8;
-                return (
-                  <div
-                    key={c.id}
-                    className={cn(
-                      "flex-1 rounded-sm min-w-[4px] transition-opacity hover:opacity-100 opacity-80",
-                      isLong ? "bg-amber-500/70" : isShort ? "bg-emerald-500/70" : "bg-primary/50",
-                    )}
-                    style={{ height: `${h}%` }}
-                    title={c.intervalActual !== null ? `${c.intervalActual}d` : "first"}
-                  />
-                );
-              })}
+            <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">New entry</span>
+            <Popover open={entryCalOpen} onOpenChange={setEntryCalOpen}>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-1.5 text-xs text-left hover:text-foreground transition-colors">
+                  <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                  <span>{entryDate.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={entryDate}
+                  onSelect={(d) => { if (d) { setEntryDate(d); setEntryCalOpen(false); } }}
+                  disabled={(d) => d > new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Textarea
+              className="text-xs resize-none h-14"
+              placeholder="Notes (optional)"
+              value={entryNotes}
+              onChange={(e) => setEntryNotes(e.target.value)}
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setAddingEntry(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" className="h-6 px-2 text-xs" onClick={() => addMutation.mutate()} disabled={addMutation.isPending}>
+                Save
+              </Button>
             </div>
           </div>
         )}
+
+        {/* Habit grid + interval bars */}
+        {completions.length > 0 && (() => {
+          const today = toLocalDateStr(new Date());
+          const completionDates = new Set(completions.map((c) => c.completedAt.slice(0, 10)));
+
+          // Build 91-day array oldest → newest
+          const cells: string[] = Array.from({ length: 91 }, (_, i) => {
+            const d = new Date(today + "T00:00:00");
+            d.setDate(d.getDate() - (90 - i));
+            return toLocalDateStr(d);
+          });
+
+          return (
+            <>
+              {/* Habit grid */}
+              <div className="px-4 py-3 border-b flex flex-col gap-2">
+                <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Last 90 days</span>
+                <div className="grid gap-[3px]" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
+                  {cells.map((dateStr) => (
+                    <div
+                      key={dateStr}
+                      className={cn(
+                        "aspect-square rounded-sm",
+                        completionDates.has(dateStr) ? "bg-primary/70" : "bg-muted/30",
+                      )}
+                      title={dateStr}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Interval bars — existing, unchanged */}
+              {completions.length > 1 && avgDays !== null && (
+                <div className="px-4 py-3 border-b flex flex-col gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Interval history</span>
+                  <div className="flex items-end gap-1 h-14">
+                    {completions.slice(-16).map((c) => {
+                      const ratio = c.intervalActual !== null ? c.intervalActual / (avgDays * 1.5) : 0;
+                      const h = Math.max(Math.min(ratio * 100, 100), 8);
+                      const isLong = c.intervalActual !== null && c.intervalActual > avgDays * 1.2;
+                      const isShort = c.intervalActual !== null && c.intervalActual < avgDays * 0.8;
+                      return (
+                        <div
+                          key={c.id}
+                          className={cn(
+                            "flex-1 rounded-sm min-w-[4px] transition-opacity hover:opacity-100 opacity-80",
+                            isLong ? "bg-amber-500/70" : isShort ? "bg-emerald-500/70" : "bg-primary/50",
+                          )}
+                          style={{ height: `${h}%` }}
+                          title={c.intervalActual !== null ? `${c.intervalActual}d` : "first"}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Timeline */}
         <div className="flex-1 overflow-y-auto py-4 -mx-6 px-6">
