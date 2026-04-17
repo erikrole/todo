@@ -32,7 +32,7 @@ function sortTasks(tasks: Task[], key: SortKey): Task[] {
 }
 
 const SORT_LABELS: Record<SortKey, string> = {
-  added: "Date added",
+  added: "Manual order",
   title: "Title A → Z",
   deadline: "Deadline",
 };
