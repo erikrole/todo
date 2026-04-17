@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toLocalDateStr, taskAge } from "@/lib/dates";
@@ -43,7 +43,11 @@ export default function TodayPage() {
     (t) => t.whenDate !== null && t.whenDate <= today,
   );
 
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setCollapsed(loadCollapsed());
+  }, []);
 
   function toggleSection(key: string) {
     setCollapsed((prev) => {
