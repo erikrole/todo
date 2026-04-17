@@ -27,6 +27,7 @@ interface TaskListProps {
   quickAddDefaults?: Partial<Pick<Task, "whenDate" | "timeOfDay" | "projectId" | "areaId" | "sectionId">>;
   activeSections?: Section[];
   emptyMessage?: string;
+  renderRowSuffix?: (task: Task) => React.ReactNode;
 }
 
 function todayStr() {
@@ -39,7 +40,7 @@ function nextWeekStr() {
   return toLocalDateStr(d);
 }
 
-export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, activeSections, emptyMessage }: TaskListProps) {
+export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, activeSections, emptyMessage, renderRowSuffix }: TaskListProps) {
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const { data: allProjects = [] } = useProjects();
   const activeProjects = allProjects.filter((p) => !p.isCompleted) as ProjectWithCounts[];
@@ -184,17 +185,31 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
       {tasks.length === 0 && emptyMessage && (
         <p className="text-sm text-muted-foreground py-6 text-center">{emptyMessage}</p>
       )}
-      {tasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          isExpanded={expandedTaskId === task.id}
-          onToggle={handleToggle}
-          activeProjects={activeProjects}
-          activeSections={activeSections}
-          showWhenDate={showWhenDate}
-        />
-      ))}
+      {tasks.map((task) =>
+        renderRowSuffix ? (
+          <div key={task.id} className="group relative">
+            <TaskItem
+              task={task}
+              isExpanded={expandedTaskId === task.id}
+              onToggle={handleToggle}
+              activeProjects={activeProjects}
+              activeSections={activeSections}
+              showWhenDate={showWhenDate}
+            />
+            {renderRowSuffix(task)}
+          </div>
+        ) : (
+          <TaskItem
+            key={task.id}
+            task={task}
+            isExpanded={expandedTaskId === task.id}
+            onToggle={handleToggle}
+            activeProjects={activeProjects}
+            activeSections={activeSections}
+            showWhenDate={showWhenDate}
+          />
+        )
+      )}
       <TaskQuickAdd ref={quickAddRef} defaults={quickAddDefaults} />
     </div>
   );
