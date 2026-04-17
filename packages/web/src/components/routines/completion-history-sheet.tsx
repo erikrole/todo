@@ -77,10 +77,9 @@ function EditRow({ completion, taskId, onDone }: EditRowProps) {
 
   return (
     <div className="flex flex-col gap-2 py-2 px-3 rounded-lg bg-muted/50 border">
-      {/* Date picker */}
       <Popover open={calOpen} onOpenChange={setCalOpen}>
         <PopoverTrigger asChild>
-          <button className="flex items-center gap-1.5 text-[12px] text-left hover:text-foreground transition-colors">
+          <button className="flex items-center gap-1.5 text-xs text-left hover:text-foreground transition-colors">
             <CalendarIcon className="h-3 w-3 text-muted-foreground" />
             <span>{date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>
           </button>
@@ -105,7 +104,7 @@ function EditRow({ completion, taskId, onDone }: EditRowProps) {
 
       <div className="flex items-center justify-between gap-2">
         <button
-          className="flex items-center gap-1 text-[11px] text-destructive/70 hover:text-destructive transition-colors"
+          className="flex items-center gap-1 text-xs text-destructive/70 hover:text-destructive transition-colors"
           onClick={() => remove.mutate()}
           disabled={remove.isPending}
         >
@@ -144,33 +143,36 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-96 flex flex-col gap-0 pb-0">
-        <SheetHeader className="pb-3 border-b">
-          <SheetTitle className="text-base font-semibold leading-tight">{task?.title ?? ""}</SheetTitle>
+        <SheetHeader className="pb-4 border-b">
+          <SheetTitle className="text-xl font-bold leading-tight">{task?.title ?? ""}</SheetTitle>
           <SheetDescription className="sr-only">Completion history</SheetDescription>
         </SheetHeader>
 
-        {/* Stats grid */}
+        {/* Stats grid — big scoreboard numbers */}
         {stats && stats.count > 0 && (
           <div className="grid grid-cols-4 gap-px bg-border border-b">
             {[
               { label: "total", value: stats.count },
-              { label: "avg", value: avgDays !== null ? `${avgDays}d` : "—" },
-              { label: "best", value: stats.shortestDays !== null ? `${stats.shortestDays}d` : "—" },
+              { label: "avg", value: avgDays !== null ? `${Math.round(avgDays)}d` : "—" },
+              { label: "best", value: stats.shortestDays !== null ? `${stats.shortestDays}d` : "—", highlight: true },
               { label: "longest", value: stats.longestDays !== null ? `${stats.longestDays}d` : "—" },
             ].map((s) => (
-              <div key={s.label} className="flex flex-col items-center py-3 bg-background gap-0.5">
-                <span className="text-sm font-semibold tabular-nums">{s.value}</span>
-                <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">{s.label}</span>
+              <div key={s.label} className="flex flex-col items-center py-4 bg-background gap-1">
+                <span className={cn(
+                  "text-2xl font-bold tabular-nums leading-none",
+                  s.highlight && "text-primary"
+                )}>{s.value}</span>
+                <span className="text-xs text-muted-foreground/70 uppercase tracking-wider">{s.label}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* Mini consistency sparkline — dots for last 12 completions */}
+        {/* Interval history bar chart */}
         {completions.length > 1 && avgDays !== null && (
-          <div className="px-4 py-3 border-b flex flex-col gap-1.5">
-            <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Interval history</span>
-            <div className="flex items-end gap-1 h-8">
+          <div className="px-4 py-3 border-b flex flex-col gap-2">
+            <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Interval history</span>
+            <div className="flex items-end gap-1 h-14">
               {completions.slice(-16).map((c) => {
                 const ratio = c.intervalActual !== null ? c.intervalActual / (avgDays * 1.5) : 0;
                 const h = Math.max(Math.min(ratio * 100, 100), 8);
@@ -180,8 +182,8 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
                   <div
                     key={c.id}
                     className={cn(
-                      "flex-1 rounded-sm min-w-[4px]",
-                      isLong ? "bg-amber-500/50" : isShort ? "bg-emerald-500/50" : "bg-primary/30",
+                      "flex-1 rounded-sm min-w-[4px] transition-opacity hover:opacity-100 opacity-80",
+                      isLong ? "bg-amber-500/70" : isShort ? "bg-emerald-500/70" : "bg-primary/50",
                     )}
                     style={{ height: `${h}%` }}
                     title={c.intervalActual !== null ? `${c.intervalActual}d` : "first"}
@@ -206,8 +208,14 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
                   <div className="flex flex-col items-center shrink-0">
                     <div
                       className={cn(
-                        "h-2 w-2 rounded-full mt-1 shrink-0 ring-2 ring-background",
-                        c.intervalActual !== null ? "bg-primary/50" : "bg-muted-foreground/30",
+                        "h-3 w-3 rounded-full mt-1 shrink-0 ring-2 ring-background",
+                        c.intervalActual === null
+                          ? "bg-muted-foreground/40"
+                          : c.intervalActual < (avgDays ?? 99) * 0.8
+                          ? "bg-emerald-500/80"
+                          : c.intervalActual > (avgDays ?? 0) * 1.2
+                          ? "bg-amber-500/80"
+                          : "bg-primary/60",
                       )}
                     />
                     {i < sorted.length - 1 && <div className="flex-1 w-px bg-border/60 my-0.5" />}
@@ -224,10 +232,10 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
                     ) : (
                       <>
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[12px] font-medium text-foreground/80">{formatDate(c.completedAt)}</span>
+                          <span className="text-sm font-semibold text-foreground">{formatDate(c.completedAt)}</span>
                           <div className="flex items-center gap-1.5">
                             {c.intervalActual !== null && (
-                              <span className="text-[11px] text-muted-foreground/45 tabular-nums">
+                              <span className="text-xs text-muted-foreground/70 tabular-nums font-medium">
                                 {c.intervalActual}d
                               </span>
                             )}
@@ -241,11 +249,15 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
                         </div>
 
                         {c.intervalActual !== null && (
-                          <div className="mt-1 h-[2px] rounded-full bg-muted overflow-hidden max-w-[160px]">
+                          <div className="mt-1.5 h-[3px] rounded-full bg-muted overflow-hidden max-w-[180px]">
                             <div
                               className={cn(
                                 "h-full rounded-full",
-                                c.intervalActual > (avgDays ?? 0) * 1.2 ? "bg-amber-500/40" : "bg-primary/35",
+                                c.intervalActual > (avgDays ?? 0) * 1.2
+                                  ? "bg-amber-500/60"
+                                  : c.intervalActual < (avgDays ?? 99) * 0.8
+                                  ? "bg-emerald-500/60"
+                                  : "bg-primary/50",
                               )}
                               style={{ width: `${Math.min((c.intervalActual / maxInterval) * 100, 100)}%` }}
                             />
@@ -253,7 +265,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
                         )}
 
                         {c.notes && (
-                          <p className="mt-1 text-[11px] text-muted-foreground/55 italic leading-snug">{c.notes}</p>
+                          <p className="mt-1 text-xs text-muted-foreground/70 italic leading-snug">{c.notes}</p>
                         )}
                       </>
                     )}

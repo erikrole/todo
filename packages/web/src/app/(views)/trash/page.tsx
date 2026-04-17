@@ -27,7 +27,7 @@ export default function TrashPage() {
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
       <div className="flex items-baseline gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Trash</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Trash</h1>
         <span className="text-xs text-muted-foreground/40">Items are deleted after 30 days.</span>
       </div>
 

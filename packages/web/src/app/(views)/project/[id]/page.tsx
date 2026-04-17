@@ -173,7 +173,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 </div>
               </PopoverContent>
             </Popover>
-            <h1 className="text-2xl font-semibold tracking-tight">{project?.name ?? "Project"}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{project?.name ?? "Project"}</h1>
           </div>
           {total > 0 && (
             <p className="text-xs text-muted-foreground">

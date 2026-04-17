@@ -73,8 +73,8 @@ export default function TodayPage() {
     <div className="flex flex-col gap-6 max-w-2xl">
       <div className="flex flex-col gap-2">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
-          <p className="text-xs text-muted-foreground/70 mt-0.5">
+          <h1 className="text-3xl font-bold tracking-tight">Today</h1>
+          <p className="text-sm text-muted-foreground/70 mt-0.5">
             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
           </p>
         </div>

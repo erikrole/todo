@@ -43,7 +43,7 @@ export default function RoutinesPage() {
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Routines</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Routines</h1>
         <Button variant="ghost" size="sm" onClick={() => setImportOpen(true)}>
           <Upload className="h-4 w-4 mr-1.5" />
           Import
@@ -52,19 +52,19 @@ export default function RoutinesPage() {
 
       {/* Summary chips */}
       {!isLoading && tasks.length > 0 && (
-        <div className="flex items-center gap-2 text-[11px]">
+        <div className="flex items-center gap-2 text-xs font-semibold">
           {overdue > 0 && (
-            <span className="px-2 py-0.5 rounded-md bg-destructive/10 text-destructive/70">
+            <span className="px-2.5 py-1 rounded-md bg-destructive/15 text-destructive">
               {overdue} overdue
             </span>
           )}
           {dueSoon > 0 && (
-            <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600/70 dark:text-amber-400/70">
+            <span className="px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400">
               {dueSoon} due soon
             </span>
           )}
           {healthy > 0 && (
-            <span className="px-2 py-0.5 rounded-md bg-muted text-muted-foreground/60">
+            <span className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground/80">
               {healthy} on track
             </span>
           )}

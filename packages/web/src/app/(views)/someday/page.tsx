@@ -9,7 +9,7 @@ export default function SomedayPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Someday</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Someday</h1>
       <DroppableZone id="section:someday">
         <TaskList
           tasks={tasks}

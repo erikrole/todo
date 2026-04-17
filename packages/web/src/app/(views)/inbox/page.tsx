@@ -9,7 +9,7 @@ export default function InboxPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
       <DroppableZone id="section:inbox">
         <TaskList tasks={tasks} isLoading={isLoading} emptyMessage="No tasks in your inbox." />
       </DroppableZone>

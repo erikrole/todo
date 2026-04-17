@@ -83,7 +83,7 @@ export default function AreaPage({ params }: { params: Promise<{ id: string }> }
             </div>
           </PopoverContent>
         </Popover>
-        <h1 className="text-2xl font-semibold tracking-tight">{area?.name ?? "Area"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{area?.name ?? "Area"}</h1>
       </div>
 
       <textarea
