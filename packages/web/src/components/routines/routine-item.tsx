@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import type { Task } from "@todo/shared";
 import { CompletionHistorySheet } from "./completion-history-sheet";
 import { StatusRing } from "./status-ring";
@@ -61,7 +61,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
   const todayMutation = useMutation({
     mutationFn: () =>
       api.post(`/api/tasks/${task.id}/completions`, {
-        completedAt: today + "T12:00:00",
+        completedAt: toLocalDateStr(new Date()) + "T12:00:00",
         notes: null,
       }),
     onSuccess: () => {
@@ -180,11 +180,9 @@ export function RoutineItem({ task, index = 0 }: Props) {
               aria-label="Log today"
               className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-primary/80 hover:text-primary hover:bg-primary/10 transition-colors"
               onClick={() => todayMutation.mutate()}
-              disabled={todayMutation.isPending}
+              disabled={todayMutation.isPending || logMutation.isPending}
             >
-              <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
-                <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <Check className="h-3 w-3" />
               Today
             </button>
             <Popover open={logOpen} onOpenChange={setLogOpen}>
@@ -193,6 +191,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
                   aria-label="Log past date"
                   className="flex items-center px-1.5 py-1.5 text-primary/50 hover:text-primary hover:bg-primary/10 border-l border-primary/20 transition-colors"
                   onClick={() => setLogOpen(true)}
+                  disabled={todayMutation.isPending || logMutation.isPending}
                 >
                   <ChevronDown className="h-3 w-3" />
                 </button>
