@@ -51,3 +51,35 @@ export function deadlineUrgency(deadline: string): "overdue" | "soon" | "normal"
   if (diff <= 3) return "soon";
   return "normal";
 }
+
+/** Human-readable age string for a task that has been in inbox since createdAt. */
+export function taskAge(createdAt: string): string {
+  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+  if (days === 0) return "today";
+  if (days === 1) return "1d";
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w`;
+  return `${Math.floor(days / 30)}mo`;
+}
+
+/** YYYY-MM-DD string for today in local time. */
+export function todayStr(): string {
+  return toLocalDateStr(new Date());
+}
+
+/** YYYY-MM-DD string for tomorrow in local time. */
+export function tomorrowStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return toLocalDateStr(d);
+}
+
+/** YYYY-MM-DD string for the coming Saturday in local time (or today if today is Saturday). */
+export function nextSaturdayStr(): string {
+  const d = new Date();
+  const day = d.getDay(); // 0=Sun … 6=Sat
+  const daysUntilSat = day === 6 ? 0 : 6 - day;
+  d.setDate(d.getDate() + daysUntilSat);
+  return toLocalDateStr(d);
+}
