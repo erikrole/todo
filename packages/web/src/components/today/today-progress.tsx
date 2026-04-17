@@ -15,7 +15,7 @@ function progressColor(pct: number): string {
 
 export function TodayProgress({ completed, total }: TodayProgressProps) {
   if (total === 0) return null;
-  const pct = (completed / total) * 100;
+  const pct = Math.min((completed / total) * 100, 100);
 
   return (
     <div className="flex items-center gap-3 px-4">
