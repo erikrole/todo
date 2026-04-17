@@ -231,7 +231,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
               onChange={(e) => setEntryNotes(e.target.value)}
             />
             <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setAddingEntry(false)}>
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => { setAddingEntry(false); setEntryNotes(""); setEntryDate(new Date()); }}>
                 Cancel
               </Button>
               <Button size="sm" className="h-6 px-2 text-xs" onClick={() => addMutation.mutate()} disabled={addMutation.isPending}>
@@ -244,7 +244,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
         {/* Habit grid + interval bars */}
         {completions.length > 0 && (() => {
           const today = toLocalDateStr(new Date());
-          const completionDates = new Set(completions.map((c) => c.completedAt.slice(0, 10)));
+          const completionDates = new Set(completions.map((c) => toLocalDateStr(new Date(c.completedAt))));
 
           // Build 91-day array oldest → newest
           const cells: string[] = Array.from({ length: 91 }, (_, i) => {
