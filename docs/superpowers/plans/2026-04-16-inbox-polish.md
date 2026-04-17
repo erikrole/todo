@@ -28,6 +28,17 @@
 - [ ] **Step 1: Add three helpers at the end of the file**
 
 ```ts
+/** Human-readable age string for a task that has been in inbox since createdAt. */
+export function taskAge(createdAt: string): string {
+  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+  if (days === 0) return "today";
+  if (days === 1) return "1d";
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `${weeks}w`;
+  return `${Math.floor(days / 30)}mo`;
+}
+
 /** YYYY-MM-DD string for today in local time. */
 export function todayStr(): string {
   return toLocalDateStr(new Date());
@@ -243,6 +254,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TaskQuickAdd } from "@/components/tasks/task-quick-add";
+import { taskAge } from "@/lib/dates";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCallback, useRef, useState } from "react";
@@ -342,6 +354,10 @@ export default function InboxPage() {
                   onToggle={handleToggle}
                   activeProjects={activeProjects}
                 />
+                {/* Age badge — visible at rest, fades out when dispatch controls appear */}
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/35 tabular-nums opacity-100 group-hover:opacity-0 transition-opacity">
+                  {taskAge(task.createdAt)}
+                </span>
                 <InboxDispatchControls taskId={task.id} />
               </div>
             ))}

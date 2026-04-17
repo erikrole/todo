@@ -114,6 +114,31 @@ A sort control in the header (right-aligned, same row as the `h1` block) lets th
 
 ---
 
+## Change 5 — Task age badge
+
+**Files:** `packages/web/src/lib/dates.ts`, `packages/web/src/app/(views)/inbox/page.tsx`
+
+### Current behavior
+No indication of how long a task has been sitting in inbox.
+
+### New behavior
+Each task row shows a subtle age label (e.g. `3d`, `2w`, `1mo`) right-aligned between the title and the dispatch controls. It is visible by default and fades out on hover as the dispatch pills fade in — they swap in the same slot.
+
+| Age | Label |
+|-----|-------|
+| Same day | `today` |
+| 1 day | `1d` |
+| 2–6 days | `Nd` |
+| 1–4 weeks | `Nw` |
+| 1+ months | `Nmo` |
+
+### Implementation notes
+- Add `taskAge(createdAt: string): string` helper to `@/lib/dates.ts`.
+- Render `<span className="... opacity-100 group-hover:opacity-0 transition-opacity">` in the `group relative` wrapper, right-aligned.
+- Dispatch controls already use `opacity-0 group-hover:opacity-100` — they swap cleanly.
+
+---
+
 ## Subagent split
 
 | Subagent | Files touched | Changes |
