@@ -54,7 +54,7 @@ export function deadlineUrgency(deadline: string): "overdue" | "soon" | "normal"
 
 /** Human-readable age string for a task that has been in inbox since createdAt. */
 export function taskAge(createdAt: string): string {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
+  const days = Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000));
   if (days === 0) return "today";
   if (days === 1) return "1d";
   if (days < 7) return `${days}d`;
