@@ -1,10 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetch";
 import { cn } from "@/lib/utils";
 import { toLocalDateStr } from "@/lib/dates";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import type { Task } from "@todo/shared";
 import { CompletionHistorySheet } from "./completion-history-sheet";
 import { StatusRing } from "./status-ring";
@@ -27,11 +32,30 @@ interface Props {
 
 export function RoutineItem({ task, index = 0 }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [logDate, setLogDate] = useState<Date>(() => new Date());
+  const [logNotes, setLogNotes] = useState("");
+  const qc = useQueryClient();
   const today = toLocalDateStr(new Date());
 
   const { data } = useQuery({
     queryKey: ["task-completions", task.id],
     queryFn: () => api.get<CompletionStats>(`/api/tasks/${task.id}/completions`),
+  });
+
+  const logMutation = useMutation({
+    mutationFn: () =>
+      api.post(`/api/tasks/${task.id}/completions`, {
+        completedAt: toLocalDateStr(logDate) + "T12:00:00",
+        notes: logNotes.trim() || null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["task-completions", task.id] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      setLogOpen(false);
+      setLogNotes("");
+      setLogDate(new Date());
+    },
   });
 
   const lastCompletedAt = data?.stats.lastCompletedAt ?? null;
@@ -88,7 +112,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
         )}
 
         <div className="flex items-center gap-4 pl-4 pr-3 py-3 rounded-xl hover:bg-accent/50 transition-colors">
-          {/* Status ring — 24px */}
+          {/* Status ring */}
           <StatusRing progressPct={barPct} isOverdue={isOverdue} isDueSoon={isDueSoon} />
 
           {/* Content */}
@@ -112,7 +136,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
               </div>
             </div>
 
-            {/* Meta: days-ago · count · avg */}
+            {/* Meta */}
             <div className="mt-0.5 flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground/65">
               {daysAgo !== null && <span>{daysAgo}d ago</span>}
               {daysAgo !== null && (count > 0 || avgDays !== null) && <span>·</span>}
@@ -121,7 +145,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
               {avgDays !== null && <span>{Math.round(avgDays)}d avg</span>}
             </div>
 
-            {/* Progress bar — 4px */}
+            {/* Progress bar */}
             <div className="mt-2 h-1 rounded-full bg-border/60 overflow-hidden">
               <div
                 className={cn(
@@ -134,6 +158,52 @@ export function RoutineItem({ task, index = 0 }: Props) {
               />
             </div>
           </div>
+
+          {/* Log completion button */}
+          <Popover open={logOpen} onOpenChange={setLogOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 h-7 w-7 rounded-lg flex items-center justify-center hover:bg-primary/15 text-primary/70 hover:text-primary"
+                onClick={(e) => { e.stopPropagation(); setLogOpen(true); }}
+                title="Log past completion"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-0"
+              align="end"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-3 border-b">
+                <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Log completion</p>
+              </div>
+              <Calendar
+                mode="single"
+                selected={logDate}
+                onSelect={(d) => { if (d) setLogDate(d); }}
+                disabled={(d) => d > new Date()}
+                initialFocus
+              />
+              <div className="p-3 border-t flex flex-col gap-2">
+                <Input
+                  className="h-8 text-xs"
+                  placeholder="Notes (optional)"
+                  value={logNotes}
+                  onChange={(e) => setLogNotes(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") logMutation.mutate(); }}
+                />
+                <Button
+                  size="sm"
+                  className="w-full h-8"
+                  onClick={() => logMutation.mutate()}
+                  disabled={logMutation.isPending}
+                >
+                  Log {logDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

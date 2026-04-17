@@ -9,6 +9,27 @@ import { ImportSheet } from "@/components/routines/import-sheet";
 import { toLocalDateStr } from "@/lib/dates";
 import type { Task } from "@todo/shared";
 
+function sortRoutines(tasks: Task[], today: string): Task[] {
+  function priority(t: Task): number {
+    if (!t.whenDate) return 3;
+    const d = Math.round((Date.parse(t.whenDate + "T00:00:00") - Date.parse(today + "T00:00:00")) / 86400000);
+    if (d < 0) return 0;   // overdue
+    if (d === 0) return 1;  // today
+    if (d <= 2) return 2;   // due soon
+    return 4;               // future
+  }
+  return [...tasks].sort((a, b) => {
+    const pa = priority(a);
+    const pb = priority(b);
+    if (pa !== pb) return pa - pb;
+    // Within same priority: sort by whenDate ascending (nulls alphabetical)
+    if (!a.whenDate && !b.whenDate) return a.title.localeCompare(b.title);
+    if (!a.whenDate) return 1;
+    if (!b.whenDate) return -1;
+    return a.whenDate.localeCompare(b.whenDate);
+  });
+}
+
 function useSummaryStats(tasks: Task[]) {
   const today = toLocalDateStr(new Date());
   let overdue = 0;
@@ -37,7 +58,9 @@ function useSummaryStats(tasks: Task[]) {
 
 export default function RoutinesPage() {
   const [importOpen, setImportOpen] = useState(false);
+  const today = toLocalDateStr(new Date());
   const { data: tasks = [], isLoading } = useTasks("routines");
+  const sorted = sortRoutines(tasks, today);
   const { overdue, dueSoon, healthy } = useSummaryStats(tasks);
 
   return (
@@ -79,7 +102,7 @@ export default function RoutinesPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-1">
-          {tasks.map((task, i) => (
+          {sorted.map((task, i) => (
             <RoutineItem key={task.id} task={task} index={i} />
           ))}
         </div>
