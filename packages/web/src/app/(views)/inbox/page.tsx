@@ -12,11 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TaskQuickAdd } from "@/components/tasks/task-quick-add";
-import type { TaskQuickAddHandle } from "@/components/tasks/task-quick-add";
 import { taskAge } from "@/lib/dates";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import type { Task, ProjectWithCounts } from "@todo/shared";
 
 type SortKey = "added" | "title" | "deadline";
@@ -45,7 +44,6 @@ export default function InboxPage() {
 
   const [sortKey, setSortKey] = useState<SortKey>("added");
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
-  const quickAddRef = useRef<TaskQuickAddHandle>(null);
   const handleToggle = useCallback(
     (id: string) => setExpandedTaskId((prev) => (prev === id ? null : id)),
     [],
@@ -117,7 +115,7 @@ export default function InboxPage() {
                 <InboxDispatchControls taskId={task.id} />
               </div>
             ))}
-            <TaskQuickAdd ref={quickAddRef} />
+            <TaskQuickAdd />
           </div>
         </DroppableZone>
       )}
