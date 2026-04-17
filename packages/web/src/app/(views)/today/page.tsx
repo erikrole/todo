@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useCallback, useState } from "react";
+import { ChevronDown, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toLocalDateStr } from "@/lib/dates";
+import { toLocalDateStr, taskAge } from "@/lib/dates";
 import { useTasks } from "@/hooks/use-tasks";
 import { TaskList } from "@/components/tasks/task-list";
 import { DroppableZone } from "@/components/dnd/droppable-zone";
-import { Progress } from "@/components/ui/progress";
+import { TodayProgress } from "@/components/today/today-progress";
+import { TodayRoutineRow } from "@/components/today/today-routine-row";
+import { TodaySnoozeControls } from "@/components/today/snooze-controls";
 import type { Task, TimeOfDay } from "@todo/shared";
 
 const SECTIONS: { id: TimeOfDay | null; label: string; key: string }[] = [
@@ -32,7 +34,14 @@ function loadCollapsed(): Record<string, boolean> {
 export default function TodayPage() {
   const today = toLocalDateStr(new Date());
   const { data: allTasks = [], isLoading } = useTasks("today_all");
-  const overdueTasks = allTasks.filter((t) => !t.isCompleted && t.whenDate !== null && t.whenDate < today);
+  const { data: routineTasks = [] } = useTasks("routines");
+
+  const overdueTasks = allTasks.filter(
+    (t) => !t.isCompleted && t.whenDate !== null && t.whenDate < today,
+  );
+  const dueRoutines = routineTasks.filter(
+    (t) => t.whenDate !== null && t.whenDate <= today,
+  );
 
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed);
 
@@ -48,61 +57,126 @@ export default function TodayPage() {
 
   const completedCount = allTasks.filter((t) => t.isCompleted && !t.isCancelled).length;
   const totalForProgress = allTasks.filter((t) => !t.isCancelled).length;
-  const progressPct = totalForProgress > 0 ? (completedCount / totalForProgress) * 100 : 0;
+  const allDone = totalForProgress > 0 && completedCount === totalForProgress;
 
   function tasksBySection(sectionId: TimeOfDay | null): Task[] {
     return allTasks
       .filter((t) => t.isCompleted || (t.whenDate !== null && t.whenDate >= today))
       .filter((t) => (t.timeOfDay ?? null) === sectionId)
       .sort((a, b) => {
-        // Active tasks before completed tasks
         if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
-        // Active: sort by scheduledTime ascending
         if (!a.isCompleted) {
           if (!a.scheduledTime && !b.scheduledTime) return 0;
           if (!a.scheduledTime) return 1;
           if (!b.scheduledTime) return -1;
           return a.scheduledTime.localeCompare(b.scheduledTime);
         }
-        // Completed: sort by completedAt descending (most recent first)
         return (b.completedAt ?? "").localeCompare(a.completedAt ?? "");
       });
   }
 
+  const snoozeControls = useCallback(
+    (task: Task) => <TodaySnoozeControls taskId={task.id} />,
+    [],
+  );
+
+  const overdueRowSuffix = useCallback(
+    (task: Task) => (
+      <>
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground/35 tabular-nums opacity-100 group-hover:opacity-0 transition-opacity">
+          {taskAge(task.createdAt)}
+        </span>
+        <TodaySnoozeControls taskId={task.id} />
+      </>
+    ),
+    [],
+  );
+
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
+      {/* Header + progress */}
       <div className="flex flex-col gap-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Today</h1>
           <p className="text-sm text-muted-foreground/70 mt-0.5">
-            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
           </p>
         </div>
-        {totalForProgress > 0 && (
-          <div className="flex items-center gap-3 px-4">
-            <Progress value={progressPct} className="h-1.5 flex-1" />
-            <span className="text-xs text-muted-foreground/65 shrink-0 tabular-nums">
-              {completedCount}/{totalForProgress}
-            </span>
-          </div>
-        )}
+        <TodayProgress completed={completedCount} total={totalForProgress} />
       </div>
 
       {isLoading ? (
-        <TaskList tasks={[]} isLoading />
+        <div className="flex flex-col gap-1">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-10 rounded-lg bg-muted/40 animate-pulse" />
+          ))}
+        </div>
       ) : (
         <>
+          {/* Routines section */}
+          {dueRoutines.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between px-4 mb-1">
+                <h2 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-[0.12em]">
+                  Routines
+                  <span className="ml-1.5 text-muted-foreground/50 normal-case font-normal">
+                    {dueRoutines.length} due
+                  </span>
+                </h2>
+                <button
+                  onClick={() => toggleSection("routines")}
+                  aria-label={collapsed["routines"] ? "Expand Routines" : "Collapse Routines"}
+                  className="text-muted-foreground/55 hover:text-muted-foreground/80 transition-colors"
+                >
+                  {collapsed["routines"] ? (
+                    <span className="flex items-center gap-1 text-xs tabular-nums">
+                      {dueRoutines.length}
+                      <ChevronRight className="h-3 w-3" />
+                    </span>
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              <div
+                className={cn(
+                  "grid transition-[grid-template-rows,opacity] duration-200 ease-in-out",
+                  collapsed["routines"]
+                    ? "grid-rows-[0fr] opacity-0"
+                    : "grid-rows-[1fr] opacity-100",
+                )}
+              >
+                <div className="overflow-hidden">
+                  {dueRoutines.map((r) => (
+                    <TodayRoutineRow key={r.id} task={r} />
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Overdue section */}
           {overdueTasks.length > 0 && (
             <section>
               <h2 className="text-xs font-semibold text-destructive/80 uppercase tracking-[0.12em] mb-1 px-4">
                 Overdue
               </h2>
               <DroppableZone id="section:today:overdue">
-                <TaskList tasks={overdueTasks} showWhenDate emptyMessage="" />
+                <TaskList
+                  tasks={overdueTasks}
+                  showWhenDate
+                  emptyMessage=""
+                  renderRowSuffix={overdueRowSuffix}
+                />
               </DroppableZone>
             </section>
           )}
 
+          {/* Time-of-day sections */}
           {SECTIONS.map(({ id, label, key }) => {
             const dropId = `section:today:${key}`;
             const sectionTasks = tasksBySection(id);
@@ -145,6 +219,7 @@ export default function TodayPage() {
                         tasks={sectionTasks}
                         quickAddDefaults={{ whenDate: today, timeOfDay: id ?? undefined }}
                         emptyMessage=""
+                        renderRowSuffix={snoozeControls}
                       />
                     </DroppableZone>
                   </div>
@@ -152,6 +227,15 @@ export default function TodayPage() {
               </section>
             );
           })}
+
+          {/* Completion celebration */}
+          {allDone && (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <Sparkles className="h-6 w-6 text-muted-foreground/25" />
+              <p className="text-sm font-medium text-muted-foreground/40">All done for today</p>
+              <p className="text-xs text-muted-foreground/30">Come back tomorrow.</p>
+            </div>
+          )}
         </>
       )}
     </div>
