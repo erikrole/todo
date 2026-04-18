@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAreas } from "@/hooks/use-areas";
+import { useEffect, useRef, useState } from "react";
+import { useAreas, useCreateArea } from "@/hooks/use-areas";
 import { useProjects } from "@/hooks/use-projects";
 import { useTaskCounts } from "@/hooks/use-tasks";
 import type { Accent, Theme } from "./shell";
+
+const AREA_COLOR_PALETTE = [
+  "oklch(0.68 0.13 58)",   // ochre
+  "oklch(0.63 0.13 30)",   // clay
+  "oklch(0.62 0.08 150)",  // sage
+  "oklch(0.58 0.08 240)",  // slate
+  "oklch(0.56 0.12 320)",  // plum
+];
 
 const ACCENT_SWATCHES: { id: Accent; color: string }[] = [
   { id: "ochre", color: "oklch(0.68 0.13 58)" },
@@ -49,6 +58,28 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
   const { data: areas = [] } = useAreas();
   const { data: allProjects = [] } = useProjects();
   const { data: counts } = useTaskCounts();
+  const createArea = useCreateArea();
+
+  const [addingArea, setAddingArea] = useState(false);
+  const [newAreaName, setNewAreaName] = useState("");
+  const newAreaRef = useRef<HTMLInputElement>(null);
+  const newAreaSubmittedRef = useRef(false);
+
+  useEffect(() => {
+    if (addingArea) setTimeout(() => newAreaRef.current?.focus(), 30);
+  }, [addingArea]);
+
+  async function submitNewArea() {
+    if (newAreaSubmittedRef.current) return;
+    const name = newAreaName.trim();
+    if (!name) { setAddingArea(false); return; }
+    newAreaSubmittedRef.current = true;
+    const color = AREA_COLOR_PALETTE[areas.length % AREA_COLOR_PALETTE.length];
+    setNewAreaName("");
+    setAddingArea(false);
+    await createArea.mutateAsync({ name, color });
+    newAreaSubmittedRef.current = false;
+  }
 
   const topLevelProjects = allProjects.filter((p) => !p.parentProjectId && !p.isCompleted);
 
@@ -161,30 +192,95 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
       </nav>
 
       {/* Areas */}
-      {areas.length > 0 && (
-        <>
+      <div
+        style={{
+          padding: "18px 18px 6px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 11,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          color: "var(--ink-4)",
+        }}
+      >
+        <span style={{ flex: 1 }}>Areas</span>
+        <button
+          onClick={() => setAddingArea(true)}
+          title="New area"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 16,
+            height: 16,
+            borderRadius: 5,
+            color: "var(--ink-4)",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink-2)"; e.currentTarget.style.background = "var(--surface-2)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-4)"; e.currentTarget.style.background = "transparent"; }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      </div>
+      <div
+        style={{
+          padding: "0 8px",
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        {addingArea && (
           <div
             style={{
-              padding: "18px 18px 6px 18px",
-              fontSize: 11,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--ink-4)",
-            }}
-          >
-            Areas
-          </div>
-          <div
-            style={{
-              padding: "0 8px",
-              flex: 1,
-              overflowY: "auto",
               display: "flex",
-              flexDirection: "column",
-              gap: 1,
+              alignItems: "center",
+              gap: 10,
+              padding: "5px 10px",
             }}
           >
-            {areas.map((area) => {
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 2,
+                background: AREA_COLOR_PALETTE[areas.length % AREA_COLOR_PALETTE.length],
+                flexShrink: 0,
+              }}
+            />
+            <input
+              ref={newAreaRef}
+              value={newAreaName}
+              onChange={(e) => setNewAreaName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); submitNewArea(); }
+                if (e.key === "Escape") { setNewAreaName(""); setAddingArea(false); }
+              }}
+              onBlur={submitNewArea}
+              placeholder="New area"
+              style={{
+                flex: 1,
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontSize: 13.5,
+                color: "var(--ink)",
+                fontFamily: "inherit",
+                padding: 0,
+              }}
+            />
+          </div>
+        )}
+        {areas.map((area) => {
               const areaProjects = topLevelProjects.filter((p) => p.areaId === area.id);
               return (
                 <div key={area.id}>
@@ -298,11 +394,7 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
                 </Link>
               );
             })}
-          </div>
-        </>
-      )}
-
-      {areas.length === 0 && <div style={{ flex: 1 }} />}
+      </div>
 
       {/* Footer: accent picker + theme toggle + settings */}
       <div
