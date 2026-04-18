@@ -1,4 +1,4 @@
-<!-- Generated: 2026-04-12 | Files scanned: 98 | Token estimate: ~500 -->
+<!-- Generated: 2026-04-17 | Files scanned: 110+ | Token estimate: ~600 -->
 # Data
 
 ## Schema (`packages/db/src/schema.ts`)
@@ -33,6 +33,7 @@ tasks
   area_id → areas.id (SET NULL)
   section_id → sections.id (SET NULL)
   parent_task_id             ← subtask (no FK, manual cascade)
+  spawned_from_task_id       ← recurrence chain canonical ID
   is_someday, is_completed, completed_at
   is_cancelled, deleted_at   ← soft delete
   recurrence_type (daily|weekly|monthly|yearly|custom)
@@ -41,6 +42,14 @@ tasks
   position (real)
   created_at, updated_at
   IDX: project_id, area_id, when_date, is_completed, deleted_at, parent_task_id
+
+task_completions            ← routine/recurring task history log
+  id (PK), task_id → tasks.id (CASCADE)
+  completed_at (ISO string)
+  interval_actual (real)    ← days since prior completion, recomputed on each change
+  notes
+  created_at
+  IDX: task_id, completed_at
 ```
 
 ## Relationships
@@ -51,7 +60,9 @@ areas 1──* tasks
 projects 1──* tasks
 sections 1──* tasks
 tasks 1──* tasks (subtasks via parent_task_id)
+tasks 1──* tasks (recurrence chain via spawned_from_task_id)
 projects 1──* projects (sub-projects via parent_project_id, 1 level)
+tasks 1──* task_completions (routine completion history)
 ```
 
 ## Position / Ordering

@@ -98,7 +98,6 @@ export default function TodayPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
-      {/* Header + progress */}
       <div className="flex flex-col gap-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Today</h1>
@@ -121,7 +120,6 @@ export default function TodayPage() {
         </div>
       ) : (
         <>
-          {/* Routines section */}
           {dueRoutines.length > 0 && (
             <section>
               <div className="flex items-center justify-between px-4 mb-1">
@@ -163,7 +161,6 @@ export default function TodayPage() {
             </section>
           )}
 
-          {/* Overdue section */}
           {overdueTasks.length > 0 && (
             <section>
               <h2 className="text-xs font-semibold text-destructive/80 uppercase tracking-[0.12em] mb-1 px-4">
@@ -180,7 +177,6 @@ export default function TodayPage() {
             </section>
           )}
 
-          {/* Time-of-day sections */}
           {SECTIONS.map(({ id, label, key }) => {
             const dropId = `section:today:${key}`;
             const sectionTasks = tasksBySection(id);
@@ -232,7 +228,6 @@ export default function TodayPage() {
             );
           })}
 
-          {/* Completion celebration */}
           {allDone && (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
               <Sparkles className="h-6 w-6 text-muted-foreground/25" />

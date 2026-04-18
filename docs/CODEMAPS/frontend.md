@@ -1,4 +1,4 @@
-<!-- Generated: 2026-04-12 | Updated: 2026-04-12 (keyboard shortcuts) | Files scanned: 98 -->
+<!-- Generated: 2026-04-17 | Updated: today components, inbox dispatch, routines, completions | Files scanned: 110+ -->
 # Frontend
 
 ## Page Tree (`packages/web/src/app/`)
@@ -49,6 +49,30 @@ TaskDndProvider (task-dnd-provider.tsx)
           └── TaskQuickAdd (task-quick-add.tsx)  ← exposes focus() handle via forwardRef
               └── NLP parse preview chips (date, time, project, deadline)
 
+TodayProgress (components/today/today-progress.tsx)
+  └── Progress bar clamped 0-100%, color ramps red→green via inline style
+
+TodaySnoozeControls (components/today/snooze-controls.tsx)
+  └── Tomorrow / Someday / Weekend pill buttons for deferring today tasks
+
+TodayRoutineRow (components/today/today-routine-row.tsx)
+  └── Compact row for routines in the Today view Routines section
+
+InboxDispatchControls (components/inbox/dispatch-controls.tsx)
+  └── Today / Tomorrow / overflow dropdown dispatch pills for inbox tasks
+
+RoutineItem (components/routines/routine-item.tsx)
+  └── Split completion button (log today + past date), streak ring, status ring
+
+StatusRing (components/routines/status-ring.tsx)
+  └── SVG ring showing routine completion status
+
+CompletionHistorySheet (components/routines/completion-history-sheet.tsx)
+  └── 90-day habit grid + stats + add-entry button, opened from routine item
+
+LogCompletionPopover (components/routines/log-completion-popover.tsx)
+  └── Date picker for logging a past completion
+
 SectionBlock (section-block.tsx)
   └── @dnd-kit/sortable — section drag reorder within project page
 
@@ -93,6 +117,7 @@ Mutations invalidate parent query keys on success. Optimistic updates used for s
 - `fetch.ts` — `api` object with typed `.get/.post/.patch/.delete`
 - `toast.ts` — `notify.success / notify.error / notify.undoable`
 - `keyboard/shortcut-config.ts` — `SHORTCUT_DEFS` (20 shortcuts), `eventToKey`, `matchesKey`, `loadOverrides`, `saveOverrides`, `formatKeyParts`; localStorage key: `todo-keyboard-shortcuts`
+- `completions.ts` — `recomputeIntervals(canonicalId)` — recalculates `interval_actual` for all completion rows of a recurring task chain
 
 ## DnD Drop ID Convention
 

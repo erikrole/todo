@@ -11,12 +11,10 @@
       "type": "stdio",
       "command": "node",
       "args": [
-        "packages/mcp/dist/index.js"
-      ],
-      "env": {
-        "TURSO_URL": "${TURSO_URL}",
-        "TURSO_AUTH_TOKEN": "${TURSO_AUTH_TOKEN}"
-      }
+        "--env-file=/Users/erole/GitHub/todo/.env.local",
+        "/Users/erole/GitHub/todo/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/cli.mjs",
+        "/Users/erole/GitHub/todo/packages/mcp/src/index.ts"
+      ]
     }
   }
 }

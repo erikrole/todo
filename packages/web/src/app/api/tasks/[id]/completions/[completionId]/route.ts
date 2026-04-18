@@ -19,27 +19,25 @@ export async function PATCH(
   const parsed = PatchSchema.safeParse(body);
   if (!parsed.success) return err(parsed.error.message);
 
-  const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+  const [[task], [existing]] = await Promise.all([
+    db.select().from(tasks).where(eq(tasks.id, id)),
+    db.select().from(taskCompletions).where(eq(taskCompletions.id, completionId)),
+  ]);
   if (!task) return err("Not found", 404);
-  const canonicalId = task.spawnedFromTaskId ?? task.id;
-
-  const [existing] = await db
-    .select()
-    .from(taskCompletions)
-    .where(eq(taskCompletions.id, completionId));
   if (!existing) return err("Completion not found", 404);
+
+  const canonicalId = task.spawnedFromTaskId ?? task.id;
 
   const patch: Record<string, unknown> = {};
   if (parsed.data.completedAt !== undefined) patch.completedAt = parsed.data.completedAt;
   if (parsed.data.notes !== undefined) patch.notes = parsed.data.notes ?? null;
 
-  await db.update(taskCompletions).set(patch).where(eq(taskCompletions.id, completionId));
-  await recomputeIntervals(canonicalId);
-
   const [updated] = await db
-    .select()
-    .from(taskCompletions)
-    .where(eq(taskCompletions.id, completionId));
+    .update(taskCompletions)
+    .set(patch)
+    .where(eq(taskCompletions.id, completionId))
+    .returning();
+  await recomputeIntervals(canonicalId);
 
   return ok(updated);
 }

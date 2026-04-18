@@ -68,13 +68,8 @@ export async function POST(
     createdAt: nowIso(),
   };
 
-  await db.insert(taskCompletions).values(row);
+  const [created] = await db.insert(taskCompletions).values(row).returning();
   await recomputeIntervals(canonicalId);
-
-  const [created] = await db
-    .select()
-    .from(taskCompletions)
-    .where(eq(taskCompletions.id, row.id));
 
   return ok(created, 201);
 }

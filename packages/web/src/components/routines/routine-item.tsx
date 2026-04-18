@@ -44,29 +44,14 @@ export function RoutineItem({ task, index = 0 }: Props) {
   });
 
   const logMutation = useMutation({
-    mutationFn: () =>
-      api.post(`/api/tasks/${task.id}/completions`, {
-        completedAt: toLocalDateStr(logDate) + "T12:00:00",
-        notes: logNotes.trim() || null,
-      }),
+    mutationFn: ({ completedAt, notes }: { completedAt: string; notes: string | null }) =>
+      api.post(`/api/tasks/${task.id}/completions`, { completedAt, notes }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["task-completions", task.id] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
       setLogOpen(false);
       setLogNotes("");
       setLogDate(new Date());
-    },
-  });
-
-  const todayMutation = useMutation({
-    mutationFn: () =>
-      api.post(`/api/tasks/${task.id}/completions`, {
-        completedAt: toLocalDateStr(new Date()) + "T12:00:00",
-        notes: null,
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["task-completions", task.id] });
-      qc.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 
@@ -113,7 +98,6 @@ export function RoutineItem({ task, index = 0 }: Props) {
         style={{ animationDelay: `${index * 30}ms` }}
         onClick={() => setHistoryOpen(true)}
       >
-        {/* Left accent line for urgent states */}
         {(isOverdue || isDueSoon) && (
           <div
             className={cn(
@@ -124,10 +108,8 @@ export function RoutineItem({ task, index = 0 }: Props) {
         )}
 
         <div className="flex items-center gap-4 pl-4 pr-3 py-3 rounded-xl hover:bg-accent/50 transition-colors">
-          {/* Status ring */}
           <StatusRing progressPct={barPct} isOverdue={isOverdue} isDueSoon={isDueSoon} />
 
-          {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between gap-4">
               <span className="text-sm font-semibold truncate leading-snug">{task.title}</span>
@@ -148,7 +130,6 @@ export function RoutineItem({ task, index = 0 }: Props) {
               </div>
             </div>
 
-            {/* Meta */}
             <div className="mt-0.5 flex items-center gap-1.5 tabular-nums text-xs text-muted-foreground/65">
               {daysAgo !== null && <span>{daysAgo}d ago</span>}
               {daysAgo !== null && (count > 0 || avgDays !== null) && <span>·</span>}
@@ -157,7 +138,6 @@ export function RoutineItem({ task, index = 0 }: Props) {
               {avgDays !== null && <span>{Math.round(avgDays)}d avg</span>}
             </div>
 
-            {/* Progress bar */}
             <div className="mt-2 h-1 rounded-full bg-border/60 overflow-hidden">
               <div
                 className={cn(
@@ -171,7 +151,6 @@ export function RoutineItem({ task, index = 0 }: Props) {
             </div>
           </div>
 
-          {/* Split completion button */}
           <div
             className="opacity-0 group-hover:opacity-100 transition-opacity flex shrink-0 rounded-lg overflow-hidden border border-primary/20"
             onClick={(e) => e.stopPropagation()}
@@ -179,8 +158,8 @@ export function RoutineItem({ task, index = 0 }: Props) {
             <button
               aria-label="Log today"
               className="flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-primary/80 hover:text-primary hover:bg-primary/10 transition-colors"
-              onClick={() => todayMutation.mutate()}
-              disabled={todayMutation.isPending || logMutation.isPending}
+              onClick={() => logMutation.mutate({ completedAt: toLocalDateStr(new Date()) + "T12:00:00", notes: null })}
+              disabled={logMutation.isPending}
             >
               <Check className="h-3 w-3" />
               Today
@@ -191,7 +170,7 @@ export function RoutineItem({ task, index = 0 }: Props) {
                   aria-label="Log past date"
                   className="flex items-center px-1.5 py-1.5 text-primary/50 hover:text-primary hover:bg-primary/10 border-l border-primary/20 transition-colors"
                   onClick={() => setLogOpen(true)}
-                  disabled={todayMutation.isPending || logMutation.isPending}
+                  disabled={logMutation.isPending}
                 >
                   <ChevronDown className="h-3 w-3" />
                 </button>
@@ -217,12 +196,12 @@ export function RoutineItem({ task, index = 0 }: Props) {
                     placeholder="Notes (optional)"
                     value={logNotes}
                     onChange={(e) => setLogNotes(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") logMutation.mutate(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") logMutation.mutate({ completedAt: toLocalDateStr(logDate) + "T12:00:00", notes: logNotes.trim() || null }); }}
                   />
                   <Button
                     size="sm"
                     className="w-full h-8"
-                    onClick={() => logMutation.mutate()}
+                    onClick={() => logMutation.mutate({ completedAt: toLocalDateStr(logDate) + "T12:00:00", notes: logNotes.trim() || null })}
                     disabled={logMutation.isPending}
                   >
                     Log {logDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}

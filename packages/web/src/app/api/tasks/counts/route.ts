@@ -6,10 +6,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const today = searchParams.get("date") || todayStr();
 
-  const [inboxRow] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(
+  const [
+    [inboxRow],
+    [todayRow],
+    [overdueRow],
+    [todayCompletedRow],
+    [todayTotalRow],
+  ] = await Promise.all([
+    db.select({ count: count() }).from(tasks).where(
       and(
         isNull(tasks.whenDate),
         isNull(tasks.projectId),
@@ -20,12 +24,8 @@ export async function GET(request: Request) {
         eq(tasks.isSomeday, false),
         isNull(tasks.deletedAt),
       ),
-    );
-
-  const [todayRow] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(
+    ),
+    db.select({ count: count() }).from(tasks).where(
       and(
         lte(tasks.whenDate, today),
         isNull(tasks.parentTaskId),
@@ -33,12 +33,8 @@ export async function GET(request: Request) {
         eq(tasks.isCancelled, false),
         isNull(tasks.deletedAt),
       ),
-    );
-
-  const [overdueRow] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(
+    ),
+    db.select({ count: count() }).from(tasks).where(
       and(
         lt(tasks.whenDate, today),
         isNull(tasks.parentTaskId),
@@ -46,12 +42,8 @@ export async function GET(request: Request) {
         eq(tasks.isCancelled, false),
         isNull(tasks.deletedAt),
       ),
-    );
-
-  const [todayCompletedRow] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(
+    ),
+    db.select({ count: count() }).from(tasks).where(
       and(
         eq(tasks.whenDate, today),
         isNull(tasks.parentTaskId),
@@ -59,19 +51,16 @@ export async function GET(request: Request) {
         eq(tasks.isCancelled, false),
         isNull(tasks.deletedAt),
       ),
-    );
-
-  const [todayTotalRow] = await db
-    .select({ count: count() })
-    .from(tasks)
-    .where(
+    ),
+    db.select({ count: count() }).from(tasks).where(
       and(
         eq(tasks.whenDate, today),
         isNull(tasks.parentTaskId),
         eq(tasks.isCancelled, false),
         isNull(tasks.deletedAt),
       ),
-    );
+    ),
+  ]);
 
   return ok({
     inbox: inboxRow.count,

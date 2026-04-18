@@ -1,4 +1,4 @@
-<!-- Generated: 2026-04-12 | Updated: 2026-04-12 (counts + duplicate routes, today_all filter) | Files scanned: 98 -->
+<!-- Generated: 2026-04-17 | Updated: completions API, routines routes | Files scanned: 110+ -->
 # Backend
 
 ## Auth
@@ -36,6 +36,9 @@ POST   /api/tasks/[id]/complete   → complete; creates next recurrence if recur
 POST   /api/tasks/[id]/uncomplete → revert completion
 POST   /api/tasks/[id]/duplicate  → clone task (fractional position between original and next sibling)
 POST   /api/tasks/[id]/restore    → clear deleted_at
+GET    /api/tasks/[id]/completions          → list completions + stats (count, avgDays, shortestDays, longestDays, lastCompletedAt)
+POST   /api/tasks/[id]/completions          → log a completion entry (manual date support)
+DELETE /api/tasks/[id]/completions/[cId]   → delete a specific completion entry
 ```
 
 ## Task View Routing Logic

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/fetch";
@@ -142,8 +142,11 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
 
   const completions = data?.completions ?? [];
   const stats = data?.stats;
-  const sorted = [...completions].reverse();
-  const maxInterval = Math.max(...completions.map((c) => c.intervalActual ?? 0), 1);
+  const sorted = useMemo(() => [...completions].reverse(), [completions]);
+  const maxInterval = useMemo(
+    () => Math.max(...completions.map((c) => c.intervalActual ?? 0), 1),
+    [completions],
+  );
   const avgDays = stats?.avgDays ?? null;
 
   const addMutation = useMutation({
@@ -183,7 +186,6 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
           <SheetDescription className="sr-only">Completion history</SheetDescription>
         </SheetHeader>
 
-        {/* Stats grid — big scoreboard numbers */}
         {stats && stats.count > 0 && (
           <div className="grid grid-cols-4 gap-px bg-border border-b">
             {[
@@ -203,7 +205,6 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Inline add entry form */}
         {addingEntry && (
           <div className="px-4 py-3 border-b flex flex-col gap-2">
             <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">New entry</span>
@@ -241,7 +242,6 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
           </div>
         )}
 
-        {/* Habit grid + interval bars */}
         {completions.length > 0 && (() => {
           const today = toLocalDateStr(new Date());
           const completionDates = new Set(completions.map((c) => toLocalDateStr(new Date(c.completedAt))));
@@ -255,7 +255,6 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
 
           return (
             <>
-              {/* Habit grid */}
               <div className="px-4 py-3 border-b flex flex-col gap-2">
                 <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Last 90 days</span>
                 <div className="grid gap-[3px]" style={{ gridTemplateColumns: "repeat(13, 1fr)" }}>
@@ -272,7 +271,6 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
                 </div>
               </div>
 
-              {/* Interval bars — existing, unchanged */}
               {completions.length > 1 && avgDays !== null && (
                 <div className="px-4 py-3 border-b flex flex-col gap-2">
                   <span className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Interval history</span>
@@ -301,7 +299,6 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
           );
         })()}
 
-        {/* Timeline */}
         <div className="flex-1 overflow-y-auto py-4 -mx-6 px-6">
           {isLoading ? (
             <div className="text-sm text-muted-foreground">Loading...</div>
