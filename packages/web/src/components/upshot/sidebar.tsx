@@ -282,16 +282,24 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
         )}
         {areas.map((area) => {
               const areaProjects = topLevelProjects.filter((p) => p.areaId === area.id);
+              const areaHref = `/v2/area/${area.id}`;
+              const areaActive = pathname === areaHref;
               return (
                 <div key={area.id}>
-                  <div
+                  <Link
+                    href={areaHref}
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: 10,
                       padding: "5px 10px",
-                      color: "var(--ink-2)",
+                      borderRadius: 8,
+                      color: areaActive ? "var(--ink)" : "var(--ink-2)",
+                      background: areaActive ? "var(--surface)" : "transparent",
+                      boxShadow: areaActive ? "var(--shadow-1)" : "none",
                       fontSize: 13.5,
+                      fontWeight: areaActive ? 500 : 400,
+                      textDecoration: "none",
                     }}
                   >
                     <span
@@ -307,7 +315,7 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
                     {areaProjects.length > 0 && (
                       <span style={{ fontSize: 11, color: "var(--ink-4)" }}>{areaProjects.length}</span>
                     )}
-                  </div>
+                  </Link>
                   {areaProjects.map((p) => {
                     const isActive = pathname === `/v2/project/${p.id}`;
                     return (
