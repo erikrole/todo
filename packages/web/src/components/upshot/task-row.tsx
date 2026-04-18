@@ -70,54 +70,67 @@ export function UpshootTaskRow({ task, showWhenDate, areaColor }: TaskRowProps) 
         )}
       </button>
 
-      {/* Title */}
-      <span
-        style={{
-          flex: 1,
-          fontSize: 14.5,
-          color: task.isCompleted ? "var(--ink-4)" : "var(--ink)",
-          textDecoration: task.isCompleted ? "line-through" : "none",
-          opacity: task.isCompleted ? 0.5 : 1,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {task.title}
-      </span>
-
-      {/* Metadata */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-        {task.deadline && (
-          <span style={{ fontSize: 11.5, color: "var(--danger)", display: "inline-flex", alignItems: "center", gap: 3 }}>
-            <ClockIcon />
-            due {task.deadline}
-          </span>
-        )}
-        {showWhenDate && task.whenDate && (
+      {/* Title + sub-line */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span
             style={{
-              fontSize: 11,
-              color: isOverdue ? "var(--danger)" : "var(--ink-4)",
-              fontVariantNumeric: "tabular-nums",
+              flex: 1,
+              fontSize: 14.5,
+              color: task.isCompleted ? "var(--ink-4)" : "var(--ink)",
+              textDecoration: task.isCompleted ? "line-through" : "none",
+              opacity: task.isCompleted ? 0.5 : 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            {task.whenDate}
+            {task.title}
           </span>
-        )}
-        {task.scheduledTime && !task.isCompleted && (
-          <span style={{ fontSize: 12.5, color: "var(--ink-3)", fontVariantNumeric: "tabular-nums" }}>
-            {formatTime12(task.scheduledTime)}
-          </span>
-        )}
-        {task.recurrenceType && !task.isCompleted && (
-          <span style={{ fontSize: 11, color: "var(--ink-4)", display: "inline-flex", alignItems: "center", gap: 3 }}>
-            <RoutineIcon />
-          </span>
+          {task.scheduledTime && !task.isCompleted && (
+            <span style={{ fontSize: 12.5, color: "var(--ink-3)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+              {formatTime12(task.scheduledTime)}
+            </span>
+          )}
+        </div>
+
+        {/* Sub-line: recurrence + deadline */}
+        {(task.recurrenceType || task.deadline || (showWhenDate && task.whenDate)) && !task.isCompleted && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+            {task.recurrenceType && (
+              <span style={{ fontSize: 11.5, color: "var(--ink-3)", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                <RoutineIcon /> {cadenceLabel(task)}
+              </span>
+            )}
+            {task.deadline && (
+              <span style={{ fontSize: 11.5, color: "var(--danger)", display: "inline-flex", alignItems: "center", gap: 3 }}>
+                <ClockIcon /> due {task.deadline.slice(5)}
+              </span>
+            )}
+            {showWhenDate && task.whenDate && (
+              <span style={{ fontSize: 11, color: isOverdue ? "var(--danger)" : "var(--ink-4)", fontVariantNumeric: "tabular-nums" }}>
+                {task.whenDate}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>
   );
+}
+
+function cadenceLabel(task: Task): string {
+  const interval = task.recurrenceInterval ?? 1;
+  const type = task.recurrenceType;
+  if (!type) return "routine";
+  if (interval === 1) {
+    if (type === "daily") return "daily";
+    if (type === "weekly") return "weekly";
+    if (type === "monthly") return "monthly";
+    if (type === "yearly") return "yearly";
+  }
+  const unit = type === "daily" ? "d" : type === "weekly" ? "w" : type === "monthly" ? "mo" : "yr";
+  return `every ${interval}${unit}`;
 }
 
 function formatTime12(hhmm: string): string {

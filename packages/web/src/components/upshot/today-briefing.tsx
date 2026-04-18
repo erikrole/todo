@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useTasks, useCompleteTask } from "@/hooks/use-tasks";
 import { useTodayCalendarEvents } from "@/hooks/use-calendar-events";
 import { useProjects } from "@/hooks/use-projects";
@@ -47,7 +47,38 @@ const CAL_COLORS: Record<"personal" | "work", string> = {
 
 // ─── Greeting ─────────────────────────────────────────────────────────────────
 
-function Greeting({ mode, completedCount, totalCount }: { mode: Mode; completedCount: number; totalCount: number }) {
+function useBrief(mode: Mode, taskTitles: string[]): string | null {
+  const [brief, setBrief] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (taskTitles.length === 0) return;
+    let cancelled = false;
+    fetch("/api/brief", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode, taskTitles, date: formatDate() }),
+    })
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled && data.brief) setBrief(data.brief); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return brief;
+}
+
+function Greeting({
+  mode,
+  completedCount,
+  totalCount,
+  taskTitles,
+}: {
+  mode: Mode;
+  completedCount: number;
+  totalCount: number;
+  taskTitles: string[];
+}) {
   const name = process.env.NEXT_PUBLIC_USER_NAME;
   const nameStr = name ? `, ${name}.` : ".";
   const headingText =
@@ -56,6 +87,7 @@ function Greeting({ mode, completedCount, totalCount }: { mode: Mode; completedC
     `Good afternoon${nameStr}`;
 
   const progress = totalCount > 0 ? completedCount / totalCount : 0;
+  const brief = useBrief(mode, taskTitles);
 
   return (
     <div style={{ padding: "8px 16px 20px 16px" }}>
@@ -68,13 +100,19 @@ function Greeting({ mode, completedCount, totalCount }: { mode: Mode; completedC
           fontWeight: 500,
           fontSize: 42,
           lineHeight: 1.1,
-          margin: "0 0 14px 0",
+          margin: "0 0 10px 0",
           letterSpacing: "-0.02em",
           color: "var(--ink)",
         }}
       >
         {headingText}
       </h1>
+
+      {brief && (
+        <p style={{ margin: "0 0 14px", maxWidth: 640, fontSize: 15.5, lineHeight: 1.55, color: "var(--ink-2)", textWrap: "pretty" } as React.CSSProperties}>
+          <span style={{ color: "var(--accent-ink)", fontWeight: 500 }}>·</span> {brief}
+        </p>
+      )}
 
       {totalCount > 0 && (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -521,7 +559,12 @@ export function TodayBriefing() {
 
   return (
     <div style={{ padding: "18px 0 140px 0", maxWidth: 720 }}>
-      <Greeting mode={mode} completedCount={completedCount} totalCount={totalCount} />
+      <Greeting
+          mode={mode}
+          completedCount={completedCount}
+          totalCount={totalCount}
+          taskTitles={activeTodayTasks.map((t) => t.title)}
+        />
 
       {isLoading ? (
         <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 8 }}>
