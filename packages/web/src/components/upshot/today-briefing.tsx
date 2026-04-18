@@ -5,6 +5,7 @@ import { useTasks, useCompleteTask } from "@/hooks/use-tasks";
 import { useTodayCalendarEvents } from "@/hooks/use-calendar-events";
 import { useProjects } from "@/hooks/use-projects";
 import { useAreas } from "@/hooks/use-areas";
+import { useWeather } from "@/hooks/use-weather";
 import { toLocalDateStr } from "@/lib/dates";
 import { UpshootTaskRow } from "./task-row";
 import type { Task, TimeOfDay } from "@todo/shared";
@@ -55,7 +56,10 @@ function useBrief(mode: Mode, taskTitles: string[]): string | null {
     let cancelled = false;
     fetch("/api/brief", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+      },
       body: JSON.stringify({ mode, taskTitles, date: formatDate() }),
     })
       .then((r) => r.json())
@@ -84,13 +88,35 @@ function Greeting({
   const headingText =
     mode === "morning" ? `Good morning${nameStr}` :
     mode === "evening" ? `Winding down${nameStr}` :
-    `Good afternoon${nameStr}`;
+    `Midday check-in${nameStr}`;
 
   const progress = totalCount > 0 ? completedCount / totalCount : 0;
   const brief = useBrief(mode, taskTitles);
+  const { data: weather } = useWeather();
 
   return (
     <div style={{ padding: "8px 16px 20px 16px" }}>
+      {/* Weather line */}
+      {weather && (
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            fontSize: 13,
+            color: "var(--ink-3)",
+            marginBottom: 8,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent-ink)", flexShrink: 0 }}>
+            <path d="M17 16a5 5 0 0 0-1-9.9 6 6 0 0 0-11.7 2A4.5 4.5 0 0 0 5 16" />
+            <path d="M9 19l-1 2M13 19l-1 2M17 19l-1 2" />
+          </svg>
+          <span style={{ fontVariantNumeric: "tabular-nums" }}>
+            {weather.temp}° · {weather.condition}
+          </span>
+        </div>
+      )}
       <div style={{ fontSize: 12, color: "var(--ink-4)", letterSpacing: "0.04em", marginBottom: 6 }}>
         {formatDate()}
       </div>

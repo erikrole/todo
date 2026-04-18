@@ -12,10 +12,25 @@ export interface CalendarEvent {
   description?: string;
 }
 
+function sanitizeIcal(text: string): string {
+  // Remove bare lines that have no property delimiter (colon or semicolon)
+  // and aren't line continuations (which start with whitespace)
+  return text
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trimEnd();
+      if (trimmed === "") return true;
+      if (trimmed.startsWith(" ") || trimmed.startsWith("\t")) return true; // continuation
+      return trimmed.includes(":") || trimmed.includes(";");
+    })
+    .join("\n");
+}
+
 async function fetchAndParse(url: string, source: "personal" | "work"): Promise<CalendarEvent[]> {
   const res = await fetch(url, { next: { revalidate: 300 } });
   if (!res.ok) throw new Error(`Failed to fetch ${source} calendar: ${res.status}`);
-  const text = await res.text();
+  const raw = await res.text();
+  const text = sanitizeIcal(raw);
 
   const jcal = ICAL.parse(text);
   const comp = new ICAL.Component(jcal);
