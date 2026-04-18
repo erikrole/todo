@@ -360,49 +360,69 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
               );
             })}
 
-            {/* Projects without area */}
-            {topLevelProjects.filter((p) => !p.areaId).map((p) => {
-              const isActive = pathname === `/v2/project/${p.id}`;
-              return (
-                <Link
-                  key={p.id}
-                  href={`/v2/project/${p.id}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "4px 10px",
-                    borderRadius: 8,
-                    color: isActive ? "var(--ink)" : "var(--ink-3)",
-                    background: isActive ? "var(--surface)" : "transparent",
-                    boxShadow: isActive ? "var(--shadow-1)" : "none",
-                    fontWeight: isActive ? 500 : 400,
-                    fontSize: 13,
-                    textDecoration: "none",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 11,
-                      height: 11,
-                      borderRadius: 3,
-                      flexShrink: 0,
-                      border: `1.5px solid ${p.color ?? (isActive ? "var(--accent)" : "var(--hairline-strong)")}`,
-                      background: p.color ? `${p.color}33` : "transparent",
-                    }}
-                  />
-                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {p.name}
-                  </span>
-                  {p.taskCount > 0 && (
-                    <span style={{ fontSize: 11, color: "var(--ink-4)", fontVariantNumeric: "tabular-nums" }}>
-                      {p.taskCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
       </div>
+
+      {/* Orphan projects (no area) */}
+      {topLevelProjects.some((p) => !p.areaId) && (
+        <>
+          <div
+            style={{
+              padding: "14px 18px 6px 18px",
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "var(--ink-4)",
+            }}
+          >
+            Projects
+          </div>
+          <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 1 }}>
+            {topLevelProjects
+              .filter((p) => !p.areaId)
+              .map((p) => {
+                const isActive = pathname === `/v2/project/${p.id}`;
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/v2/project/${p.id}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: "4px 10px",
+                      borderRadius: 8,
+                      color: isActive ? "var(--ink)" : "var(--ink-3)",
+                      background: isActive ? "var(--surface)" : "transparent",
+                      boxShadow: isActive ? "var(--shadow-1)" : "none",
+                      fontWeight: isActive ? 500 : 400,
+                      fontSize: 13,
+                      textDecoration: "none",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 11,
+                        height: 11,
+                        borderRadius: 3,
+                        flexShrink: 0,
+                        border: `1.5px solid ${p.color ?? (isActive ? "var(--accent)" : "var(--hairline-strong)")}`,
+                        background: p.color ? `${p.color}33` : "transparent",
+                      }}
+                    />
+                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {p.name}
+                    </span>
+                    {p.taskCount > 0 && (
+                      <span style={{ fontSize: 11, color: "var(--ink-4)", fontVariantNumeric: "tabular-nums" }}>
+                        {p.taskCount}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+          </div>
+        </>
+      )}
 
       {/* Footer: accent picker + theme toggle + settings */}
       <div
