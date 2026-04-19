@@ -300,6 +300,11 @@ export const TaskItem = memo(function TaskItem({
                 >
                   {task.title}
                 </span>
+                {task.notes && !isExpanded && (
+                  <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed mt-0.5">
+                    {task.notes.split("\n").find((l) => l.trim()) ?? ""}
+                  </p>
+                )}
                 {((showWhenDate && task.whenDate) || task.scheduledTime || task.recurrenceType || task.notes || (task.isSomeday && !task.whenDate)) && (
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {task.isSomeday && !task.whenDate && (
