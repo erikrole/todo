@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(req: NextRequest) {
-  const authToken = process.env.AUTH_TOKEN;
+  const authToken = process.env.AUTH_TOKEN?.trim();
 
   if (!authToken) {
     console.error("AUTH_TOKEN env var is not set");
