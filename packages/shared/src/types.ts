@@ -106,3 +106,77 @@ export interface ApiResponse<T> {
 export interface ApiError {
   error: string;
 }
+
+// ─── Logs ────────────────────────────────────────────────────────────────────
+
+export interface Log {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  isBuiltIn: boolean;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LogEntry {
+  id: string;
+  logId: string;
+  loggedAt: string;
+  numericValue: number | null;
+  data: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Occasions ───────────────────────────────────────────────────────────────
+
+export interface Occasion {
+  id: string;
+  name: string;
+  date: string;
+  isAnnual: boolean;
+  prepWindowDays: number;
+  notes: string | null;
+  emoji: string | null;
+  occasionType: string;
+  personName: string | null;
+  startYear: number | null;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+
+export interface Subscription {
+  id: string;
+  name: string;
+  amount: number;
+  billingPeriod: string;
+  nextDueDate: string | null;
+  category: string | null;
+  autoRenew: boolean;
+  isSplit: boolean;
+  url: string | null;
+  notes: string | null;
+  isActive: boolean;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Task Completions ────────────────────────────────────────────────────────
+
+export interface TaskCompletion {
+  id: string;
+  taskId: string;
+  completedAt: string;
+  intervalActual: number | null;
+  notes: string | null;
+  createdAt: string;
+}
