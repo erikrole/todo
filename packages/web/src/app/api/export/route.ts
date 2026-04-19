@@ -1,6 +1,6 @@
 import { areas, db, logEntries, logs, occasions, projects, sections, subscriptions, taskCompletions, tasks } from "@todo/db";
 import type { ExportPayload, Occasion, Subscription, Task } from "@todo/shared";
-import { asc } from "drizzle-orm";
+import { asc, isNull } from "drizzle-orm";
 import { nowIso, ok } from "@/lib/api";
 
 export async function GET() {
@@ -18,7 +18,7 @@ export async function GET() {
     db.select().from(areas).orderBy(asc(areas.position)),
     db.select().from(projects).orderBy(asc(projects.position)),
     db.select().from(sections).orderBy(asc(sections.position)),
-    db.select().from(tasks).orderBy(asc(tasks.position)),
+    db.select().from(tasks).where(isNull(tasks.deletedAt)).orderBy(asc(tasks.position)),
     db.select().from(taskCompletions).orderBy(asc(taskCompletions.completedAt)),
     db.select().from(logs).orderBy(asc(logs.position)),
     db.select().from(logEntries).orderBy(asc(logEntries.loggedAt)),
@@ -26,6 +26,8 @@ export async function GET() {
     db.select().from(subscriptions).orderBy(asc(subscriptions.position)),
   ]);
 
+  // Drizzle infers union-typed text columns as string; casts are safe because
+  // all writes go through Zod schemas that constrain values to valid union members.
   const payload: ExportPayload = {
     exportedAt: nowIso(),
     areas: areaRows,

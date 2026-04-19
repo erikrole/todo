@@ -74,6 +74,7 @@ export interface Task {
   areaId: string | null;
   sectionId: string | null;
   parentTaskId: string | null;
+  spawnedFromTaskId: string | null;
   /** When true, task is in Someday and hidden from Inbox. Cleared when whenDate is set. */
   isSomeday: boolean;
   isCompleted: boolean;
