@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useCreateTask } from "@/hooks/use-tasks";
+import { useProjects } from "@/hooks/use-projects";
+import { parseTaskInput } from "@/lib/parse-task";
 
 const HINTS = [
   "Remind me to water plants every 3 days",
@@ -13,12 +16,37 @@ export function CommandBar() {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
   const [hintIdx, setHintIdx] = useState(0);
+  const submittedRef = useRef(false);
+  const createTask = useCreateTask();
+  const { data: projects = [] } = useProjects();
 
   useEffect(() => {
     if (focused || value) return;
     const t = setInterval(() => setHintIdx((i) => (i + 1) % HINTS.length), 2800);
     return () => clearInterval(t);
   }, [focused, value]);
+
+  async function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    const trimmed = value.trim();
+    if (!trimmed || submittedRef.current || createTask.isPending) return;
+    submittedRef.current = true;
+    const parsed = parseTaskInput(trimmed, projects);
+    try {
+      await createTask.mutateAsync({
+        title: parsed.title || trimmed,
+        whenDate: parsed.whenDate ?? undefined,
+        timeOfDay: parsed.timeOfDay ?? undefined,
+        scheduledTime: parsed.scheduledTime ?? undefined,
+        deadline: parsed.deadline ?? undefined,
+        isSomeday: parsed.isSomeday ?? false,
+        projectId: parsed.projectId ?? undefined,
+      });
+      setValue("");
+    } finally {
+      submittedRef.current = false;
+    }
+  }
 
   return (
     <div
@@ -63,6 +91,7 @@ export function CommandBar() {
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={focused ? "Type a task, or ask…" : HINTS[hintIdx]}

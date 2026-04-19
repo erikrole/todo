@@ -2,7 +2,7 @@ import { db, taskCompletions, tasks } from "@todo/db";
 import { asc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { err, nowIso, ok } from "@/lib/api";
+import { err, nextRecurrenceDate, nowIso, ok, todayStr } from "@/lib/api";
 import { recomputeIntervals } from "@/lib/completions";
 
 export async function GET(
@@ -70,6 +70,14 @@ export async function POST(
 
   const [created] = await db.insert(taskCompletions).values(row).returning();
   await recomputeIntervals(canonicalId);
+
+  // Advance whenDate for recurring tasks (not appointment mode — those are scheduled manually)
+  if (task.recurrenceType && task.recurrenceType !== "appointment" && task.recurrenceInterval) {
+    const today = todayStr();
+    const baseDate = task.whenDate && task.whenDate <= today ? task.whenDate : today;
+    const nextDate = nextRecurrenceDate(baseDate, task.recurrenceType, task.recurrenceInterval);
+    await db.update(tasks).set({ whenDate: nextDate, updatedAt: nowIso() }).where(eq(tasks.id, canonicalId));
+  }
 
   return ok(created, 201);
 }

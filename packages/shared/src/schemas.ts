@@ -54,7 +54,7 @@ export const UpdateSectionSchema = z.object({
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 
 const TimeOfDaySchema = z.enum(["morning", "day", "night"]);
-const RecurrenceTypeSchema = z.enum(["daily", "weekly", "monthly", "yearly", "custom"]);
+const RecurrenceTypeSchema = z.enum(["daily", "weekly", "monthly", "yearly", "custom", "weekday", "appointment"]);
 const RecurrenceModeSchema = z.enum(["on_schedule", "after_completion"]);
 
 /** YYYY-MM-DD */
@@ -114,6 +114,101 @@ export const BatchTaskActionSchema = z.discriminatedUnion("action", [
 ]);
 export type BatchTaskAction = z.infer<typeof BatchTaskActionSchema>;
 
+// ─── Logs ────────────────────────────────────────────────────────────────────
+
+export const CreateLogSchema = z.object({
+  name: z.string().min(1),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
+  position: z.number().optional(),
+});
+
+export const UpdateLogSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
+  position: z.number().optional(),
+});
+
+export const CreateLogEntrySchema = z.object({
+  logId: z.string().min(1),
+  loggedAt: DateStringSchema,
+  numericValue: z.number().nullable().optional(),
+  data: z.record(z.unknown()).optional(),
+  notes: z.string().optional(),
+});
+
+export const UpdateLogEntrySchema = z.object({
+  loggedAt: DateStringSchema.optional(),
+  numericValue: z.number().nullable().optional(),
+  data: z.record(z.unknown()).optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+const BillingPeriodSchema = z.enum(["weekly", "monthly", "annual"]);
+
+export const CreateSubscriptionSchema = z.object({
+  name: z.string().min(1),
+  amount: z.number().positive(),
+  billingPeriod: BillingPeriodSchema,
+  nextDueDate: DateStringSchema.optional(),
+  category: z.string().optional(),
+  autoRenew: z.boolean().optional(),
+  isSplit: z.boolean().optional(),
+  url: z.string().url().optional().or(z.literal("")),
+  notes: z.string().optional(),
+  position: z.number().optional(),
+});
+
+export const UpdateSubscriptionSchema = z.object({
+  name: z.string().min(1).optional(),
+  amount: z.number().positive().optional(),
+  billingPeriod: BillingPeriodSchema.optional(),
+  nextDueDate: DateStringSchema.nullable().optional(),
+  category: z.string().nullable().optional(),
+  autoRenew: z.boolean().optional(),
+  isSplit: z.boolean().optional(),
+  url: z.string().url().nullable().optional().or(z.literal("")).or(z.null()),
+  notes: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  position: z.number().optional(),
+});
+
+// ─── Occasions ────────────────────────────────────────────────────────────────
+
+export const OccasionTypeSchema = z.enum(["birthday", "anniversary", "sports", "holiday", "event"]);
+
+export const CreateOccasionSchema = z.object({
+  name: z.string().min(1),
+  date: DateStringSchema,
+  occasionType: OccasionTypeSchema.optional(),
+  personName: z.string().optional(),
+  startYear: z.number().int().optional(),
+  isAnnual: z.boolean().optional(),
+  prepWindowDays: z.number().int().min(0).optional(),
+  notes: z.string().optional(),
+  emoji: z.string().optional(),
+  position: z.number().optional(),
+});
+
+export const UpdateOccasionSchema = z.object({
+  name: z.string().min(1).optional(),
+  date: DateStringSchema.optional(),
+  occasionType: OccasionTypeSchema.optional(),
+  personName: z.string().nullable().optional(),
+  startYear: z.number().int().nullable().optional(),
+  isAnnual: z.boolean().optional(),
+  prepWindowDays: z.number().int().min(0).optional(),
+  notes: z.string().nullable().optional(),
+  emoji: z.string().nullable().optional(),
+  position: z.number().optional(),
+});
+
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 export type CreateAreaInput = z.infer<typeof CreateAreaSchema>;
@@ -124,3 +219,11 @@ export type CreateSectionInput = z.infer<typeof CreateSectionSchema>;
 export type UpdateSectionInput = z.infer<typeof UpdateSectionSchema>;
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;
 export type UpdateTaskInput = z.infer<typeof UpdateTaskSchema>;
+export type CreateLogInput = z.infer<typeof CreateLogSchema>;
+export type UpdateLogInput = z.infer<typeof UpdateLogSchema>;
+export type CreateLogEntryInput = z.infer<typeof CreateLogEntrySchema>;
+export type UpdateLogEntryInput = z.infer<typeof UpdateLogEntrySchema>;
+export type CreateSubscriptionInput = z.infer<typeof CreateSubscriptionSchema>;
+export type UpdateSubscriptionInput = z.infer<typeof UpdateSubscriptionSchema>;
+export type CreateOccasionInput = z.infer<typeof CreateOccasionSchema>;
+export type UpdateOccasionInput = z.infer<typeof UpdateOccasionSchema>;

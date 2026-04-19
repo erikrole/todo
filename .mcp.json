@@ -2,10 +2,11 @@
   "mcpServers": {
     "todo": {
       "command": "node",
-      "args": ["packages/mcp/dist/index.js"],
-      "env": {
-        "SQLITE_PATH": "packages/db/local.db"
-      }
+      "args": [
+        "--env-file=.env.local",
+        "node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/cli.mjs",
+        "packages/mcp/src/index.ts"
+      ]
     }
   }
 }

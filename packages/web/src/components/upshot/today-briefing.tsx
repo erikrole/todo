@@ -1,15 +1,21 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
-import { useTasks, useCompleteTask } from "@/hooks/use-tasks";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { useTasks } from "@/hooks/use-tasks";
 import { useTodayCalendarEvents } from "@/hooks/use-calendar-events";
 import { useProjects } from "@/hooks/use-projects";
 import { useAreas } from "@/hooks/use-areas";
 import { useWeather } from "@/hooks/use-weather";
+import { useOccasions } from "@/hooks/use-occasions";
+import { useInsights } from "@/hooks/use-insights";
 import { toLocalDateStr } from "@/lib/dates";
-import { UpshootTaskRow } from "./task-row";
+import { nextOccurrenceForOccasion, daysUntilDate } from "@/lib/occasions";
+import { TaskList } from "@/components/tasks/task-list";
 import type { Task, TimeOfDay } from "@todo/shared";
 import type { CalendarEvent } from "@/hooks/use-calendar-events";
+import type { Occasion } from "@todo/db";
 
 type TimelineItem =
   | { kind: "event"; id: string; min: number; title: string; source: "personal" | "work" }
@@ -48,28 +54,25 @@ const CAL_COLORS: Record<"personal" | "work", string> = {
 
 // ─── Greeting ─────────────────────────────────────────────────────────────────
 
-function useBrief(mode: Mode, taskTitles: string[]): string | null {
-  const [brief, setBrief] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (taskTitles.length === 0) return;
-    let cancelled = false;
-    fetch("/api/brief", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-      },
-      body: JSON.stringify({ mode, taskTitles, date: formatDate() }),
-    })
-      .then((r) => r.json())
-      .then((data) => { if (!cancelled && data.brief) setBrief(data.brief); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return brief;
+function useBrief(mode: Mode, taskTitles: string[], today: string): string | null {
+  const { data } = useQuery({
+    queryKey: ["brief", mode, today],
+    queryFn: () =>
+      fetch("/api/brief", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
+        },
+        body: JSON.stringify({ mode, taskTitles, date: formatDate() }),
+      })
+        .then((r) => r.json())
+        .then((d) => (d.brief as string | null) ?? null),
+    enabled: taskTitles.length > 0,
+    staleTime: 60 * 60_000, // 1 hour — regenerates when mode changes or day rolls over
+    retry: false,
+  });
+  return data ?? null;
 }
 
 function Greeting({
@@ -91,7 +94,8 @@ function Greeting({
     `Midday check-in${nameStr}`;
 
   const progress = totalCount > 0 ? completedCount / totalCount : 0;
-  const brief = useBrief(mode, taskTitles);
+  const today = toLocalDateStr(new Date());
+  const brief = useBrief(mode, taskTitles, today);
   const { data: weather } = useWeather();
 
   return (
@@ -158,6 +162,130 @@ function Greeting({
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Insights strip ──────────────────────────────────────────────────────────
+
+function InsightsStrip() {
+  const router = useRouter();
+  const { data: insights = [] } = useInsights();
+  const urgent = insights.filter((i) => i.severity === "warning" || i.severity === "alert");
+  if (urgent.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        margin: "0 16px 16px",
+        display: "flex",
+        gap: 8,
+        overflowX: "auto",
+        scrollbarWidth: "none",
+        WebkitOverflowScrolling: "touch",
+      } as React.CSSProperties}
+    >
+      {urgent.map((insight) => {
+        const isAlert = insight.severity === "alert";
+        return (
+          <button
+            key={insight.id}
+            onClick={() => router.push(insight.href ?? "/routines")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              borderRadius: 99,
+              border: `1px solid ${isAlert ? "oklch(58% 0.22 25 / 35%)" : "oklch(65% 0.17 75 / 35%)"}`,
+              background: isAlert
+                ? "color-mix(in oklch, oklch(58% 0.22 25) 8%, var(--surface))"
+                : "color-mix(in oklch, oklch(65% 0.17 75) 8%, var(--surface))",
+              flexShrink: 0,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{ fontSize: 13 }}>{insight.icon}</span>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: isAlert ? "oklch(58% 0.22 25)" : "oklch(55% 0.16 75)",
+              }}
+            >
+              {insight.title}
+            </span>
+            <span
+              style={{
+                fontSize: 11,
+                color: isAlert ? "oklch(58% 0.22 25 / 70%)" : "oklch(55% 0.16 75 / 70%)",
+              }}
+            >
+              {insight.detail}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Occasions strip ─────────────────────────────────────────────────────────
+
+const OCCASION_TYPE_EMOJI: Record<string, string> = {
+  birthday: "🎂", anniversary: "💍", sports: "🏟️", holiday: "🎉", event: "⭐",
+};
+
+function OccasionsStrip({ occasions }: { occasions: Occasion[] }) {
+  const router = useRouter();
+  const relevant = occasions
+    .map((o) => ({ ...o, nextDate: nextOccurrenceForOccasion(o) }))
+    .map((o) => ({ ...o, days: daysUntilDate(o.nextDate) }))
+    .filter((o) => o.days >= 0 && (o.days === 0 || (o.prepWindowDays > 0 && o.days <= o.prepWindowDays)))
+    .sort((a, b) => a.days - b.days);
+
+  if (relevant.length === 0) return null;
+
+  return (
+    <div style={{ margin: "0 16px 20px", display: "flex", flexDirection: "column", gap: 6 }}>
+      {relevant.map((o) => {
+        const isToday = o.days === 0;
+        const emoji = o.emoji ?? OCCASION_TYPE_EMOJI[o.occasionType ?? "event"] ?? "⭐";
+        return (
+          <button
+            key={o.id}
+            onClick={() => router.push("/occasions")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 14px",
+              background: isToday
+                ? "color-mix(in srgb, #f59e0b 10%, var(--surface))"
+                : "var(--surface)",
+              border: `1px solid ${isToday ? "color-mix(in srgb, #f59e0b 30%, transparent)" : "var(--hairline)"}`,
+              borderRadius: 10,
+              cursor: "pointer",
+              width: "100%",
+              textAlign: "left",
+            }}
+          >
+            <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
+            <span style={{ fontSize: 13.5, fontWeight: 500, color: "var(--ink)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {o.name}
+            </span>
+            <span style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: isToday ? "#ef4444" : "#f59e0b",
+              flexShrink: 0,
+            }}>
+              {isToday ? "Today" : `in ${o.days} ${o.days === 1 ? "day" : "days"}`}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -380,11 +508,13 @@ function NowStrip({ events, tasks }: { events: CalendarEvent[]; tasks: Task[] })
 interface BucketSectionProps {
   label: string;
   tasks: Task[];
-  getAreaColor: (task: Task) => string | null | undefined;
+  timeOfDay: TimeOfDay | "anytime" | null;
+  today: string;
 }
 
-function BucketSection({ label, tasks, getAreaColor }: BucketSectionProps) {
+function BucketSection({ label, tasks, timeOfDay, today }: BucketSectionProps) {
   if (tasks.length === 0) return null;
+  const qod = timeOfDay === "anytime" ? null : timeOfDay;
   return (
     <section style={{ marginBottom: 28 }}>
       <header style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "0 14px 8px" }}>
@@ -392,145 +522,14 @@ function BucketSection({ label, tasks, getAreaColor }: BucketSectionProps) {
           {label}
         </h3>
         <span style={{ fontSize: 12, color: "var(--ink-4)" }}>{tasks.length} {tasks.length === 1 ? "item" : "items"}</span>
-        <div style={{ flex: 1 }} />
-        <button style={{ color: "var(--ink-4)", fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 6px", borderRadius: 6, cursor: "pointer" }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-          add
-        </button>
       </header>
       <div style={{ padding: "0 4px" }}>
-        {tasks.map((t) => (
-          <UpshootTaskRow key={t.id} task={t} areaColor={getAreaColor(t)} />
-        ))}
-        <button style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 14px", borderRadius: 10, color: "var(--ink-4)", fontSize: 13, width: "100%", textAlign: "left", cursor: "pointer" }}>
-          <span style={{ width: 18, height: 18, borderRadius: 6, border: "1.5px dashed var(--hairline-strong)", flexShrink: 0 }} />
-          Add to {label.toLowerCase()}
-        </button>
+        <TaskList tasks={tasks} quickAddDefaults={{ whenDate: today, timeOfDay: qod ?? undefined }} />
       </div>
     </section>
   );
 }
 
-function RoutineSection({ tasks, getAreaColor }: { tasks: Task[]; getAreaColor: (t: Task) => string | null | undefined }) {
-  if (tasks.length === 0) return null;
-  return (
-    <section style={{ marginBottom: 28 }}>
-      <header style={{ display: "flex", alignItems: "baseline", gap: 10, padding: "0 14px 8px" }}>
-        <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 500, fontSize: 17, letterSpacing: "-0.01em", margin: 0, color: "var(--ink)" }}>
-          Routines
-        </h3>
-        <span style={{ fontSize: 12, color: "var(--ink-4)" }}>{tasks.length} tracked</span>
-      </header>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8, padding: "0 14px" }}>
-        {tasks.map((t) => (
-          <RoutineChip key={t.id} task={t} areaColor={getAreaColor(t)} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function cadenceLabel(task: Task): string {
-  const interval = task.recurrenceInterval ?? 1;
-  const type = task.recurrenceType;
-  if (!type) return "routine";
-  if (interval === 1) {
-    if (type === "daily") return "daily";
-    if (type === "weekly") return "weekly";
-    if (type === "monthly") return "monthly";
-    if (type === "yearly") return "yearly";
-  }
-  const unit = type === "daily" ? "d" : type === "weekly" ? "w" : type === "monthly" ? "mo" : "yr";
-  return `every ${interval} ${unit}`;
-}
-
-function RoutineChip({ task, areaColor }: { task: Task; areaColor?: string | null }) {
-  const completeTask = useCompleteTask();
-  const isDone = task.isCompleted;
-  const cadence = cadenceLabel(task);
-  const nextDue = task.whenDate;
-  const isToday = nextDue === new Date().toISOString().slice(0, 10);
-
-  return (
-    <div
-      style={{
-        padding: "12px 14px",
-        borderRadius: 12,
-        background: "var(--surface)",
-        border: "1px solid var(--hairline)",
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        minWidth: 0,
-        flex: 1,
-        opacity: isDone ? 0.5 : 1,
-        cursor: "default",
-      }}
-    >
-      {/* Accent badge — checkmark when done, recurrence icon otherwise */}
-      <button
-        onClick={() => !isDone && completeTask.mutate({ id: task.id })}
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          flexShrink: 0,
-          background: isDone ? (areaColor ?? "var(--accent)") : "var(--accent-soft)",
-          color: isDone ? "white" : "var(--accent-ink)",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: isDone ? "default" : "pointer",
-          border: "none",
-        }}
-      >
-        {isDone ? (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12l5 5L20 7" />
-          </svg>
-        ) : (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" />
-          </svg>
-        )}
-      </button>
-
-      {/* Name + cadence */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {task.title}
-        </div>
-        <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 2 }}>{cadence}</div>
-      </div>
-
-      {/* Next due */}
-      {nextDue && (
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontSize: 11, color: "var(--ink-4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Next</div>
-          <div style={{ fontSize: 12.5, fontWeight: 500, color: isToday ? "var(--accent-ink)" : "var(--ink-2)" }}>
-            {isToday ? "today" : nextDue?.slice(5)}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function OverdueSection({ tasks, getAreaColor }: { tasks: Task[]; getAreaColor: (t: Task) => string | null | undefined }) {
-  if (tasks.length === 0) return null;
-  return (
-    <section style={{ marginBottom: 28, padding: "0 14px" }}>
-      <div style={{ padding: "12px 14px", background: "var(--danger-soft)", border: "1px solid color-mix(in oklch, var(--danger) 20%, transparent)", borderRadius: "var(--radius)" }}>
-        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, color: "var(--danger)", marginBottom: 8 }}>
-          Overdue & flagged · {tasks.length}
-        </div>
-        {tasks.map((t) => (
-          <UpshootTaskRow key={t.id} task={t} showWhenDate areaColor={getAreaColor(t)} />
-        ))}
-      </div>
-    </section>
-  );
-}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -539,10 +538,10 @@ export function TodayBriefing() {
   const mode = deriveMode();
 
   const { data: allTasks = [], isLoading } = useTasks("today_all");
-  const { data: routineTasks = [] } = useTasks("routines");
   const { data: calendarEvents = [] } = useTodayCalendarEvents();
   const { data: projects = [] } = useProjects();
   const { data: areas = [] } = useAreas();
+  const { data: occasions = [] } = useOccasions();
 
   // Build lookup maps: task → area color
   const areaColorMap = useMemo(() => new Map(areas.map((a) => [a.id, a.color])), [areas]);
@@ -553,11 +552,6 @@ export function TodayBriefing() {
     if (!areaId) return null;
     return areaColorMap.get(areaId);
   }
-
-  const overdueTasks = allTasks.filter(
-    (t) => !t.isCompleted && t.whenDate !== null && t.whenDate < today,
-  );
-  const dueRoutines = routineTasks.filter((t) => !t.isCompleted && (t.whenDate === null || t.whenDate <= today));
 
   const completedCount = allTasks.filter((t) => t.isCompleted && !t.isCancelled).length;
   const totalCount = allTasks.filter((t) => !t.isCancelled).length;
@@ -600,15 +594,16 @@ export function TodayBriefing() {
         </div>
       ) : (
         <>
+          <InsightsStrip />
+          <OccasionsStrip occasions={occasions} />
           <NowStrip events={calendarEvents} tasks={allTasks} />
-          <RoutineSection tasks={dueRoutines} getAreaColor={getAreaColor} />
-          <OverdueSection tasks={overdueTasks} getAreaColor={getAreaColor} />
           {buckets.map(({ id, label }) => (
             <BucketSection
               key={label}
               label={label}
               tasks={tasksByTimeOfDay(id)}
-              getAreaColor={getAreaColor}
+              timeOfDay={id}
+              today={today}
             />
           ))}
 

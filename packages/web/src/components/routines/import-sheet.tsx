@@ -170,7 +170,7 @@ export function ImportSheet({ open, onOpenChange }: Props) {
                 {parsed.map((pt) => {
                   const last = pt.completions[pt.completions.length - 1];
                   const lastDate = last
-                    ? new Date(last.completedAt).toLocaleDateString(undefined, {
+                    ? new Date(last.completedAt.length <= 10 ? last.completedAt + "T00:00:00" : last.completedAt).toLocaleDateString(undefined, {
                         month: "short",
                         day: "numeric",
                         year: "numeric",

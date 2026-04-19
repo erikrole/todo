@@ -26,7 +26,7 @@ import {
 import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { MoveProjectDialog } from "./move-project-dialog";
 import type { AreaWithCounts, ProjectWithCounts } from "@todo/shared";
-import type { Accent, Theme, FontPairing } from "./shell";
+import type { Accent, Theme } from "./shell";
 
 const COLOR_OPTIONS: { label: string; value: string }[] = [
   { label: "Ochre", value: "oklch(0.68 0.13 58)" },
@@ -68,23 +68,23 @@ function NavIcon({ type }: { type: string }) {
 type NavItem = { href: string; label: string; icon: string; countKey?: "inbox" | "today" | "overdue" };
 
 const TASKS_NAV: NavItem[] = [
-  { href: "/v2/today",    label: "Today",    icon: "today",    countKey: "today" },
-  { href: "/v2/inbox",    label: "Inbox",    icon: "inbox",    countKey: "inbox" },
-  { href: "/v2/upcoming", label: "Upcoming", icon: "upcoming" },
-  { href: "/v2/someday",  label: "Someday",  icon: "someday" },
-  { href: "/v2/routines", label: "Routines", icon: "routines" },
+  { href: "/today",    label: "Today",    icon: "today",    countKey: "today" },
+  { href: "/inbox",    label: "Inbox",    icon: "inbox",    countKey: "inbox" },
+  { href: "/upcoming", label: "Upcoming", icon: "upcoming" },
+  { href: "/someday",  label: "Someday",  icon: "someday" },
+  { href: "/routines", label: "Routines", icon: "routines" },
 ];
 
 const LIFE_NAV: NavItem[] = [
-  { href: "/v2/logs",          label: "Logs",          icon: "logs" },
-  { href: "/v2/subscriptions", label: "Subscriptions", icon: "subscriptions" },
-  { href: "/v2/occasions",     label: "Occasions",     icon: "occasions" },
+  { href: "/logs",          label: "Logs",          icon: "logs" },
+  { href: "/subscriptions", label: "Subscriptions", icon: "subscriptions" },
+  { href: "/occasions",     label: "Occasions",     icon: "occasions" },
 ];
 
 const MORE_NAV: NavItem[] = [
-  { href: "/v2/logbook", label: "Logbook", icon: "logbook" },
-  { href: "/v2/trash",   label: "Trash",   icon: "trash" },
-  { href: "/v2/import",  label: "Import",  icon: "import" },
+  { href: "/logbook", label: "Logbook", icon: "logbook" },
+  { href: "/trash",   label: "Trash",   icon: "trash" },
+  { href: "/import",  label: "Import",  icon: "import" },
 ];
 
 function NavLink({ href, label, icon, isActive, badge }: { href: string; label: string; icon: string; isActive: boolean; badge?: number }) {
@@ -136,11 +136,9 @@ interface SidebarProps {
   onAccentChange: (a: Accent) => void;
   theme: Theme;
   onThemeToggle: () => void;
-  font: FontPairing;
-  onFontChange: (f: FontPairing) => void;
 }
 
-export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle, font, onFontChange }: SidebarProps) {
+export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }: SidebarProps) {
   const pathname = usePathname();
   const { data: areas = [] } = useAreas();
   const { data: allProjects = [] } = useProjects();
@@ -477,28 +475,6 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle, f
           {theme === "light" ? "Dark" : "Light"}
         </button>
       </div>
-      {/* Font pairing picker */}
-      <div style={{ display: "flex", gap: 4, padding: "0 8px 4px" }}>
-        {(["editorial", "warm", "precise"] as FontPairing[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => onFontChange(f)}
-            style={{
-              flex: 1,
-              fontSize: 10,
-              padding: "3px 0",
-              borderRadius: 5,
-              textTransform: "capitalize",
-              background: font === f ? "var(--accent-soft)" : "transparent",
-              color: font === f ? "var(--accent-ink)" : "var(--ink-4)",
-              border: font === f ? "1px solid color-mix(in oklch, var(--accent) 30%, transparent)" : "1px solid transparent",
-              cursor: "pointer",
-            }}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
       <Link
         href="/settings/shortcuts"
         style={{
@@ -536,7 +512,7 @@ function AreaRow({
   const updateArea = useUpdateArea();
   const deleteArea = useDeleteArea();
 
-  const areaHref = `/v2/area/${area.id}`;
+  const areaHref = `/area/${area.id}`;
   const areaActive = pathname === areaHref;
   const hasProjects = projects.length > 0;
 
@@ -577,7 +553,7 @@ function AreaRow({
     const wasActive = areaActive;
     deleteArea.mutate(area.id);
     setDeleteOpen(false);
-    if (wasActive) router.push("/v2/inbox");
+    if (wasActive) router.push("/inbox");
   }
 
   return (
@@ -764,7 +740,7 @@ function ProjectRow({
   const deleteProject = useDeleteProject();
   const completeProject = useCompleteProject();
 
-  const href = `/v2/project/${project.id}`;
+  const href = `/project/${project.id}`;
   const isActive = pathname === href;
 
   const [renaming, setRenaming] = useState(false);
@@ -804,14 +780,14 @@ function ProjectRow({
   function handleArchive() {
     const wasActive = isActive;
     completeProject.mutate({ id: project.id });
-    if (wasActive) router.push("/v2/inbox");
+    if (wasActive) router.push("/inbox");
   }
 
   function handleDelete() {
     const wasActive = isActive;
     deleteProject.mutate(project.id);
     setDeleteOpen(false);
-    if (wasActive) router.push("/v2/inbox");
+    if (wasActive) router.push("/inbox");
   }
 
   const padLeft = orphan ? 10 : 28;

@@ -39,8 +39,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+/** Parse a completedAt string as local time regardless of whether it includes a time component. */
+function parseLocalDate(iso: string): Date {
+  return new Date(iso.length <= 10 ? iso + "T00:00:00" : iso);
+}
+
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return parseLocalDate(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 interface EditRowProps {
@@ -52,14 +57,14 @@ interface EditRowProps {
 function EditRow({ completion, taskId, onDone }: EditRowProps) {
   const qc = useQueryClient();
   const [notes, setNotes] = useState(completion.notes ?? "");
-  const [date, setDate] = useState<Date>(new Date(completion.completedAt));
+  const [date, setDate] = useState<Date>(parseLocalDate(completion.completedAt));
   const [calOpen, setCalOpen] = useState(false);
 
   const save = useMutation({
     mutationFn: () =>
       api.patch(`/api/tasks/${taskId}/completions/${completion.id}`, {
         notes: notes.trim() || null,
-        completedAt: toLocalDateStr(date) + "T" + new Date(completion.completedAt).toTimeString().slice(0, 8),
+        completedAt: toLocalDateStr(date) + "T" + parseLocalDate(completion.completedAt).toTimeString().slice(0, 8),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["task-completions"] });
@@ -244,7 +249,7 @@ export function CompletionHistorySheet({ task, open, onOpenChange }: Props) {
 
         {completions.length > 0 && (() => {
           const today = toLocalDateStr(new Date());
-          const completionDates = new Set(completions.map((c) => toLocalDateStr(new Date(c.completedAt))));
+          const completionDates = new Set(completions.map((c) => toLocalDateStr(parseLocalDate(c.completedAt))));
 
           // Build 91-day array oldest → newest
           const cells: string[] = Array.from({ length: 91 }, (_, i) => {

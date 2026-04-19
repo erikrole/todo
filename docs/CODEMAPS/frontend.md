@@ -1,132 +1,77 @@
-<!-- Generated: 2026-04-17 | Updated: today components, inbox dispatch, routines, completions | Files scanned: 110+ -->
+<!-- Generated: 2026-04-18 | Files scanned: ~40 | Token estimate: ~700 -->
+
 # Frontend
 
-## Page Tree (`packages/web/src/app/`)
+Next.js App Router. Views: `packages/web/src/app/(upshot)/v2/`.
+Data: TanStack Query hooks. UI: shadcn/ui primitives only.
 
+## Page Tree
 ```
-layout.tsx              Root — fonts, Providers
-providers.tsx           QueryClient, ThemeProvider, KeyboardProvider, CommandPalette, Toaster
-page.tsx                / → redirect to /inbox
-
-(views)/layout.tsx      Shell with AppSidebar + TaskDndProvider
-(views)/inbox/          Inbox view
-(views)/today/          Today view — grouped by time_of_day (Morning/Day/Night)
-(views)/upcoming/       Upcoming — grouped by when_date
-(views)/someday/        Someday
-(views)/logbook/        Completed tasks
-(views)/trash/          Soft-deleted tasks
-(views)/project/[id]/   Project page — sections + tasks + notes
-(views)/area/[id]/      Area page — projects grid + loose tasks + notes
-(views)/settings/shortcuts/  Keyboard shortcut rebinding UI
+(upshot)/v2/
+├── page.tsx               Dashboard/home
+├── inbox/page.tsx         Inbox (no date/project/area)
+├── today/page.tsx         Today (when_date = today)
+├── upcoming/page.tsx      Upcoming (when_date > today)
+├── someday/page.tsx       Someday (isSomeday = true)
+├── logbook/page.tsx       Logbook (completed tasks)
+├── trash/page.tsx         Trash (soft-deleted)
+├── area/[id]/page.tsx     Area detail
+├── project/[id]/page.tsx  Project detail (sections + tasks)
+├── logs/
+│   ├── page.tsx           Logs index (all logs with entry counts)
+│   └── [slug]/page.tsx    Single log (entries list + add form)
+├── routines/page.tsx      Routines manager (recurring tasks + completion rings)
+├── subscriptions/page.tsx Subscriptions tracker
+├── occasions/page.tsx     Occasions (birthdays, anniversaries, events)
+└── import/page.tsx        Import/migration tool
 ```
 
 ## Component Hierarchy
-
 ```
-AppSidebar (sidebar.tsx, ~624 lines)
-  ├── NAV_ITEMS (Inbox/Today/Upcoming/Someday/Logbook/Trash)
-  ├── AreaItem[]            ← per-area collapsible with context menu (CRUD)
-  │   └── ProjectItem[]     ← sub-projects with context menu (rename/delete)
-  ├── ProjectItem[]         ← top-level standalone projects
-  │   └── ProjectItem[]     ← sub-projects (1 level max)
-  └── SidebarFooter         ← Settings (Keyboard Shortcuts) link + ThemeToggle
+Shell (upshot/shell.tsx)
+├── Sidebar (upshot/sidebar.tsx)          area/project nav, task counts, new-area inline input
+├── CommandBar (upshot/command-bar.tsx)   Cmd+K palette (NLP task create + navigation)
+├── ContextRail (upshot/context-rail.tsx) AI assistant rail
+└── <Page Content>
+    ├── task-row.tsx                      single task row (checkbox, title, badges)
+    ├── tasks/task-item.tsx               expanded task panel (date, recurrence, subtasks)
+    ├── tasks/bulk-action-bar.tsx         multi-select actions
+    ├── today/today-progress.tsx          progress ring
+    ├── today/today-routine-row.tsx       routine row in today view
+    ├── routines/routine-item.tsx         routine card with status ring
+    ├── routines/completion-history-sheet.tsx
+    ├── routines/import-sheet.tsx
+    └── dnd/task-dnd-provider.tsx         drag-and-drop context
+```
 
-TaskDndProvider (task-dnd-provider.tsx)
-  └── DndContext            ← @dnd-kit global drag handler
-      └── TaskList (task-list.tsx)
-          ├── TaskItem[]  (task-item.tsx, ~794 lines)
-          │   ├── TaskCheckbox
-          │   ├── ContextMenu (move to view/project/section, complete, delete)
-          │   ├── data-task-id / data-focused attrs  ← keyboard focus ring
-          │   └── ExpandedPanel (inline expanded detail)
-          │       ├── Notes textarea (auto-save on blur)
-          │       ├── Date picker (Popover + Calendar)
-          │       ├── Time-of-day segmented control (Morning/Day/Evening)
-          │       ├── Deadline picker (Popover + Calendar)
-          │       ├── Recurrence picker (Popover — Daily/Weekly/Monthly/Yearly)
-          │       ├── Subtask list + inline add
-          │       └── Delete button
-          └── TaskQuickAdd (task-quick-add.tsx)  ← exposes focus() handle via forwardRef
-              └── NLP parse preview chips (date, time, project, deadline)
-
-TodayProgress (components/today/today-progress.tsx)
-  └── Progress bar clamped 0-100%, color ramps red→green via inline style
-
-TodaySnoozeControls (components/today/snooze-controls.tsx)
-  └── Tomorrow / Someday / Weekend pill buttons for deferring today tasks
-
-TodayRoutineRow (components/today/today-routine-row.tsx)
-  └── Compact row for routines in the Today view Routines section
-
-InboxDispatchControls (components/inbox/dispatch-controls.tsx)
-  └── Today / Tomorrow / overflow dropdown dispatch pills for inbox tasks
-
-RoutineItem (components/routines/routine-item.tsx)
-  └── Split completion button (log today + past date), streak ring, status ring
-
-StatusRing (components/routines/status-ring.tsx)
-  └── SVG ring showing routine completion status
-
-CompletionHistorySheet (components/routines/completion-history-sheet.tsx)
-  └── 90-day habit grid + stats + add-entry button, opened from routine item
-
-LogCompletionPopover (components/routines/log-completion-popover.tsx)
-  └── Date picker for logging a past completion
-
-SectionBlock (section-block.tsx)
-  └── @dnd-kit/sortable — section drag reorder within project page
-
-CommandPalette (command-palette.tsx)  ← Cmd+K (via keyboard system)
-  └── CommandDialog → navigate views/projects/areas OR create task with NLP
-
-KeyboardProvider (components/keyboard/keyboard-provider.tsx)  ← wraps all views
-  ├── ShortcutsOverlay (shortcuts-overlay.tsx)  ← ? quick-reference modal
-  └── useShortcutAction / useRegisterTaskList / useFocusedTask hooks
+## Hooks → Endpoints
+```
+use-tasks.ts          → /api/tasks (all CRUD + complete/batch/counts)
+use-areas.ts          → /api/areas
+use-projects.ts       → /api/projects
+use-sections.ts       → /api/sections
+use-logs.ts           → /api/logs, /api/log-entries
+use-routines.ts       → /api/routines
+use-subscriptions.ts  → /api/subscriptions
+use-occasions.ts      → /api/occasions
+use-insights.ts       → /api/insights
+use-calendar-events.ts → /api/calendar/events
+use-weather.ts        → /api/weather
+use-selection.tsx     → local state (multi-select)
+use-density.ts        → localStorage
+use-accent-color.ts   → localStorage
+use-mobile.ts         → window.matchMedia
 ```
 
 ## State Management
+- Server state: TanStack Query (all hooks in `src/hooks/`)
+- UI state: React local state + localStorage (sidebar collapse, density, accent color)
+- No global client store
 
-All server state via **TanStack Query v5**.
-
-| Hook | Query key | Description |
-|------|-----------|-------------|
-| `useAreas` | `["areas"]` | All areas |
-| `useProjects` | `["projects", areaId?]` | Projects (optionally by area) |
-| `useSections` | `["sections", projectId]` | Sections for a project |
-| `useTasks` | `["tasks", view, projectId?, areaId?]` | Tasks by view/scope |
-| `useTask` | `["task", id]` | Single task + subtasks |
-| `useTaskCounts` | `["task-counts"]` | `{ inbox, today, overdue }` counts for sidebar badges (staleTime: 60s) |
-
-Mutations invalidate parent query keys on success. Optimistic updates used for section drag reorder and task complete/uncomplete (removes from inbox immediately; marks completed in today_all).
-
-## Key Libraries
-
-| Lib | Usage |
-|-----|-------|
-| `@dnd-kit/core` + `@dnd-kit/sortable` | Drag tasks between views; drag sections within project |
-| `framer-motion` | Task expand/collapse animation, task completion fade-out |
-| `chrono-node` | NLP date parsing in `parseTaskInput` |
-| `react-day-picker` | Calendar UI in date/deadline pickers |
-| `next-themes` | Dark/light mode |
-| `sonner` | Toast notifications with undo support |
-
-## Utility Files (`src/lib/`)
-
-- `parse-task.ts` — NLP token extraction (date, time-of-day, project, deadline, someday)
-- `dates.ts` — `formatWhenDate`, `fmtTime`, `deadlineUrgency`, `toLocalDateStr`, `parseNaturalDate`
-- `fetch.ts` — `api` object with typed `.get/.post/.patch/.delete`
-- `toast.ts` — `notify.success / notify.error / notify.undoable`
-- `keyboard/shortcut-config.ts` — `SHORTCUT_DEFS` (20 shortcuts), `eventToKey`, `matchesKey`, `loadOverrides`, `saveOverrides`, `formatKeyParts`; localStorage key: `todo-keyboard-shortcuts`
-- `completions.ts` — `recomputeIntervals(canonicalId)` — recalculates `interval_actual` for all completion rows of a recurring task chain
-
-## DnD Drop ID Convention
-
-```
-sidebar:inbox | sidebar:today | sidebar:upcoming | sidebar:someday
-sidebar:area:{id}
-sidebar:project:{id}
-section:project:{id}       ← unsectioned tasks in project
-section:area:{id}          ← loose tasks in area
-section:{sectionId}        ← tasks in a named section
-section:upcoming:{date}    ← tasks in an upcoming date group
-```
+## UI Conventions
+- NLP date parsing via `chrono-node` → `when_date` (never `deadline`)
+- Deadline only from expanded task panel flag picker
+- Context-aware quick-add: infers project/area/date/time_of_day from current view
+- Double-submit guard: `submittedRef = useRef(false)` on async form submissions
+- Toasts: `notify.success()` / `notify.error()` from `lib/toast.ts`
+- All mutations in hooks include `onError: notify.error(...)` and `onSuccess: notify.success(...)` for create/delete

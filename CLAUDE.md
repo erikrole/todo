@@ -55,7 +55,15 @@ This is a **pnpm monorepo** for a personal task manager (Things 3-inspired).
 
 ### Database schema summary
 
-Three tables: `areas` → `projects` (area_id FK) → `tasks` (project_id / area_id / parent_task_id FKs). Key task fields: `when_date` (YYYY-MM-DD, routes to Today/Upcoming), `time_of_day` (null/morning/day/night, groups within Today), `deadline` (separate from when_date; drives warning badges), `recurrence_type`, `recurrence_mode` (on_schedule | after_completion), `recurrence_interval`, `recurrence_ends_at`.
+Core task tables: `areas` → `projects` (area_id FK) → `tasks` (project_id / area_id / parent_task_id FKs). Key task fields: `when_date` (YYYY-MM-DD, routes to Today/Upcoming), `time_of_day` (null/morning/day/night, groups within Today), `deadline` (separate from when_date; drives warning badges), `recurrence_type`, `recurrence_mode` (on_schedule | after_completion), `recurrence_interval`, `recurrence_ends_at`.
+
+Companion tables (added in migrations 0008–0010):
+- **`logs`** — named logs with a unique `slug` (e.g. "gas", "mowing", "health")
+- **`log_entries`** — timestamped JSONB entries belonging to a log; `data` stores type-specific fields
+- **`occasions`** — recurring personal events (birthdays, anniversaries); fields: `occasion_type`, `person_name`, `start_year`, `month`, `day`
+- **`subscriptions`** — tracked recurring expenses; fields: `name`, `amount`, `billing_cycle`, `next_billing_date`, `is_active`, `is_split`
+
+Shared utility in `packages/web/src/lib/routine-links.ts`: `LINKED_LOG_SOURCES` and `LINKED_ROUTINE_TITLES` map routine task titles to their log slugs/type filters for completion tracking.
 
 ### Environment variables
 
@@ -85,7 +93,6 @@ TypeScript strict mode is enabled. All packages extend `tsconfig.base.json`.
 
 ### API routes
 
-<!-- AUTO-GENERATED -->
 | Route | Methods | Description |
 |---|---|---|
 | `/api/areas` | GET, POST | List / create areas |
@@ -102,9 +109,25 @@ TypeScript strict mode is enabled. All packages extend `tsconfig.base.json`.
 | `/api/tasks/[id]/uncomplete` | POST | Revert completion |
 | `/api/tasks/[id]/duplicate` | POST | Clone task (inserted after original via fractional indexing) |
 | `/api/tasks/[id]/restore` | POST | Restore soft-deleted task |
+| `/api/logs` | GET, POST | List logs with entry counts; create new log |
+| `/api/logs/[id]` | GET, PATCH, DELETE | Retrieve, update, or delete a log |
+| `/api/logs/[id]/entries` | GET, POST | List log entries; create entry for a log |
+| `/api/logs/[id]/entries/batch` | POST | Batch import log entries with deduplication |
+| `/api/log-entries/[id]` | PATCH, DELETE | Update or delete a log entry |
+| `/api/occasions` | GET, POST | List occasions sorted by date; create occasion |
+| `/api/occasions/[id]` | GET, PATCH, DELETE | Retrieve, update, or delete an occasion |
+| `/api/subscriptions` | GET, POST | List subscriptions (`?active=true` for active only); create subscription |
+| `/api/subscriptions/[id]` | GET, PATCH, DELETE | Retrieve, update, or delete a subscription |
+| `/api/routines` | GET | List active recurring tasks with last-completion from log entries or task_completions |
+| `/api/routines/[id]` | PATCH, DELETE | Update routine metadata; delete routine |
+| `/api/routines/sync-dates` | POST | Recalculate and set next recurrence dates |
+| `/api/insights` | GET | Computed insights: overdue/approaching routines, oil change mileage |
+| `/api/intelligence/vehicle` | GET | Vehicle mileage and oil change status |
+| `/api/intelligence/appointment` | GET | AI-suggested next appointment date |
+| `/api/import/routines` | POST | Bulk import routine completions; optionally create missing routines |
+| `/api/brief` | POST | AI-generated one-sentence daily briefing (uses `ANTHROPIC_API_KEY`) |
 
 All routes require `Authorization: Bearer $NEXT_PUBLIC_AUTH_TOKEN`.
-<!-- /AUTO-GENERATED -->
 
 ### UI conventions
 

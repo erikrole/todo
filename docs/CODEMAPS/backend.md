@@ -1,77 +1,84 @@
-<!-- Generated: 2026-04-17 | Updated: completions API, routines routes | Files scanned: 110+ -->
+<!-- Generated: 2026-04-18 | Files scanned: ~50 | Token estimate: ~900 -->
+
 # Backend
 
-## Auth
+All routes: `packages/web/src/app/api/`. All require `Authorization: Bearer $NEXT_PUBLIC_AUTH_TOKEN`.
+Response envelope: `{ data: T }` via `ok()` / `{ error }` via `err()` — except `/api/brief` → `{ brief }`.
 
-`packages/web/src/proxy.ts` — middleware enforcing `Authorization: Bearer $NEXT_PUBLIC_AUTH_TOKEN` on all `/api/*` routes.
+## Route Map
 
-## REST API Routes
-
+### Tasks
 ```
-GET    /api/areas            → list areas (with counts)
-POST   /api/areas            → create area
-GET    /api/areas/[id]       → get area
-PATCH  /api/areas/[id]       → update area (name, notes, color, isArchived)
-DELETE /api/areas/[id]       → delete area
-
-GET    /api/projects         → list projects (?areaId= filter)
-POST   /api/projects         → create project
-GET    /api/projects/[id]    → get project + subtasks
-PATCH  /api/projects/[id]    → update project (max 1 level nesting enforced)
-DELETE /api/projects/[id]    → delete project
-POST   /api/projects/[id]/complete → complete project + optional completeAllTasks
-
-GET    /api/sections         → list sections (?projectId= required)
-POST   /api/sections         → create section
-PATCH  /api/sections/[id]    → update section (title, position, isCollapsed)
-DELETE /api/sections/[id]    → delete section (unassigns tasks, doesn't delete)
-
-GET    /api/tasks            → list tasks (?filter=inbox|today|today_all|upcoming|someday|logbook|completed|trash|all, ?projectId=, ?areaId=)
-POST   /api/tasks            → create task
-GET    /api/tasks/counts     → { inbox, today, overdue } counts for sidebar badges
-GET    /api/tasks/[id]       → get task + subtasks
-PATCH  /api/tasks/[id]       → update task
-DELETE /api/tasks/[id]       → soft-delete (sets deleted_at); ?permanent=true for hard delete
-POST   /api/tasks/[id]/complete   → complete; creates next recurrence if recurring
-POST   /api/tasks/[id]/uncomplete → revert completion
-POST   /api/tasks/[id]/duplicate  → clone task (fractional position between original and next sibling)
-POST   /api/tasks/[id]/restore    → clear deleted_at
-GET    /api/tasks/[id]/completions          → list completions + stats (count, avgDays, shortestDays, longestDays, lastCompletedAt)
-POST   /api/tasks/[id]/completions          → log a completion entry (manual date support)
-DELETE /api/tasks/[id]/completions/[cId]   → delete a specific completion entry
+GET    /api/tasks                         filter=inbox|today|today_all|upcoming|someday|logbook|trash|all; projectId, areaId
+POST   /api/tasks                         create
+GET    /api/tasks/counts                  → { inbox, today, overdue }
+POST   /api/tasks/batch                   bulk complete/uncomplete/delete/restore/update
+POST   /api/tasks/purge                   hard-delete all trashed tasks
+GET    /api/tasks/[id]
+PATCH  /api/tasks/[id]
+DELETE /api/tasks/[id]                    soft delete; ?permanent=true for hard
+POST   /api/tasks/[id]/complete           spawns next recurrence if recurring
+POST   /api/tasks/[id]/uncomplete
+POST   /api/tasks/[id]/duplicate          fractional position after original
+POST   /api/tasks/[id]/restore
+GET    /api/tasks/[id]/completions
+POST   /api/tasks/[id]/completions
+PATCH  /api/tasks/[id]/completions/[cid]
+DELETE /api/tasks/[id]/completions/[cid]
+POST   /api/tasks/[id]/completions/import bulk import
 ```
 
-## Task View Routing Logic
-
+### Areas / Projects / Sections
 ```
-Inbox:     when_date IS NULL AND project_id IS NULL AND area_id IS NULL
-           AND parent_task_id IS NULL AND is_completed=0 AND deleted_at IS NULL
-           AND is_cancelled=0 AND is_someday=0
-Today:     when_date = today AND parent_task_id IS NULL AND is_completed=0
-           AND is_cancelled=0 AND deleted_at IS NULL
-today_all: when_date <= today AND parent_task_id IS NULL AND deleted_at IS NULL
-           (active + completed today + overdue; used by Today view for unified list)
-Upcoming:  when_date > today AND parent_task_id IS NULL AND is_completed=0
-           AND is_cancelled=0 AND deleted_at IS NULL
-Someday:   is_someday=1 AND is_completed=0 AND deleted_at IS NULL
-Logbook:   is_completed=1 AND parent_task_id IS NULL ORDER BY completed_at DESC
-Trash:     deleted_at IS NOT NULL
+GET|POST       /api/areas
+GET|PATCH|DEL  /api/areas/[id]
+GET|POST       /api/projects
+GET|PATCH|DEL  /api/projects/[id]
+POST           /api/projects/[id]/complete
+GET|POST       /api/sections              ?projectId=
+PATCH|DEL      /api/sections/[id]
 ```
 
-## MCP Server (`packages/mcp`)
+### Logs & Entries
+```
+GET|POST       /api/logs                  list with entryCount; create
+GET|PATCH|DEL  /api/logs/[id]
+GET|POST       /api/logs/[id]/entries
+POST           /api/logs/[id]/entries/batch  deduplication import
+PATCH|DEL      /api/log-entries/[id]
+```
 
-Entry: `src/index.ts` — registers tools via stdio transport.
+### Life Tracking
+```
+GET|POST       /api/occasions             sorted by date
+GET|PATCH|DEL  /api/occasions/[id]
+GET|POST       /api/subscriptions         ?active=true
+GET|PATCH|DEL  /api/subscriptions/[id]
+```
 
-| Tool | File |
-|------|------|
-| `list_tasks`, `create_task`, `update_task`, `complete_task` | `tools/tasks.ts` |
-| `list_projects`, `create_project`, `complete_project` | `tools/projects.ts` |
-| `list_areas` | `tools/areas.ts` |
-| `list_sections`, `create_section`, `update_section`, `delete_section` | `tools/sections.ts` |
-| `plan_project`, `apply_project_plan` | `tools/architect.ts` |
+### Routines
+```
+GET            /api/routines              active recurring tasks + lastCompletedAt (log or task_completions)
+PATCH|DEL      /api/routines/[id]
+POST           /api/routines/sync-dates   recalculate next recurrence dates
+```
 
-Key files: `src/lib/anthropic.ts` (Claude client), `src/lib/prompts.ts` (architect system prompt), `src/lib/architect-schema.ts` (Zod plan schema).
+### Intelligence / Derived
+```
+GET  /api/insights                  overdue/approaching routines + oil change mileage alert
+GET  /api/intelligence/vehicle      current odometer + last oil change
+GET  /api/intelligence/appointment  AI-suggested next appointment date
+GET  /api/calendar/events
+GET  /api/weather
+POST /api/brief                     AI briefing (claude-haiku-4.5, 80 tokens) → { brief }
+POST /api/import/routines           bulk import routine completions
+```
 
-## Shared Schemas (`packages/shared/src/schemas.ts`)
+## Shared Utilities
+`lib/api.ts` — `ok(data)`, `err(msg)`, `nowIso()`, `todayStr()`, `nextRecurrenceDate(from, type, interval)`
+`lib/routine-links.ts` — `LINKED_LOG_SOURCES`, `LINKED_ROUTINE_TITLES`, `GAS_LOG_SLUG`, `OIL_CHANGE_INTERVAL_MILES`
+`lib/fetch.ts` — typed fetch wrapper with Bearer token injection
+`lib/dates.ts` — `parseNaturalDate`, `toLocalDateStr`, `fmtTime`, `formatWhenDate`
 
-Zod schemas: `CreateAreaSchema`, `UpdateAreaSchema`, `CreateProjectSchema`, `UpdateProjectSchema`, `CreateSectionSchema`, `UpdateSectionSchema`, `CreateTaskSchema`, `UpdateTaskSchema`. All exported as TypeScript types via `z.infer<>`.
+## MCP Tools (`packages/mcp/src/`)
+Direct DB (no HTTP). Tools: `list_tasks`, `create_task`, `complete_task`, `update_task`, `list_projects`, `create_project`, `complete_project`, `list_areas`, `list_sections`, `create_section`, `update_section`, `delete_section`, `plan_project` (AI dry-run), `apply_project_plan` (atomic create).

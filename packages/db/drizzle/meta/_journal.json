@@ -57,6 +57,27 @@
       "when": 1776362926239,
       "tag": "0007_melodic_bloodstorm",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1776479578947,
+      "tag": "0008_hesitant_korg",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1776481414093,
+      "tag": "0009_outgoing_power_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1776483443490,
+      "tag": "0010_nostalgic_thing",
+      "breakpoints": true
     }
   ]
 }

@@ -1,61 +1,49 @@
-<!-- Generated: 2026-04-12 | Files scanned: 98 | Token estimate: ~400 -->
+<!-- Generated: 2026-04-18 | Files scanned: package.json files | Token estimate: ~400 -->
+
 # Dependencies
 
 ## External Services
 
 | Service | Purpose | Config |
 |---------|---------|--------|
-| Turso (libSQL) | Production database | `TURSO_URL`, `TURSO_AUTH_TOKEN` |
-| Vercel | Hosting + edge network | `vercel --prod` from repo root |
-| Anthropic Claude | MCP architect tools | `ANTHROPIC_API_KEY`, `ARCHITECT_MODEL` |
+| Turso (libsql) | Production SQLite DB | `TURSO_URL` + `TURSO_AUTH_TOKEN` |
+| Anthropic API | Daily briefing, AI appointment suggestion, MCP architect tools | `ANTHROPIC_API_KEY` |
+| Vercel | Hosting + CI/CD | project: `erikroles-projects/todo` |
 
-## Key Runtime Dependencies
+## Key Libraries
 
-### `packages/web`
+### Database
+- `@libsql/client` — unified SQLite/Turso driver
+- `drizzle-orm` — type-safe ORM
+- `drizzle-kit` — migration generation/application
 
-| Package | Usage |
-|---------|-------|
-| `next` | App Router, API routes, middleware |
-| `@tanstack/react-query` v5 | Server state, cache, mutations |
-| `@dnd-kit/core` + `@dnd-kit/sortable` | Drag-and-drop tasks and sections |
-| `framer-motion` | Animated task expand/collapse |
-| `chrono-node` | NLP date parsing |
-| `react-day-picker` | Calendar date picker UI |
-| `next-themes` | Dark/light mode |
-| `sonner` | Toast notifications |
-| `drizzle-orm` + `@libsql/client` | DB access (same driver as `packages/db`) |
-| `radix-ui` | Headless primitives (via shadcn/ui) |
-| `lucide-react` | Icon set (sidebar, keyboard settings UI) |
-| `@hugeicons/react` | Extended icon set |
+### Web (`packages/web`)
+- `next` — App Router, route handlers, middleware
+- `@tanstack/react-query` — server state management
+- `@radix-ui/*` + `shadcn/ui` — UI primitives
+- `tailwindcss` — styling
+- `chrono-node` — NLP date parsing → `when_date`
+- `@dnd-kit/*` — drag-and-drop task reordering
+- `date-fns` — date formatting
+- `zod` — schema validation (via `@todo/shared`)
+- `lucide-react` — icons
 
-### `packages/mcp`
+### MCP (`packages/mcp`)
+- `@modelcontextprotocol/sdk` — MCP server + stdio transport
+- `@anthropic-ai/sdk` — Claude API for architect tools
 
-| Package | Usage |
-|---------|-------|
-| `@modelcontextprotocol/sdk` | MCP server + tool registration |
-| `@anthropic-ai/sdk` | Claude API for architect tools |
-| `drizzle-orm` + `@libsql/client` | Direct DB access |
-| `zod` | Tool input validation |
+## Internal Packages
+```
+@todo/shared  (packages/shared)  types + Zod schemas
+@todo/db      (packages/db)      Drizzle schema + client
+```
 
-### `packages/db`
+## Environment Variables
 
-| Package | Usage |
-|---------|-------|
-| `drizzle-orm` | ORM + query builder |
-| `@libsql/client` | Turso/SQLite driver |
-| `drizzle-kit` | Migration generation |
-
-### `packages/shared`
-
-| Package | Usage |
-|---------|-------|
-| `zod` | Schema definitions + type inference |
-
-## Dev Dependencies (root)
-
-| Package | Usage |
-|---------|-------|
-| `prettier` | Code formatting (100-char, double quotes) |
-| `typescript` | Strict mode, extends `tsconfig.base.json` |
-| `dotenv-cli` | Inject `.env.local` for db commands |
-| `playwright` | E2E tests (`packages/web/e2e/`) |
+| Variable | Package | Purpose |
+|----------|---------|---------|
+| `TURSO_URL` | db, mcp | Turso URL (absent = local SQLite) |
+| `TURSO_AUTH_TOKEN` | db, mcp | Turso auth token |
+| `NEXT_PUBLIC_AUTH_TOKEN` | web | Bearer token for all REST API calls |
+| `ANTHROPIC_API_KEY` | web, mcp | Claude API (brief + intelligence + architect) |
+| `ARCHITECT_MODEL` | mcp | Override model for plan_project (default: claude-sonnet-4-6) |

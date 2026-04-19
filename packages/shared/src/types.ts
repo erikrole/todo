@@ -51,7 +51,7 @@ export interface Section {
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 
 export type TimeOfDay = "morning" | "day" | "night";
-export type RecurrenceType = "daily" | "weekly" | "monthly" | "yearly" | "custom";
+export type RecurrenceType = "daily" | "weekly" | "monthly" | "yearly" | "custom" | "weekday" | "appointment";
 /**
  * on_schedule: next when_date rolls forward from the original when_date (strict calendar schedule)
  * after_completion: next when_date = completion date + interval (Things 3 "after completion")

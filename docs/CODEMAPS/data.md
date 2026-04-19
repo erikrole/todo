@@ -1,86 +1,84 @@
-<!-- Generated: 2026-04-17 | Files scanned: 110+ | Token estimate: ~600 -->
+<!-- Generated: 2026-04-18 | Files scanned: schema.ts + 10 migrations | Token estimate: ~600 -->
+
 # Data
 
-## Schema (`packages/db/src/schema.ts`)
+Schema: `packages/db/src/schema.ts`. Driver: `@libsql/client`. ORM: Drizzle.
+Local: `file:packages/db/local.db`. Prod: Turso `todo-prod-erikrole.aws-us-east-1.turso.io`.
 
+## Tables
+
+### Core Task Tables
 ```
 areas
-  id (PK), name, notes, color
-  is_archived, position (real)
-  created_at, updated_at
+  id, name, color, isArchived, position(real), createdAt, updatedAt
 
 projects
-  id (PK), name, notes, color
-  area_id → areas.id (SET NULL)
-  parent_project_id → projects.id (CASCADE)  ← 1 level max enforced in API
-  is_completed, completed_at, position (real)
-  created_at, updated_at
-  IDX: area_id, is_completed, parent_project_id
+  id, name, areaId→areas, parentProjectId→projects(self)
+  isCompleted, completedAt, isArchived, isSomeday, position(real)
 
 sections
-  id (PK), project_id → projects.id (CASCADE)
-  title, position (real), is_collapsed
-  created_at, updated_at
-  IDX: project_id
+  id, projectId→projects, title, position(real), isCollapsed
 
 tasks
-  id (PK), title, notes
-  when_date (YYYY-MM-DD)     ← routes to Today/Upcoming
-  time_of_day (morning|day|night|null)
-  scheduled_time (HH:MM)
-  deadline (YYYY-MM-DD)
-  project_id → projects.id (SET NULL)
-  area_id → areas.id (SET NULL)
-  section_id → sections.id (SET NULL)
-  parent_task_id             ← subtask (no FK, manual cascade)
-  spawned_from_task_id       ← recurrence chain canonical ID
-  is_someday, is_completed, completed_at
-  is_cancelled, deleted_at   ← soft delete
-  recurrence_type (daily|weekly|monthly|yearly|custom)
-  recurrence_mode (on_schedule|after_completion)
-  recurrence_interval (int), recurrence_ends_at
-  position (real)
-  created_at, updated_at
-  IDX: project_id, area_id, when_date, is_completed, deleted_at, parent_task_id
+  id, title, notes
+  whenDate(YYYY-MM-DD), timeOfDay(morning|day|night|null)
+  deadline(YYYY-MM-DD)
+  projectId→projects, areaId→areas, sectionId→sections
+  parentTaskId→tasks(self), spawnedFromTaskId→tasks(self)
+  isCompleted, completedAt, isCancelled, isSomeday, deletedAt(soft delete)
+  position(real)
+  recurrenceType(daily|weekly|monthly|yearly|weekday|appointment)
+  recurrenceMode(on_schedule|after_completion)
+  recurrenceInterval(int), recurrenceEndsAt(YYYY-MM-DD)
 
-task_completions            ← routine/recurring task history log
-  id (PK), task_id → tasks.id (CASCADE)
-  completed_at (ISO string)
-  interval_actual (real)    ← days since prior completion, recomputed on each change
-  notes
-  created_at
-  IDX: task_id, completed_at
+taskCompletions
+  id, taskId→tasks, completedAt, intervalActual(int, days), notes
+```
+
+### Log / Metric Tables
+```
+logs
+  id, name, slug(unique), description, icon, color, isBuiltIn, position(real)
+
+logEntries
+  id, logId→logs, loggedAt(ISO), numericValue(real), data(JSON text), notes
+```
+
+### Life Tracking Tables
+```
+subscriptions
+  id, name, amount(real), billingPeriod(monthly|yearly|weekly|quarterly)
+  nextDueDate(YYYY-MM-DD), category, autoRenew, isSplit, isActive
+
+occasions
+  id, name, occasionType(birthday|anniversary|holiday|other)
+  personName, startYear(int), month(int), day(int), isAnnual, prepWindowDays(int)
 ```
 
 ## Relationships
-
 ```
-areas 1──* projects 1──* sections
-areas 1──* tasks
-projects 1──* tasks
-sections 1──* tasks
-tasks 1──* tasks (subtasks via parent_task_id)
-tasks 1──* tasks (recurrence chain via spawned_from_task_id)
-projects 1──* projects (sub-projects via parent_project_id, 1 level)
-tasks 1──* task_completions (routine completion history)
+areas ──< projects ──< sections
+       └──< tasks
+projects ──< tasks ──< tasks (subtasks via parentTaskId)
+                    └── tasks (recurrence chain via spawnedFromTaskId)
+tasks ──< taskCompletions
+logs  ──< logEntries
 ```
 
 ## Position / Ordering
+`position REAL` (fractional indexing) on areas, projects, tasks.
+Insert between items: `position = (a + b) / 2`. No renumbering needed.
 
-All tables use a `position real` column with fractional indexing (O(1) insert between two items by averaging neighbors). No renumbering needed on reorder.
-
-## Recurrence Logic
-
-On `complete_task`:
-- `on_schedule`: next `when_date` = original `when_date` + interval
-- `after_completion`: next `when_date` = today + interval
-- New task cloned from parent with incremented date; parent marked completed
-
-## Driver Config
-
-| Environment | Driver | Connection |
-|-------------|--------|------------|
-| Local dev | `@libsql/client` | `file:packages/db/local.db` |
-| Production | `@libsql/client` | `TURSO_URL` + `TURSO_AUTH_TOKEN` |
-
-Migrations: `drizzle-kit` via `pnpm db:generate` / `pnpm db:migrate`.
+## Migration History
+```
+0001 — initial: areas, projects, sections, tasks
+0002 — task soft delete (deletedAt)
+0003 — taskCompletions table
+0004 — recurrence fields on tasks
+0005 — spawnedFromTaskId on tasks
+0006 — isCancelled, isSomeday on tasks
+0007 — parentProjectId on projects
+0008 — logs, logEntries, occasions, subscriptions tables
+0009 — occasionType, personName, startYear on occasions
+0010 — isSplit on subscriptions
+```

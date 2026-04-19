@@ -1,0 +1,1 @@
+ALTER TABLE `subscriptions` ADD `is_split` integer DEFAULT false NOT NULL;

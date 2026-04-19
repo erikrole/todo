@@ -242,6 +242,13 @@ html.dark[data-accent="amber"] {
   }
 }
 
+/* Placeholder color */
+input::placeholder,
+textarea::placeholder {
+  color: var(--ink-4);
+  opacity: 1;
+}
+
 /* Compact density mode */
 html[data-density="compact"] [data-task-id] > div:first-child {
   padding-top: 0.3125rem !important;

@@ -1,33 +1,45 @@
-Codemap Analysis Report — 2026-04-12
-======================================
+Codemap Analysis Report — 2026-04-18
+=====================================
 
-Status: INITIAL SCAN (no prior codemaps)
+STATUS: Initial generation (no prior codemaps)
 
-Files scanned: 98 (54 .ts + 44 .tsx)
-Codemaps generated: 5
+FILES SCANNED: ~120
+CODEMAPS WRITTEN: 5 (architecture, backend, frontend, data, dependencies)
 
-architecture.md  — system diagram, data flow, package layout
-backend.md       — 12 REST routes, MCP tools (14), auth middleware
-frontend.md      — page tree, component hierarchy, TanStack Query hooks, DnD
-data.md          — 4 DB tables, relationships, recurrence logic, driver config
-dependencies.md  — external services, 15+ key runtime deps
+## New Routes (since last known state)
++ /api/logs, /api/logs/[id], /api/logs/[id]/entries, /api/logs/[id]/entries/batch
++ /api/log-entries/[id]
++ /api/occasions, /api/occasions/[id]
++ /api/subscriptions, /api/subscriptions/[id]
++ /api/routines, /api/routines/[id], /api/routines/sync-dates
++ /api/insights
++ /api/intelligence/vehicle, /api/intelligence/appointment
++ /api/import/routines
++ /api/brief
++ /api/calendar/events, /api/weather
 
-New dependencies detected (since baseline):
-  react-day-picker   ^9.14.0   (calendar date picker)
+## New DB Tables (migrations 0008–0010)
++ logs
++ logEntries
++ occasions (+ occasionType, personName, startYear cols)
++ subscriptions (+ isSplit col)
 
-Architecture changes since last documented state (PLAN.md → current):
-  + All packages fully implemented (db, web, mcp were "planned")
-  + sections table added
-  + Soft-delete on tasks (deleted_at)
-  + Task uncomplete + restore endpoints
-  + MCP architect tools (plan_project, apply_project_plan)
-  + Command palette (Cmd+K) with task creation
-  + DnD: task drag to views, section drag reorder
-  + Sidebar: area CRUD + project CRUD with context menus
-  + Expanded task panel: date/deadline/time-of-day/recurrence pickers
-  + E2E Playwright setup
+## New Frontend Pages
++ /v2/logs, /v2/logs/[slug]
++ /v2/occasions
++ /v2/subscriptions
++ /v2/routines
++ /v2/import
 
-Staleness warnings:
-  PLAN.md              — historical, intentionally preserved
-  ARCHITECT_AGENT_PLAN.md — historical, intentionally preserved
-  PLAN_v1.2.md         — historical, intentionally preserved
+## New Hooks
++ use-logs.ts, use-routines.ts, use-occasions.ts, use-subscriptions.ts
++ use-insights.ts, use-calendar-events.ts, use-weather.ts
+
+## Tech Debt Fixed (this session)
+- LINKED_LOG_SOURCES deduplicated → now imported from lib/routine-links.ts
+- brief/route.ts: NextResponse.json → Response.json (dropped next/server import)
+- Added notify.error/success to use-routines, use-occasions, use-subscriptions, use-logs
+- Applied pending migrations 0008, 0009, 0010
+
+## Staleness Warnings
+None — initial generation.

@@ -1,4 +1,14 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit *)",
+      "Bash(pnpm --filter web exec tsc --noEmit *)",
+      "Bash(vercel logs *)",
+      "Bash(vercel whoami)",
+      "Bash(vercel env ls *)",
+      "Bash(vercel project ls *)"
+    ]
+  },
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,

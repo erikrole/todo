@@ -116,6 +116,89 @@ export const taskCompletions = sqliteTable(
   ],
 );
 
+// ─── Logs ────────────────────────────────────────────────────────────────────
+
+export const logs = sqliteTable("logs", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  icon: text("icon"),
+  color: text("color"),
+  isBuiltIn: integer("is_built_in", { mode: "boolean" }).default(false).notNull(),
+  position: real("position").default(0).notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const logEntries = sqliteTable(
+  "log_entries",
+  {
+    id: text("id").primaryKey(),
+    logId: text("log_id").notNull().references(() => logs.id, { onDelete: "cascade" }),
+    loggedAt: text("logged_at").notNull(),
+    numericValue: real("numeric_value"),
+    data: text("data"),
+    notes: text("notes"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_log_entries_log_id").on(t.logId),
+    index("idx_log_entries_logged_at").on(t.loggedAt),
+  ],
+);
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+export const subscriptions = sqliteTable(
+  "subscriptions",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    amount: real("amount").notNull(),
+    billingPeriod: text("billing_period").notNull(),
+    nextDueDate: text("next_due_date"),
+    category: text("category"),
+    autoRenew: integer("auto_renew", { mode: "boolean" }).default(true).notNull(),
+    isSplit: integer("is_split", { mode: "boolean" }).default(false).notNull(),
+    url: text("url"),
+    notes: text("notes"),
+    isActive: integer("is_active", { mode: "boolean" }).default(true).notNull(),
+    position: real("position").default(0).notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_subscriptions_next_due_date").on(t.nextDueDate),
+    index("idx_subscriptions_is_active").on(t.isActive),
+  ],
+);
+
+// ─── Occasions ────────────────────────────────────────────────────────────────
+
+export const occasions = sqliteTable(
+  "occasions",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    date: text("date").notNull(),
+    isAnnual: integer("is_annual", { mode: "boolean" }).default(true).notNull(),
+    prepWindowDays: integer("prep_window_days").default(0).notNull(),
+    notes: text("notes"),
+    emoji: text("emoji"),
+    occasionType: text("occasion_type").default("event").notNull(),
+    personName: text("person_name"),
+    startYear: integer("start_year"),
+    position: real("position").default(0).notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_occasions_date").on(t.date),
+  ],
+);
+
 export type Area = typeof areas.$inferSelect;
 export type NewArea = typeof areas.$inferInsert;
 export type Project = typeof projects.$inferSelect;
@@ -126,3 +209,11 @@ export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type TaskCompletion = typeof taskCompletions.$inferSelect;
 export type NewTaskCompletion = typeof taskCompletions.$inferInsert;
+export type Log = typeof logs.$inferSelect;
+export type NewLog = typeof logs.$inferInsert;
+export type LogEntry = typeof logEntries.$inferSelect;
+export type NewLogEntry = typeof logEntries.$inferInsert;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type NewSubscription = typeof subscriptions.$inferInsert;
+export type Occasion = typeof occasions.$inferSelect;
+export type NewOccasion = typeof occasions.$inferInsert;

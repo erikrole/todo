@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) {
-    return NextResponse.json({ brief: null });
+    return Response.json({ brief: null });
   }
 
   try {
@@ -22,7 +21,7 @@ export async function POST(request: Request) {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-haiku-4.5",
         max_tokens: 80,
         system: `You write concise, natural one-sentence daily briefings for a personal task manager. Tone: calm, warm, direct. No filler phrases like "It looks like" or "Today you have". Maximum 25 words. Never use em-dashes. Never start with "I".`,
         messages: [
@@ -36,8 +35,8 @@ export async function POST(request: Request) {
 
     const data = await res.json();
     const brief = data.content?.[0]?.text?.trim() ?? null;
-    return NextResponse.json({ brief });
+    return Response.json({ brief });
   } catch {
-    return NextResponse.json({ brief: null });
+    return Response.json({ brief: null });
   }
 }
