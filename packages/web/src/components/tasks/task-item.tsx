@@ -300,9 +300,9 @@ export const TaskItem = memo(function TaskItem({
                 >
                   {task.title}
                 </span>
-                {task.notes && !isExpanded && (
+                {task.notes?.trim() && !isExpanded && (
                   <p className="text-xs text-muted-foreground line-clamp-1 leading-relaxed mt-0.5">
-                    {task.notes.split("\n").find((l) => l.trim()) ?? ""}
+                    {task.notes.split("\n").find((l) => l.trim())}
                   </p>
                 )}
                 {((showWhenDate && task.whenDate) || task.scheduledTime || task.recurrenceType || task.notes || (task.isSomeday && !task.whenDate)) && (
@@ -333,7 +333,7 @@ export const TaskItem = memo(function TaskItem({
                         <Repeat2 className="h-2.5 w-2.5" />
                       </span>
                     )}
-                    {task.notes && (
+                    {task.notes?.trim() && (
                       <span className="text-xs text-muted-foreground/60">·</span>
                     )}
                   </div>
