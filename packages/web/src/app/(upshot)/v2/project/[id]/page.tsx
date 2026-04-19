@@ -41,7 +41,9 @@ export default function V2ProjectPage({ params }: { params: Promise<{ id: string
   const sectionSubmittedRef = useRef(false);
 
   useEffect(() => {
-    if (addingSection) setTimeout(() => sectionInputRef.current?.focus(), 50);
+    if (!addingSection) return;
+    const t = setTimeout(() => sectionInputRef.current?.focus(), 50);
+    return () => clearTimeout(t);
   }, [addingSection]);
 
   const activeTasks = tasks.filter((t) => !t.isCompleted && !t.isCancelled);
@@ -108,7 +110,7 @@ export default function V2ProjectPage({ params }: { params: Promise<{ id: string
         : prev
           ? prev.position + 1
           : next
-            ? next.position - 1
+            ? next.position / 2
             : 0;
 
     updateSection.mutate(
