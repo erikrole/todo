@@ -135,6 +135,8 @@ export interface LogEntry {
 
 // ─── Occasions ───────────────────────────────────────────────────────────────
 
+export type OccasionType = "birthday" | "anniversary" | "sports" | "holiday" | "event";
+
 export interface Occasion {
   id: string;
   name: string;
@@ -143,7 +145,7 @@ export interface Occasion {
   prepWindowDays: number;
   notes: string | null;
   emoji: string | null;
-  occasionType: string;
+  occasionType: OccasionType;
   personName: string | null;
   startYear: number | null;
   position: number;
@@ -153,11 +155,13 @@ export interface Occasion {
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────
 
+export type BillingPeriod = "weekly" | "monthly" | "annual";
+
 export interface Subscription {
   id: string;
   name: string;
   amount: number;
-  billingPeriod: string;
+  billingPeriod: BillingPeriod;
   nextDueDate: string | null;
   category: string | null;
   autoRenew: boolean;
