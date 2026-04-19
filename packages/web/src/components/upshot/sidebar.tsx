@@ -1,14 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
-import { useAreas, useCreateArea } from "@/hooks/use-areas";
-import { useProjects } from "@/hooks/use-projects";
+import { useAreas, useCreateArea, useUpdateArea, useDeleteArea } from "@/hooks/use-areas";
+import {
+  useProjects,
+  useUpdateProject,
+  useDeleteProject,
+  useCompleteProject,
+} from "@/hooks/use-projects";
 import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { useTaskCounts } from "@/hooks/use-tasks";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { DeleteConfirmDialog } from "./delete-confirm-dialog";
+import { MoveProjectDialog } from "./move-project-dialog";
+import type { AreaWithCounts, ProjectWithCounts } from "@todo/shared";
 import type { Accent, Theme, FontPairing } from "./shell";
+
+const COLOR_OPTIONS: { label: string; value: string }[] = [
+  { label: "Ochre", value: "oklch(0.68 0.13 58)" },
+  { label: "Clay", value: "oklch(0.63 0.13 30)" },
+  { label: "Sage", value: "oklch(0.62 0.08 150)" },
+  { label: "Slate", value: "oklch(0.58 0.08 240)" },
+  { label: "Plum", value: "oklch(0.56 0.12 320)" },
+  { label: "Crimson", value: "oklch(0.58 0.18 20)" },
+  { label: "Moss", value: "oklch(0.55 0.10 130)" },
+  { label: "Sky", value: "oklch(0.65 0.10 220)" },
+];
 
 const AREA_COLOR_PALETTE = [
   "oklch(0.68 0.13 58)",   // ochre
@@ -369,131 +398,18 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle, f
           </div>
         )}
         {areas.map((area) => {
-              const areaProjects = topLevelProjects.filter((p) => p.areaId === area.id);
-              const areaHref = `/v2/area/${area.id}`;
-              const areaActive = pathname === areaHref;
-              const collapsed = isCollapsed(area.id);
-              const hasProjects = areaProjects.length > 0;
-              return (
-                <div key={area.id}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      borderRadius: 8,
-                      background: areaActive ? "var(--surface)" : "transparent",
-                      boxShadow: areaActive ? "var(--shadow-1)" : "none",
-                    }}
-                  >
-                    {hasProjects ? (
-                      <button
-                        onClick={() => toggle(area.id)}
-                        title={collapsed ? "Expand" : "Collapse"}
-                        aria-label={collapsed ? "Expand area" : "Collapse area"}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          width: 16,
-                          height: 22,
-                          marginLeft: 2,
-                          color: "var(--ink-4)",
-                          background: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: 0,
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink-2)"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-4)"; }}
-                      >
-                        <ChevronRight
-                          size={11}
-                          strokeWidth={2.4}
-                          style={{
-                            transform: collapsed ? "none" : "rotate(90deg)",
-                            transition: "transform 150ms ease",
-                          }}
-                        />
-                      </button>
-                    ) : (
-                      <span style={{ display: "inline-block", width: 18, flexShrink: 0 }} />
-                    )}
-                    <Link
-                      href={areaHref}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "5px 10px 5px 4px",
-                        borderRadius: 8,
-                        color: areaActive ? "var(--ink)" : "var(--ink-2)",
-                        fontSize: 13.5,
-                        fontWeight: areaActive ? 500 : 400,
-                        textDecoration: "none",
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: 2,
-                          background: area.color ?? "var(--ink-4)",
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{area.name}</span>
-                      {hasProjects && (
-                        <span style={{ fontSize: 11, color: "var(--ink-4)" }}>{areaProjects.length}</span>
-                      )}
-                    </Link>
-                  </div>
-                  {!collapsed && areaProjects.map((p) => {
-                    const isActive = pathname === `/v2/project/${p.id}`;
-                    return (
-                      <Link
-                        key={p.id}
-                        href={`/v2/project/${p.id}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "4px 10px 4px 28px",
-                          borderRadius: 8,
-                          color: isActive ? "var(--ink)" : "var(--ink-3)",
-                          background: isActive ? "var(--surface)" : "transparent",
-                          boxShadow: isActive ? "var(--shadow-1)" : "none",
-                          fontWeight: isActive ? 500 : 400,
-                          fontSize: 13,
-                          textDecoration: "none",
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 11,
-                            height: 11,
-                            borderRadius: 3,
-                            flexShrink: 0,
-                            border: `1.5px solid ${isActive ? "var(--accent)" : "var(--hairline-strong)"}`,
-                          }}
-                        />
-                        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {p.name}
-                        </span>
-                        {p.taskCount > 0 && (
-                          <span style={{ fontSize: 11, color: "var(--ink-4)", fontVariantNumeric: "tabular-nums" }}>
-                            {p.taskCount}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              );
-            })}
+          const areaProjects = topLevelProjects.filter((p) => p.areaId === area.id);
+          return (
+            <AreaRow
+              key={area.id}
+              area={area}
+              projects={areaProjects}
+              pathname={pathname}
+              collapsed={isCollapsed(area.id)}
+              onToggleCollapse={() => toggle(area.id)}
+            />
+          );
+        })}
 
       </div>
 
@@ -514,47 +430,9 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle, f
           <div style={{ padding: "0 8px", display: "flex", flexDirection: "column", gap: 1 }}>
             {topLevelProjects
               .filter((p) => !p.areaId)
-              .map((p) => {
-                const isActive = pathname === `/v2/project/${p.id}`;
-                return (
-                  <Link
-                    key={p.id}
-                    href={`/v2/project/${p.id}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "4px 10px",
-                      borderRadius: 8,
-                      color: isActive ? "var(--ink)" : "var(--ink-3)",
-                      background: isActive ? "var(--surface)" : "transparent",
-                      boxShadow: isActive ? "var(--shadow-1)" : "none",
-                      fontWeight: isActive ? 500 : 400,
-                      fontSize: 13,
-                      textDecoration: "none",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 11,
-                        height: 11,
-                        borderRadius: 3,
-                        flexShrink: 0,
-                        border: `1.5px solid ${p.color ?? (isActive ? "var(--accent)" : "var(--hairline-strong)")}`,
-                        background: p.color ? `${p.color}33` : "transparent",
-                      }}
-                    />
-                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {p.name}
-                    </span>
-                    {p.taskCount > 0 && (
-                      <span style={{ fontSize: 11, color: "var(--ink-4)", fontVariantNumeric: "tabular-nums" }}>
-                        {p.taskCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
+              .map((p) => (
+                <ProjectRow key={p.id} project={p} pathname={pathname} orphan />
+              ))}
           </div>
         </>
       )}
@@ -644,5 +522,421 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle, f
         <span>Settings</span>
       </Link>
     </aside>
+  );
+}
+
+function AreaRow({
+  area,
+  projects,
+  pathname,
+  collapsed,
+  onToggleCollapse,
+}: {
+  area: AreaWithCounts;
+  projects: ProjectWithCounts[];
+  pathname: string | null;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+}) {
+  const router = useRouter();
+  const updateArea = useUpdateArea();
+  const deleteArea = useDeleteArea();
+
+  const areaHref = `/v2/area/${area.id}`;
+  const areaActive = pathname === areaHref;
+  const hasProjects = projects.length > 0;
+
+  const [renaming, setRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(area.name);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (renaming) {
+      setDraftName(area.name);
+      submittedRef.current = false;
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 20);
+    }
+  }, [renaming, area.name]);
+
+  function commitRename() {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    const next = draftName.trim();
+    if (next && next !== area.name) {
+      updateArea.mutate({ id: area.id, name: next });
+    }
+    setRenaming(false);
+  }
+
+  function cancelRename() {
+    submittedRef.current = true;
+    setDraftName(area.name);
+    setRenaming(false);
+  }
+
+  function handleDelete() {
+    const wasActive = areaActive;
+    deleteArea.mutate(area.id);
+    setDeleteOpen(false);
+    if (wasActive) router.push("/v2/inbox");
+  }
+
+  return (
+    <div>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              borderRadius: 8,
+              background: areaActive ? "var(--surface)" : "transparent",
+              boxShadow: areaActive ? "var(--shadow-1)" : "none",
+            }}
+          >
+            {hasProjects ? (
+              <button
+                onClick={onToggleCollapse}
+                title={collapsed ? "Expand" : "Collapse"}
+                aria-label={collapsed ? "Expand area" : "Collapse area"}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 22,
+                  marginLeft: 2,
+                  color: "var(--ink-4)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink-2)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-4)"; }}
+              >
+                <ChevronRight
+                  size={11}
+                  strokeWidth={2.4}
+                  style={{
+                    transform: collapsed ? "none" : "rotate(90deg)",
+                    transition: "transform 150ms ease",
+                  }}
+                />
+              </button>
+            ) : (
+              <span style={{ display: "inline-block", width: 18, flexShrink: 0 }} />
+            )}
+            {renaming ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "5px 10px 5px 4px",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: area.color ?? "var(--ink-4)",
+                    flexShrink: 0,
+                  }}
+                />
+                <input
+                  ref={inputRef}
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); commitRename(); }
+                    if (e.key === "Escape") { e.preventDefault(); cancelRename(); }
+                  }}
+                  onBlur={commitRename}
+                  style={{
+                    flex: 1,
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    fontSize: 13.5,
+                    color: "var(--ink)",
+                    fontFamily: "inherit",
+                    fontWeight: areaActive ? 500 : 400,
+                    padding: 0,
+                    minWidth: 0,
+                  }}
+                />
+              </div>
+            ) : (
+              <Link
+                href={areaHref}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "5px 10px 5px 4px",
+                  borderRadius: 8,
+                  color: areaActive ? "var(--ink)" : "var(--ink-2)",
+                  fontSize: 13.5,
+                  fontWeight: areaActive ? 500 : 400,
+                  textDecoration: "none",
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: area.color ?? "var(--ink-4)",
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {area.name}
+                </span>
+                {hasProjects && (
+                  <span style={{ fontSize: 11, color: "var(--ink-4)" }}>{projects.length}</span>
+                )}
+              </Link>
+            )}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-48">
+          <ContextMenuItem onSelect={() => setRenaming(true)}>Rename</ContextMenuItem>
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>Change Color</ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-44">
+              {COLOR_OPTIONS.map((opt) => (
+                <ContextMenuItem
+                  key={opt.value}
+                  onSelect={() => updateArea.mutate({ id: area.id, color: opt.value })}
+                  className="flex items-center gap-2"
+                >
+                  <span
+                    className="h-3 w-3 rounded-sm flex-shrink-0"
+                    style={{ background: opt.value, boxShadow: area.color === opt.value ? "0 0 0 1.5px var(--ink)" : "none" }}
+                  />
+                  <span className="flex-1">{opt.label}</span>
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            variant="destructive"
+            onSelect={() => setDeleteOpen(true)}
+          >
+            Delete Area
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+      {!collapsed && projects.map((p) => (
+        <ProjectRow key={p.id} project={p} pathname={pathname} />
+      ))}
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Delete "${area.name}"?`}
+        description="Projects in this area will become orphaned (not deleted). This cannot be undone."
+        onConfirm={handleDelete}
+      />
+    </div>
+  );
+}
+
+function ProjectRow({
+  project,
+  pathname,
+  orphan = false,
+}: {
+  project: ProjectWithCounts;
+  pathname: string | null;
+  orphan?: boolean;
+}) {
+  const router = useRouter();
+  const updateProject = useUpdateProject();
+  const deleteProject = useDeleteProject();
+  const completeProject = useCompleteProject();
+
+  const href = `/v2/project/${project.id}`;
+  const isActive = pathname === href;
+
+  const [renaming, setRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(project.name);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [moveOpen, setMoveOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const submittedRef = useRef(false);
+
+  useEffect(() => {
+    if (renaming) {
+      setDraftName(project.name);
+      submittedRef.current = false;
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 20);
+    }
+  }, [renaming, project.name]);
+
+  function commitRename() {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    const next = draftName.trim();
+    if (next && next !== project.name) {
+      updateProject.mutate({ id: project.id, name: next });
+    }
+    setRenaming(false);
+  }
+
+  function cancelRename() {
+    submittedRef.current = true;
+    setDraftName(project.name);
+    setRenaming(false);
+  }
+
+  function handleArchive() {
+    const wasActive = isActive;
+    completeProject.mutate({ id: project.id });
+    if (wasActive) router.push("/v2/inbox");
+  }
+
+  function handleDelete() {
+    const wasActive = isActive;
+    deleteProject.mutate(project.id);
+    setDeleteOpen(false);
+    if (wasActive) router.push("/v2/inbox");
+  }
+
+  const padLeft = orphan ? 10 : 28;
+  const swatchBorder = orphan
+    ? `1.5px solid ${project.color ?? (isActive ? "var(--accent)" : "var(--hairline-strong)")}`
+    : `1.5px solid ${isActive ? "var(--accent)" : "var(--hairline-strong)"}`;
+  const swatchBg = orphan && project.color ? `${project.color}33` : "transparent";
+
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          {renaming ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: `4px 10px 4px ${padLeft}px`,
+                borderRadius: 8,
+                background: isActive ? "var(--surface)" : "transparent",
+                boxShadow: isActive ? "var(--shadow-1)" : "none",
+              }}
+            >
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: 3,
+                  flexShrink: 0,
+                  border: swatchBorder,
+                  background: swatchBg,
+                }}
+              />
+              <input
+                ref={inputRef}
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { e.preventDefault(); commitRename(); }
+                  if (e.key === "Escape") { e.preventDefault(); cancelRename(); }
+                }}
+                onBlur={commitRename}
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  fontSize: 13,
+                  fontWeight: isActive ? 500 : 400,
+                  color: "var(--ink)",
+                  fontFamily: "inherit",
+                  padding: 0,
+                  minWidth: 0,
+                }}
+              />
+            </div>
+          ) : (
+            <Link
+              href={href}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: `4px 10px 4px ${padLeft}px`,
+                borderRadius: 8,
+                color: isActive ? "var(--ink)" : "var(--ink-3)",
+                background: isActive ? "var(--surface)" : "transparent",
+                boxShadow: isActive ? "var(--shadow-1)" : "none",
+                fontWeight: isActive ? 500 : 400,
+                fontSize: 13,
+                textDecoration: "none",
+              }}
+            >
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: 3,
+                  flexShrink: 0,
+                  border: swatchBorder,
+                  background: swatchBg,
+                }}
+              />
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {project.name}
+              </span>
+              {project.taskCount > 0 && (
+                <span style={{ fontSize: 11, color: "var(--ink-4)", fontVariantNumeric: "tabular-nums" }}>
+                  {project.taskCount}
+                </span>
+              )}
+            </Link>
+          )}
+        </ContextMenuTrigger>
+        <ContextMenuContent className="w-48">
+          <ContextMenuItem onSelect={() => setRenaming(true)}>Rename</ContextMenuItem>
+          <ContextMenuItem onSelect={() => setMoveOpen(true)}>Move to Area…</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem onSelect={handleArchive}>Archive Project</ContextMenuItem>
+          <ContextMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
+            Delete Project
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+      <MoveProjectDialog
+        open={moveOpen}
+        onOpenChange={setMoveOpen}
+        projectId={project.id}
+        projectName={project.name}
+        currentAreaId={project.areaId}
+      />
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Delete "${project.name}"?`}
+        description="All tasks in this project will be permanently deleted. This cannot be undone."
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }
