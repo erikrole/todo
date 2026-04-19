@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useAreas, useCreateArea } from "@/hooks/use-areas";
 import { useProjects } from "@/hooks/use-projects";
+import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { useTaskCounts } from "@/hooks/use-tasks";
-import type { Accent, Theme } from "./shell";
+import type { Accent, Theme, FontPairing } from "./shell";
 
 const AREA_COLOR_PALETTE = [
   "oklch(0.68 0.13 58)",   // ochre
@@ -31,35 +33,99 @@ function NavIcon({ type }: { type: string }) {
   if (type === "upcoming") return <svg {...props}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>;
   if (type === "someday") return <svg {...props}><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 11h16M9 4v3M15 4v3"/><path d="M12 14.5l1.8 1 .4-2.1-1.5-1.4 2.1-.3L12 10l-1 1.7 2.1.3-1.5 1.4.4 2.1z" strokeLinejoin="round" strokeWidth="1.2"/></svg>;
   if (type === "routines") return <svg {...props}><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>;
+  if (type === "logs") return <svg {...props}><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></svg>;
+  if (type === "subscriptions") return <svg {...props}><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>;
+  if (type === "occasions") return <svg {...props}><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>;
   if (type === "logbook") return <svg {...props}><path d="M4 5h16M4 10h16M4 15h10M4 20h6"/></svg>;
   if (type === "trash") return <svg {...props}><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>;
+  if (type === "import") return <svg {...props}><path d="M12 3v12M8 11l4 4 4-4"/><path d="M4 19h16"/></svg>;
   return null;
 }
 
-const NAV: { href: string; label: string; icon: string; countKey?: "inbox" | "today" | "overdue" }[] = [
+type NavItem = { href: string; label: string; icon: string; countKey?: "inbox" | "today" | "overdue" };
+
+const TASKS_NAV: NavItem[] = [
   { href: "/v2/today",    label: "Today",    icon: "today",    countKey: "today" },
   { href: "/v2/inbox",    label: "Inbox",    icon: "inbox",    countKey: "inbox" },
   { href: "/v2/upcoming", label: "Upcoming", icon: "upcoming" },
   { href: "/v2/someday",  label: "Someday",  icon: "someday" },
   { href: "/v2/routines", label: "Routines", icon: "routines" },
-  { href: "/v2/logbook",  label: "Logbook",  icon: "logbook" },
-  { href: "/v2/trash",    label: "Trash",    icon: "trash" },
 ];
+
+const LIFE_NAV: NavItem[] = [
+  { href: "/v2/logs",          label: "Logs",          icon: "logs" },
+  { href: "/v2/subscriptions", label: "Subscriptions", icon: "subscriptions" },
+  { href: "/v2/occasions",     label: "Occasions",     icon: "occasions" },
+];
+
+const MORE_NAV: NavItem[] = [
+  { href: "/v2/logbook", label: "Logbook", icon: "logbook" },
+  { href: "/v2/trash",   label: "Trash",   icon: "trash" },
+  { href: "/v2/import",  label: "Import",  icon: "import" },
+];
+
+function NavLink({ href, label, icon, isActive, badge }: { href: string; label: string; icon: string; isActive: boolean; badge?: number }) {
+  return (
+    <Link
+      href={href}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "6px 10px",
+        borderRadius: 8,
+        color: isActive ? "var(--ink)" : "var(--ink-2)",
+        background: isActive ? "var(--surface)" : "transparent",
+        boxShadow: isActive ? "var(--shadow-1)" : "none",
+        fontSize: 13.5,
+        fontWeight: isActive ? 500 : 400,
+        textDecoration: "none",
+      }}
+    >
+      <span style={{ color: isActive ? "var(--accent)" : "var(--ink-3)" }}>
+        <NavIcon type={icon} />
+      </span>
+      <span style={{ flex: 1 }}>{label}</span>
+      {badge != null && badge > 0 && (
+        <span style={{ fontSize: 11, color: "var(--ink-3)", fontVariantNumeric: "tabular-nums" }}>{badge}</span>
+      )}
+    </Link>
+  );
+}
+
+function NavSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      padding: "10px 10px 4px 10px",
+      fontSize: 10.5,
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      color: "var(--ink-4)",
+      fontWeight: 600,
+    }}>
+      {children}
+    </div>
+  );
+}
 
 interface SidebarProps {
   accent: Accent;
   onAccentChange: (a: Accent) => void;
   theme: Theme;
   onThemeToggle: () => void;
+  font: FontPairing;
+  onFontChange: (f: FontPairing) => void;
 }
 
-export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }: SidebarProps) {
+export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle, font, onFontChange }: SidebarProps) {
   const pathname = usePathname();
   const { data: areas = [] } = useAreas();
   const { data: allProjects = [] } = useProjects();
   const { data: counts } = useTaskCounts();
   const createArea = useCreateArea();
+  const { isCollapsed, toggle } = useSidebarCollapse();
 
+  const [moreOpen, setMoreOpen] = useState(false);
   const [addingArea, setAddingArea] = useState(false);
   const [newAreaName, setNewAreaName] = useState("");
   const newAreaRef = useRef<HTMLInputElement>(null);
@@ -156,38 +222,60 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
 
       {/* Nav */}
       <nav style={{ padding: "4px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
-        {NAV.map(({ href, label, icon, countKey }) => {
+        {TASKS_NAV.map(({ href, label, icon, countKey }) => {
           const isActive = pathname === href;
           const badge = countKey ? counts?.[countKey] : undefined;
           return (
-            <Link
-              key={href}
-              href={href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "6px 10px",
-                borderRadius: 8,
-                color: isActive ? "var(--ink)" : "var(--ink-2)",
-                background: isActive ? "var(--surface)" : "transparent",
-                boxShadow: isActive ? "var(--shadow-1)" : "none",
-                fontSize: 13.5,
-                fontWeight: isActive ? 500 : 400,
-                textDecoration: "none",
-              }}
-            >
-              <span style={{ color: isActive ? "var(--accent)" : "var(--ink-3)" }}>
-                <NavIcon type={icon} />
-              </span>
-              <span style={{ flex: 1 }}>{label}</span>
-              {badge != null && badge > 0 && (
-                <span style={{ fontSize: 11, color: "var(--ink-3)", fontVariantNumeric: "tabular-nums" }}>
-                  {badge}
-                </span>
-              )}
-            </Link>
+            <NavLink key={href} href={href} label={label} icon={icon} isActive={isActive} badge={badge} />
           );
+        })}
+
+        <NavSectionLabel>Life</NavSectionLabel>
+
+        {LIFE_NAV.map(({ href, label, icon }) => {
+          const isActive = pathname === href;
+          return <NavLink key={href} href={href} label={label} icon={icon} isActive={isActive} />;
+        })}
+
+        {/* More disclosure */}
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "6px 10px",
+            borderRadius: 8,
+            color: "var(--ink-4)",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 13.5,
+            fontFamily: "inherit",
+            width: "100%",
+            textAlign: "left",
+          }}
+        >
+          <span style={{ color: "var(--ink-4)" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+              <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+            </svg>
+          </span>
+          <span style={{ flex: 1 }}>More</span>
+          <svg
+            width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: moreOpen ? "rotate(180deg)" : "none", transition: "transform 150ms" }}
+          >
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+
+        {moreOpen && MORE_NAV.map(({ href, label, icon }) => {
+          const isActive = pathname === href;
+          return <NavLink key={href} href={href} label={label} icon={icon} isActive={isActive} />;
         })}
       </nav>
 
@@ -284,39 +372,86 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
               const areaProjects = topLevelProjects.filter((p) => p.areaId === area.id);
               const areaHref = `/v2/area/${area.id}`;
               const areaActive = pathname === areaHref;
+              const collapsed = isCollapsed(area.id);
+              const hasProjects = areaProjects.length > 0;
               return (
                 <div key={area.id}>
-                  <Link
-                    href={areaHref}
+                  <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 10,
-                      padding: "5px 10px",
+                      gap: 2,
                       borderRadius: 8,
-                      color: areaActive ? "var(--ink)" : "var(--ink-2)",
                       background: areaActive ? "var(--surface)" : "transparent",
                       boxShadow: areaActive ? "var(--shadow-1)" : "none",
-                      fontSize: 13.5,
-                      fontWeight: areaActive ? 500 : 400,
-                      textDecoration: "none",
                     }}
                   >
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: 2,
-                        background: area.color ?? "var(--ink-4)",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span style={{ flex: 1 }}>{area.name}</span>
-                    {areaProjects.length > 0 && (
-                      <span style={{ fontSize: 11, color: "var(--ink-4)" }}>{areaProjects.length}</span>
+                    {hasProjects ? (
+                      <button
+                        onClick={() => toggle(area.id)}
+                        title={collapsed ? "Expand" : "Collapse"}
+                        aria-label={collapsed ? "Expand area" : "Collapse area"}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 16,
+                          height: 22,
+                          marginLeft: 2,
+                          color: "var(--ink-4)",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--ink-2)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--ink-4)"; }}
+                      >
+                        <ChevronRight
+                          size={11}
+                          strokeWidth={2.4}
+                          style={{
+                            transform: collapsed ? "none" : "rotate(90deg)",
+                            transition: "transform 150ms ease",
+                          }}
+                        />
+                      </button>
+                    ) : (
+                      <span style={{ display: "inline-block", width: 18, flexShrink: 0 }} />
                     )}
-                  </Link>
-                  {areaProjects.map((p) => {
+                    <Link
+                      href={areaHref}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        padding: "5px 10px 5px 4px",
+                        borderRadius: 8,
+                        color: areaActive ? "var(--ink)" : "var(--ink-2)",
+                        fontSize: 13.5,
+                        fontWeight: areaActive ? 500 : 400,
+                        textDecoration: "none",
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: 2,
+                          background: area.color ?? "var(--ink-4)",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{area.name}</span>
+                      {hasProjects && (
+                        <span style={{ fontSize: 11, color: "var(--ink-4)" }}>{areaProjects.length}</span>
+                      )}
+                    </Link>
+                  </div>
+                  {!collapsed && areaProjects.map((p) => {
                     const isActive = pathname === `/v2/project/${p.id}`;
                     return (
                       <Link
@@ -469,6 +604,28 @@ export function UpshootSidebar({ accent, onAccentChange, theme, onThemeToggle }:
         >
           {theme === "light" ? "Dark" : "Light"}
         </button>
+      </div>
+      {/* Font pairing picker */}
+      <div style={{ display: "flex", gap: 4, padding: "0 8px 4px" }}>
+        {(["editorial", "warm", "precise"] as FontPairing[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => onFontChange(f)}
+            style={{
+              flex: 1,
+              fontSize: 10,
+              padding: "3px 0",
+              borderRadius: 5,
+              textTransform: "capitalize",
+              background: font === f ? "var(--accent-soft)" : "transparent",
+              color: font === f ? "var(--accent-ink)" : "var(--ink-4)",
+              border: font === f ? "1px solid color-mix(in oklch, var(--accent) 30%, transparent)" : "1px solid transparent",
+              cursor: "pointer",
+            }}
+          >
+            {f}
+          </button>
+        ))}
       </div>
       <Link
         href="/settings/shortcuts"
