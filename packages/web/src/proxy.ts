@@ -8,32 +8,20 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Cookie (browser sessions)
-  const cookie = req.cookies.get("auth_token")?.value;
-  if (cookie === authToken) return NextResponse.next();
+  // Only gate API routes — web pages are open
+  if (!req.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
 
-  // Bearer token (MCP / API clients / iOS)
+  // Bearer token (iOS / MCP / API clients)
   const header = req.headers.get("authorization");
   if (header?.startsWith("Bearer ") && header.slice(7) === authToken) {
     return NextResponse.next();
   }
 
-  // Auth routes are always public (login/logout must work unauthenticated)
-  if (req.nextUrl.pathname.startsWith("/api/auth/")) {
-    return NextResponse.next();
-  }
-
-  // API requests → 401 JSON
-  if (req.nextUrl.pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Page requests → redirect to login
-  const loginUrl = req.nextUrl.clone();
-  loginUrl.pathname = "/login";
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
 export const config = {
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
