@@ -6,6 +6,7 @@ import { TaskItem } from "./task-item";
 import { TaskQuickAdd, TaskQuickAddHandle } from "./task-quick-add";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProjects } from "@/hooks/use-projects";
+import { useAreas } from "@/hooks/use-areas";
 import type { ProjectWithCounts } from "@todo/shared";
 import { useRegisterTaskList, useFocusedTask, useShortcutAction } from "@/components/keyboard/keyboard-provider";
 import {
@@ -44,6 +45,7 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const { data: allProjects = [] } = useProjects();
   const activeProjects = allProjects.filter((p) => !p.isCompleted) as ProjectWithCounts[];
+  const { data: allAreas = [] } = useAreas();
   const { focusedTaskId, setFocusedTaskId } = useFocusedTask();
   const quickAddRef = useRef<TaskQuickAddHandle>(null);
 
@@ -193,6 +195,7 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
               isExpanded={expandedTaskId === task.id}
               onToggle={handleToggle}
               activeProjects={activeProjects}
+              activeAreas={allAreas}
               activeSections={activeSections}
               showWhenDate={showWhenDate}
             />
@@ -205,6 +208,7 @@ export function TaskList({ tasks, isLoading, showWhenDate, quickAddDefaults, act
             isExpanded={expandedTaskId === task.id}
             onToggle={handleToggle}
             activeProjects={activeProjects}
+            activeAreas={allAreas}
             activeSections={activeSections}
             showWhenDate={showWhenDate}
           />

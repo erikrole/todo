@@ -44,6 +44,6 @@
 |----------|---------|---------|
 | `TURSO_URL` | db, mcp | Turso URL (absent = local SQLite) |
 | `TURSO_AUTH_TOKEN` | db, mcp | Turso auth token |
-| `NEXT_PUBLIC_AUTH_TOKEN` | web | Bearer token for all REST API calls |
+| `AUTH_TOKEN` | web | Bearer token for all REST API calls |
 | `ANTHROPIC_API_KEY` | web, mcp | Claude API (brief + intelligence + architect) |
 | `ARCHITECT_MODEL` | mcp | Override model for plan_project (default: claude-sonnet-4-6) |

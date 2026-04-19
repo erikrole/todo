@@ -52,7 +52,7 @@ TURSO_URL=libsql://... TURSO_AUTH_TOKEN=... pnpm db:migrate
 ## Common Issues
 
 ### API returns 401
-- Check `NEXT_PUBLIC_AUTH_TOKEN` is set in Vercel env vars and matches the client
+- Check `AUTH_TOKEN` is set in Vercel env vars and matches the client
 
 ### `/api/brief` or `/api/intelligence/appointment` returns null
 - `ANTHROPIC_API_KEY` not set or invalid — check Vercel env vars
@@ -64,7 +64,7 @@ TURSO_URL=libsql://... TURSO_AUTH_TOKEN=... pnpm db:migrate
 
 ### Dev server won't start / DB errors
 - Run `pnpm db:migrate` — local.db may be missing migrations
-- Check `packages/web/.env.local` has `NEXT_PUBLIC_AUTH_TOKEN` set
+- Check `packages/web/.env.local` has `AUTH_TOKEN` set
 
 ### Migrations fail on prod
 - Check Turso URL and auth token: `vercel env pull` then test with `turso db shell todo-prod`

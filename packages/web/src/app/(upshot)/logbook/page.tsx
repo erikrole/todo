@@ -40,7 +40,7 @@ export default function V2LogbookPage() {
       ) : (
         sortedDates.map((date) => (
           <section key={date} style={{ marginBottom: 24 }}>
-            <div style={{ padding: "0 16px 6px 16px" }}>
+            <div style={{ padding: "0 16px 6px 16px", display: "flex", alignItems: "baseline", gap: 6 }}>
               <span
                 style={{
                   fontSize: 11,
@@ -50,7 +50,10 @@ export default function V2LogbookPage() {
                   fontWeight: 600,
                 }}
               >
-                {date}
+                {date === "Unknown" ? "Unknown" : new Date(date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
+              </span>
+              <span style={{ fontSize: 11, color: "var(--ink-4)", opacity: 0.6 }}>
+                · {groups.get(date)!.length}
               </span>
             </div>
             <TaskList tasks={groups.get(date) ?? []} />

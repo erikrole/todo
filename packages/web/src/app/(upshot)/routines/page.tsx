@@ -608,6 +608,115 @@ function RoutineCreateDialog({ open, onClose }: { open: boolean; onClose: () => 
   );
 }
 
+// ── Countdown view ────────────────────────────────────────────────────────────
+
+function countdownColor(days: number): string {
+  if (days < 0) return "oklch(58% 0.22 25)";
+  if (days === 0) return "oklch(55% 0.18 140)";
+  if (days <= 2) return "oklch(62% 0.16 75)";
+  return "var(--ink-3)";
+}
+
+function countdownBg(days: number): string {
+  if (days < 0) return "color-mix(in oklch, oklch(58% 0.22 25) 8%, var(--surface))";
+  if (days === 0) return "color-mix(in oklch, oklch(55% 0.18 140) 8%, var(--surface))";
+  if (days <= 2) return "color-mix(in oklch, oklch(62% 0.16 75) 6%, var(--surface))";
+  return "var(--surface)";
+}
+
+interface CountdownGroup {
+  name: string;
+  color: string | null;
+  routines: Routine[];
+}
+
+function CountdownCard({ r, today, onEdit }: { r: Routine; today: string; onEdit: (r: Routine) => void }) {
+  const days = r.whenDate ? daysUntil(r.whenDate) : null;
+  const color = days !== null ? countdownColor(days) : "var(--ink-4)";
+  const bg = days !== null ? countdownBg(days) : "var(--surface)";
+
+  let bigLabel: string;
+  let subLabel: string;
+  if (days === null) {
+    bigLabel = "—";
+    subLabel = "no date set";
+  } else if (days < 0) {
+    bigLabel = String(Math.abs(days));
+    subLabel = `day${Math.abs(days) === 1 ? "" : "s"} overdue`;
+  } else if (days === 0) {
+    bigLabel = "today";
+    subLabel = "due now";
+  } else if (days === 1) {
+    bigLabel = "1";
+    subLabel = "day left";
+  } else {
+    bigLabel = String(days);
+    subLabel = "days left";
+  }
+
+  return (
+    <button
+      onClick={() => onEdit(r)}
+      style={{
+        display: "flex", flexDirection: "column", alignItems: "flex-start",
+        padding: "14px 16px", borderRadius: 12, border: "1px solid var(--hairline)",
+        background: bg, cursor: "pointer", textAlign: "left", gap: 2,
+        transition: "border-color 0.15s, background 0.15s",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = color; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--hairline)"; e.currentTarget.style.background = bg; }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+        <span style={{ fontSize: days === 0 ? 20 : 32, fontWeight: 700, color, lineHeight: 1, fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-display)" }}>
+          {bigLabel}
+        </span>
+        {days !== 0 && days !== null && (
+          <span style={{ fontSize: 11, color, opacity: 0.75, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            {subLabel}
+          </span>
+        )}
+      </div>
+      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)", lineHeight: 1.3, marginTop: 4 }}>
+        {r.title}
+      </span>
+      <span style={{ fontSize: 11, color: "var(--ink-4)" }}>
+        {freqLabel(r)}
+        {r.lastCompletedAt ? ` · ${lastLabel(r.lastCompletedAt)}` : ""}
+      </span>
+    </button>
+  );
+}
+
+function CountdownView({ groups, today, onEdit }: { groups: CountdownGroup[]; today: string; onEdit: (r: Routine) => void }) {
+  return (
+    <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 28 }}>
+      {groups.map((group) => (
+        <div key={group.name}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            {group.color && (
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: group.color, flexShrink: 0 }} />
+            )}
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{group.name}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
+            {group.routines
+              .slice()
+              .sort((a, b) => {
+                if (!a.whenDate && !b.whenDate) return 0;
+                if (!a.whenDate) return 1;
+                if (!b.whenDate) return -1;
+                return a.whenDate.localeCompare(b.whenDate);
+              })
+              .map((r) => (
+                <CountdownCard key={r.id} r={r} today={today} onEdit={onEdit} />
+              ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Insights card ─────────────────────────────────────────────────────────────
 
 function InsightsCard({ hasNullDates }: { hasNullDates: boolean }) {
@@ -662,11 +771,19 @@ function InsightsCard({ hasNullDates }: { hasNullDates: boolean }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-type ViewMode = "area" | "due";
+type ViewMode = "area" | "due" | "countdown";
+
+const VIEW_STORAGE_KEY = "routines-view";
 
 export default function V2RoutinesPage() {
   const { data: routines = [], isLoading } = useRoutines();
-  const [view, setView] = useState<ViewMode>("area");
+  const [view, setView] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+      if (saved === "area" || saved === "due" || saved === "countdown") return saved;
+    }
+    return "area";
+  });
   const [editing, setEditing] = useState<Routine | null>(null);
   const [creating, setCreating] = useState(false);
   const router = useRouter();
@@ -731,14 +848,14 @@ export default function V2RoutinesPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {routines.length > 0 && (
               <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden", fontSize: 12, fontWeight: 500 }}>
-                {(["area", "due"] as ViewMode[]).map((v) => (
-                  <button key={v} onClick={() => setView(v)} style={{
+                {(["area", "due", "countdown"] as ViewMode[]).map((v) => (
+                  <button key={v} onClick={() => { setView(v); localStorage.setItem(VIEW_STORAGE_KEY, v); }} style={{
                     padding: "6px 14px", cursor: "pointer", border: "none",
                     background: view === v ? "var(--primary)" : "transparent",
                     color: view === v ? "var(--primary-foreground)" : "var(--muted-foreground)",
                     transition: "background 0.15s, color 0.15s",
                   }}>
-                    {v === "area" ? "By area" : "All by due"}
+                    {v === "area" ? "By area" : v === "due" ? "All by due" : "Countdown"}
                   </button>
                 ))}
               </div>
@@ -796,10 +913,12 @@ export default function V2RoutinesPage() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : view === "due" ? (
           <div style={{ padding: "0 20px", display: "flex", flexDirection: "column", gap: 6, maxWidth: 480 }}>
             {byDue.map((r, i) => renderRoutineCard(r, i))}
           </div>
+        ) : (
+          <CountdownView groups={byArea} today={today} onEdit={setEditing} />
         )}
 
         <RoutineEditDialog open={!!editing} onClose={() => setEditing(null)} routine={editing} />

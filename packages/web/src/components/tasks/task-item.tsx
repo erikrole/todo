@@ -2,7 +2,7 @@
 
 import { memo, useState, useEffect, useRef, useCallback } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import type { Task, Section } from "@todo/shared";
+import type { Task, Section, Area } from "@todo/shared";
 import type { ProjectWithCounts } from "@todo/shared";
 import { TaskCheckbox } from "./task-checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ interface TaskItemProps {
   /** Receives the task ID so the parent can use a stable useCallback */
   onToggle: (id: string) => void;
   activeProjects: ProjectWithCounts[];
+  activeAreas?: Area[];
   activeSections?: Section[];
   showWhenDate?: boolean;
 }
@@ -79,6 +80,7 @@ export const TaskItem = memo(function TaskItem({
   isExpanded,
   onToggle,
   activeProjects,
+  activeAreas = [],
   activeSections = [],
   showWhenDate,
 }: TaskItemProps) {
@@ -271,6 +273,12 @@ export const TaskItem = memo(function TaskItem({
                   checked={task.isCompleted}
                   onComplete={handleComplete}
                   onUncomplete={handleUncomplete}
+                  tint={
+                    activeProjects.find((p) => p.id === task.projectId)?.color ??
+                    activeAreas.find((a) => a.id === (task.areaId ?? activeProjects.find((p) => p.id === task.projectId)?.areaId))?.color ??
+                    undefined
+                  }
+                  isFlagged={!!task.deadline && !task.isCompleted}
                 />
               )}
             </div>
@@ -305,7 +313,7 @@ export const TaskItem = memo(function TaskItem({
                     {task.notes.split("\n").find((l) => l.trim())}
                   </p>
                 )}
-                {((showWhenDate && task.whenDate) || task.scheduledTime || task.recurrenceType || task.notes?.trim() || (task.isSomeday && !task.whenDate)) && (
+                {((showWhenDate && task.whenDate) || task.scheduledTime || task.recurrenceType || task.deadline || task.notes?.trim() || (task.isSomeday && !task.whenDate)) && (
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {task.isSomeday && !task.whenDate && (
                       <span className="text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5 leading-none">
@@ -329,8 +337,26 @@ export const TaskItem = memo(function TaskItem({
                       </span>
                     )}
                     {task.recurrenceType && (
-                      <span className="inline-flex items-center text-muted-foreground/60">
+                      <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground/60">
                         <Repeat2 className="h-2.5 w-2.5" />
+                        {recurrenceLabel(task.recurrenceType, task.recurrenceInterval)}
+                      </span>
+                    )}
+                    {task.deadline && !task.isCompleted && (
+                      <span className={cn(
+                        "inline-flex items-center gap-0.5 text-xs tabular-nums",
+                        daysUntil(task.deadline) < 0
+                          ? "text-destructive/80"
+                          : daysUntil(task.deadline) <= 2
+                            ? "text-amber-600/80 dark:text-amber-400/80"
+                            : "text-muted-foreground/60",
+                      )}>
+                        <Flag className="h-2.5 w-2.5" />
+                        {daysUntil(task.deadline) < 0
+                          ? `overdue ${Math.abs(daysUntil(task.deadline))}d`
+                          : daysUntil(task.deadline) === 0
+                            ? "due today"
+                            : `due ${new Date(task.deadline + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
                       </span>
                     )}
                     {task.notes?.trim() && (

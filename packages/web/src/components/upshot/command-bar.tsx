@@ -6,10 +6,11 @@ import { useProjects } from "@/hooks/use-projects";
 import { parseTaskInput } from "@/lib/parse-task";
 
 const HINTS = [
-  "Remind me to water plants every 3 days",
+  "Remind me to call Mom every Sunday morning",
   "What's on my plate tomorrow?",
-  "Snooze 'Rotate tires' until Saturday",
-  "Add task for Monday morning",
+  "Add 'Oil change' for next Saturday",
+  "Schedule dentist for Monday morning",
+  "Snooze 'Rotate tires' until next week",
 ];
 
 export function CommandBar() {

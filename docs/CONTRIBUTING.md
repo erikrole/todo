@@ -17,7 +17,7 @@ pnpm install
 
 # Copy and fill in env vars
 cp packages/web/.env.example packages/web/.env.local
-# At minimum: set NEXT_PUBLIC_AUTH_TOKEN to any random string
+# At minimum: set AUTH_TOKEN to any random string
 # ANTHROPIC_API_KEY needed for /api/brief and /api/intelligence/appointment
 
 # Apply DB migrations
@@ -47,7 +47,7 @@ pnpm dev   # http://localhost:3000
 <!-- AUTO-GENERATED from packages/web/.env.example -->
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_AUTH_TOKEN` | **Yes** | Bearer token for all REST API calls. Any random string (`openssl rand -hex 32`). Exposed to browser. |
+| `AUTH_TOKEN` | **Yes** | Bearer token for all REST API calls. Any random string (`openssl rand -hex 32`). Exposed to browser. |
 | `TURSO_URL` | No | Turso DB URL. Absent = local SQLite (`packages/db/local.db`). |
 | `TURSO_AUTH_TOKEN` | No | Turso auth token. Required when `TURSO_URL` is set. |
 | `ANTHROPIC_API_KEY` | No | Claude API key. Required for `/api/brief` and `/api/intelligence/appointment`. |

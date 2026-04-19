@@ -28,7 +28,7 @@ type Mode = "morning" | "day" | "evening";
 function deriveMode(): Mode {
   const h = new Date().getHours();
   if (h < 12) return "morning";
-  if (h < 17) return "day";
+  if (h < 21) return "day";
   return "evening";
 }
 
@@ -60,10 +60,7 @@ function useBrief(mode: Mode, taskTitles: string[], today: string): string | nul
     queryFn: () =>
       fetch("/api/brief", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_AUTH_TOKEN}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode, taskTitles, date: formatDate() }),
       })
         .then((r) => r.json())

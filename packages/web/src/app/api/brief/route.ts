@@ -1,3 +1,10 @@
+import { z } from "zod";
+
+const BriefSchema = z.object({
+  taskTitles: z.array(z.string().max(200)).max(20),
+  mode: z.enum(["today", "upcoming", "someday", "inbox"]),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
 
 export async function POST(request: Request) {
   const key = process.env.ANTHROPIC_API_KEY;
@@ -5,13 +12,17 @@ export async function POST(request: Request) {
     return Response.json({ brief: null });
   }
 
-  try {
-    const { taskTitles, mode, date } = await request.json();
+  const body = await request.json().catch(() => null);
+  const parsed = BriefSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ brief: null });
+  }
 
+  const { taskTitles, mode, date } = parsed.data;
+
+  try {
     const taskList =
-      Array.isArray(taskTitles) && taskTitles.length > 0
-        ? taskTitles.slice(0, 10).join(", ")
-        : "no tasks scheduled";
+      taskTitles.length > 0 ? taskTitles.slice(0, 10).join(", ") : "no tasks scheduled";
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -21,7 +32,7 @@ export async function POST(request: Request) {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4.5",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 80,
         system: `You write concise, natural one-sentence daily briefings for a personal task manager. Tone: calm, warm, direct. No filler phrases like "It looks like" or "Today you have". Maximum 25 words. Never use em-dashes. Never start with "I".`,
         messages: [

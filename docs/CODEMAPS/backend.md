@@ -2,7 +2,7 @@
 
 # Backend
 
-All routes: `packages/web/src/app/api/`. All require `Authorization: Bearer $NEXT_PUBLIC_AUTH_TOKEN`.
+All routes: `packages/web/src/app/api/`. All require `Authorization: Bearer $AUTH_TOKEN`.
 Response envelope: `{ data: T }` via `ok()` / `{ error }` via `err()` — except `/api/brief` → `{ brief }`.
 
 ## Route Map

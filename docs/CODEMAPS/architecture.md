@@ -37,7 +37,7 @@ packages/mcp (direct DB access, no HTTP hop)
 ```
 
 ## Auth
-Single Bearer token (`NEXT_PUBLIC_AUTH_TOKEN`) checked in `packages/web/src/app/proxy.ts` (Next.js middleware). No auth library. No login page.
+Single Bearer token (`AUTH_TOKEN`) checked in `packages/web/src/app/proxy.ts` (Next.js middleware). No auth library. No login page.
 
 ## Key Design Decisions
 - **Single DB driver** (`@libsql/client`) for both local SQLite and Turso — same Drizzle schema, zero native compilation

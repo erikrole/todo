@@ -1,6 +1,17 @@
 /* Upshot design tokens — scoped to .upshot-root to prevent leaking into existing app */
 
 .upshot-root {
+  /* Bridge Tailwind/shadcn tokens to upshot design system */
+  --primary: var(--accent);
+  --primary-foreground: white;
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --muted-foreground: var(--ink-3);
+  --muted: var(--surface-2);
+  --border: var(--hairline);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+
   --bg: oklch(0.985 0.006 80);
   --bg-sunken: oklch(0.965 0.008 78);
   --surface: oklch(1 0 0);
