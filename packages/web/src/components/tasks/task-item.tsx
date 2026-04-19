@@ -300,8 +300,13 @@ export const TaskItem = memo(function TaskItem({
                 >
                   {task.title}
                 </span>
-                {((showWhenDate && task.whenDate) || task.scheduledTime || task.recurrenceType || task.notes) && (
+                {((showWhenDate && task.whenDate) || task.scheduledTime || task.recurrenceType || task.notes || (task.isSomeday && !task.whenDate)) && (
                   <div className="flex items-center gap-1.5 mt-0.5">
+                    {task.isSomeday && !task.whenDate && (
+                      <span className="text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5 leading-none">
+                        Someday
+                      </span>
+                    )}
                     {showWhenDate && task.whenDate && (
                       <span className={cn(
                         "text-xs tabular-nums",
@@ -388,8 +393,15 @@ export const TaskItem = memo(function TaskItem({
             <ContextMenuItem onSelect={() => moveTask({ whenDate: nextWeekStr(), isSomeday: false }, "Moved to Next Week")}>
               Move to Next Week
             </ContextMenuItem>
-            <ContextMenuItem onSelect={() => moveTask({ isSomeday: true, whenDate: null, timeOfDay: null }, "Moved to Someday")}>
-              Move to Someday
+            <ContextMenuItem
+              onSelect={() =>
+                moveTask(
+                  { isSomeday: !task.isSomeday, whenDate: null, timeOfDay: null },
+                  task.isSomeday ? "Moved out of Someday" : "Moved to Someday",
+                )
+              }
+            >
+              {task.isSomeday ? "Move out of Someday" : "Move to Someday"}
             </ContextMenuItem>
             {activeProjects.length > 0 && (
               <ContextMenuSub>
