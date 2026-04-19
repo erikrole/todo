@@ -39,7 +39,7 @@ This is a **pnpm monorepo** for a personal task manager (Things 3-inspired).
 
 **Single driver, two targets.** `packages/db` always uses `@libsql/client` — locally with `file:local.db` (no native build needed), in production with a Turso URL. Same Drizzle schema, same driver, zero native compilation.
 
-**Next.js as full-stack.** All REST API routes live under `packages/web/src/app/api/`. These serve both the web frontend (via TanStack Query hooks) and the future iOS Swift app. Auth is a single Bearer token (`NEXT_PUBLIC_AUTH_TOKEN` env var) enforced in `packages/web/src/app/proxy.ts` (the middleware file for this Next.js version) — no auth library, no login page.
+**Next.js as full-stack.** All REST API routes live under `packages/web/src/app/api/`. These serve both the web frontend (via TanStack Query hooks) and the future iOS Swift app. Auth uses a server-only `AUTH_TOKEN` env var enforced in `packages/web/src/proxy.ts` (Next.js 16 middleware). Browser sessions use an httpOnly cookie set at `/login`; API clients (MCP, iOS) use `Authorization: Bearer $AUTH_TOKEN`.
 
 **MCP server connects to DB directly.** `packages/mcp` imports `@todo/db` and writes to Turso/SQLite without an HTTP hop. This means MCP tools work even when the web app is not running.
 
@@ -71,7 +71,7 @@ Shared utility in `packages/web/src/lib/routine-links.ts`: `LINKED_LOG_SOURCES` 
 |---|---|---|
 | `TURSO_URL` | db, mcp | Turso database URL |
 | `TURSO_AUTH_TOKEN` | db, mcp | Turso auth token |
-| `NEXT_PUBLIC_AUTH_TOKEN` | web (proxy + browser client) | Bearer token for REST API |
+| `AUTH_TOKEN` | web (proxy) | Bearer token for REST API; browser uses httpOnly cookie set at `/login` |
 | `ANTHROPIC_API_KEY` | mcp | Required for `plan_project` / `apply_project_plan` architect tools |
 | `ARCHITECT_MODEL` | mcp | Override Claude model for architect tools (default: `claude-sonnet-4-6`) |
 
@@ -127,7 +127,7 @@ TypeScript strict mode is enabled. All packages extend `tsconfig.base.json`.
 | `/api/import/routines` | POST | Bulk import routine completions; optionally create missing routines |
 | `/api/brief` | POST | AI-generated one-sentence daily briefing (uses `ANTHROPIC_API_KEY`) |
 
-All routes require `Authorization: Bearer $NEXT_PUBLIC_AUTH_TOKEN`.
+All routes require either the `auth_token` httpOnly cookie (browser) or `Authorization: Bearer $AUTH_TOKEN` (API clients).
 
 ### UI conventions
 

@@ -1,20 +1,12 @@
-/** Typed fetch wrapper for the internal REST API. Auth token is injected server-side only. */
+/** Typed fetch wrapper for the internal REST API. */
 
 const BASE = "";
-
-function authHeaders(): HeadersInit {
-  // NEXT_PUBLIC_AUTH_TOKEN is available in both browser and server.
-  // AUTH_TOKEN alone would be undefined on the client.
-  const token = process.env.NEXT_PUBLIC_AUTH_TOKEN ?? "";
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
       ...(init?.headers ?? {}),
     },
   });
