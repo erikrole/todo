@@ -39,13 +39,7 @@ const COLOR_OPTIONS: { label: string; value: string }[] = [
   { label: "Sky", value: "oklch(0.65 0.10 220)" },
 ];
 
-const AREA_COLOR_PALETTE = [
-  "oklch(0.68 0.13 58)",   // ochre
-  "oklch(0.63 0.13 30)",   // clay
-  "oklch(0.62 0.08 150)",  // sage
-  "oklch(0.58 0.08 240)",  // slate
-  "oklch(0.56 0.12 320)",  // plum
-];
+const AREA_COLOR_PALETTE = COLOR_OPTIONS.slice(0, 5).map((o) => o.value);
 
 const ACCENT_SWATCHES: { id: Accent; color: string }[] = [
   { id: "ochre", color: "oklch(0.68 0.13 58)" },

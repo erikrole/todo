@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,10 @@ export function MoveProjectDialog({
   const { data: areas = [] } = useAreas();
   const { mutate: updateProject } = useUpdateProject();
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(currentAreaId ?? null);
+
+  useEffect(() => {
+    if (open) setSelectedAreaId(currentAreaId ?? null);
+  }, [open, currentAreaId]);
 
   const handleMove = () => {
     updateProject({ id: projectId, areaId: selectedAreaId ?? null });
