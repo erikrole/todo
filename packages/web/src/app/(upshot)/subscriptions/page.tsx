@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Subscription } from "@todo/db";
+import type { BillingPeriod } from "@todo/shared";
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,6 @@ const CATEGORY_META: Record<Category, { label: string; color: string }> = {
 };
 
 const BILLING_PERIODS = ["weekly", "monthly", "annual"] as const;
-type BillingPeriod = typeof BILLING_PERIODS[number];
 
 function categoryColor(cat: string | null): string {
   return CATEGORY_META[cat as Category]?.color ?? "#6b7280";

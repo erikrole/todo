@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Occasion } from "@todo/db";
+import type { OccasionType } from "@todo/shared";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-type OccasionType = "birthday" | "anniversary" | "sports" | "holiday" | "event";
 
 const TYPE_META: Record<OccasionType, { label: string; emoji: string; color: string; alwaysAnnual: boolean; showPerson: boolean; showStartYear: boolean; startYearLabel: string }> = {
   birthday:    { label: "Birthday",     emoji: "🎂", color: "#ec4899", alwaysAnnual: true,  showPerson: true,  showStartYear: false, startYearLabel: "" },
