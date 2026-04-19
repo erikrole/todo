@@ -77,7 +77,9 @@ export function MoveProjectDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleMove}>Move</Button>
+          <Button onClick={handleMove} disabled={selectedAreaId === (currentAreaId ?? null)}>
+            Move
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

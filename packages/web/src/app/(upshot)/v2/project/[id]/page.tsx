@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
+import { notFound } from "next/navigation";
 import { useTasks } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { useSections, useCreateSection, useUpdateSection } from "@/hooks/use-sections";
@@ -122,6 +123,8 @@ export default function V2ProjectPage({ params }: { params: Promise<{ id: string
       },
     );
   }
+
+  if (!isLoading && projects.length > 0 && !project) notFound();
 
   const isEmpty =
     !isLoading &&

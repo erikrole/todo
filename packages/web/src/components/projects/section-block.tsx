@@ -14,6 +14,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { ChevronRight, GripVertical } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/upshot/delete-confirm-dialog";
 
 interface SectionBlockProps {
   section: Section;
@@ -25,6 +26,7 @@ export function SectionBlock({ section, tasks, allSections }: SectionBlockProps)
   const updateSection = useUpdateSection();
   const deleteSection = useDeleteSection();
   const [isRenaming, setIsRenaming] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameValue, setRenameValue] = useState(section.title);
   const renameRef = useRef<HTMLInputElement>(null);
   const renameSubmittedRef = useRef(false);
@@ -73,15 +75,16 @@ export function SectionBlock({ section, tasks, allSections }: SectionBlockProps)
   }
 
   function handleDelete() {
-    const taskCount = openTasks.length;
-    const confirmed =
-      taskCount === 0 ||
-      window.confirm(
-        `This will unsection ${taskCount} task${taskCount === 1 ? "" : "s"}. Continue?`,
-      );
-    if (confirmed) {
+    if (openTasks.length === 0) {
       deleteSection.mutate({ id: section.id, projectId: section.projectId });
+    } else {
+      setDeleteOpen(true);
     }
+  }
+
+  function confirmDelete() {
+    deleteSection.mutate({ id: section.id, projectId: section.projectId });
+    setDeleteOpen(false);
   }
 
   function toggleCollapse() {
@@ -179,6 +182,13 @@ export function SectionBlock({ section, tasks, allSections }: SectionBlockProps)
           }}
         />
       )}
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Delete "${section.title}"?`}
+        description={`This will unsection ${openTasks.length} task${openTasks.length === 1 ? "" : "s"}. The tasks will remain in the project.`}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
